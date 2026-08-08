@@ -4,13 +4,18 @@ Working infrastructure for the **programmable risk transfer** project: partner C
 facility project plan, kanban board, outreach material generator, and the narrative
 reference that keeps everything on-message.
 
-The whole application is a single self-contained HTML file. No build step, no
-dependencies, no server.
+The application is a single self-contained HTML file. No build step, no
+dependencies, no server. The shared dataset lives beside it in this repo, so git
+is the database.
 
 ```
 lionscraft-platform.html    the entire application
+data/desk.json              the shared dataset — the source of truth
+index.html                  redirect so the Pages root serves the desk
 docs/master-narrative.md    source of truth for the story and the guardrails
 ```
+
+**Live:** https://lionscraft-io.github.io/risk-cockpit/
 
 ---
 
@@ -59,24 +64,57 @@ of it in outreach.
 
 ---
 
-## Data and the two copies
+## How the data works
 
-Data lives in the browser's `localStorage`, keyed `lionscraft-desk-v1`. Storage is
-per-origin, which has one consequence worth understanding:
+`data/desk.json` in this repo is the shared truth. The app fetches it on load and
+uses it as the baseline. Your browser holds only your own unpublished edits on
+top, in `localStorage` under `lionscraft-desk-v1`.
 
-**The local file and the published link keep separate copies.** Edits made at
-`file://…` do not appear at `claude.ai/…`, and vice versa. Pick one as the place
-work actually happens.
+That means git is the database: every published change is a commit, with full
+history, blame and rollback.
 
-There is no shared multi-user database — the artifact runtime does not offer one.
-The sync path is manual and deliberate:
+### What the chip in the top bar means
 
-1. Whoever made changes opens **Data → Copy JSON** (or **Export JSON** on the
-   published version)
-2. That JSON becomes the new master, committed to this repo
-3. The artifact is redeployed from the updated file, and everyone reloads
+| Chip | State |
+| --- | --- |
+| `rev N · in sync` | Your copy matches `data/desk.json`. |
+| `rev N · unpublished` | You have edits that are not in the repo yet. |
+| `update available` | The shared file moved on since your copy was taken. A banner offers **Load shared version** or **Keep mine** — it never overwrites your work silently. |
+| `local copy` | The shared file could not be fetched, so the embedded seed is standing in. |
 
-Handling changes this way means every version of the truth is in git history.
+The sync state is tracked separately from the data itself, in
+`localStorage['lionscraft-desk-sync']` as `{base, dirty}` — `base` is the shared
+revision your copy branched from, `dirty` is whether you have edited since.
+Comparing `base` against the revision in the fetched file is what detects a stale
+copy. `Keep mine` advances `base` without touching your data, so you are told
+about the *next* revision but not nagged about one you have already decided on.
+
+### Publishing a change
+
+1. **Data → Copy as revision N+1** — stamps the data with the next revision and
+   today's date, and copies it
+2. Paste over `data/desk.json`, commit, push
+3. Everyone else sees the update banner on their next reload
+
+The revision only ever moves forward, and the app refuses to consider itself in
+sync with a revision it has not actually seen.
+
+### Where the shared fetch does and doesn't work
+
+| Where | Shared data |
+| --- | --- |
+| **GitHub Pages** — the team link | ✅ works, this is the canonical home |
+| **Opening the file directly** (`file://`) | ⚠️ browser-dependent; Chrome blocks the fetch, and the app falls back to the embedded seed and says `local copy` |
+| **claude.ai artifact** | ❌ only the HTML file is published, so there is no `data/desk.json` to fetch — falls back to the seed |
+
+Work on the Pages link. The other two are convenience copies.
+
+### The embedded seed
+
+`SEED` inside the HTML is the offline fallback, not the source of truth.
+`data/desk.json` was generated from it and the two will drift as real data
+accumulates — that is expected. Regenerate the JSON from the seed only when
+bootstrapping a fresh dataset, never to "sync" it back.
 
 ---
 
@@ -97,10 +135,14 @@ Conventions worth keeping:
   and calls the matching `wire*()` for anything needing event listeners
 - All user-supplied text goes through `esc()`
 - Dates are plain `YYYY-MM-DD` strings, compared as strings; timeline maths runs in
-  UTC via `toMs()` / `shiftDays()` so a viewer's timezone can never shift a bar
-- `TODAY` is a constant, not `new Date()` — change it in one place
+  UTC via `toMs()` / `shiftDays()` so a viewer's timezone can never shift a bar.
+  `TODAY` is the viewer's real local calendar date, so "overdue" stays honest
+  without anyone editing a constant
+- `save()` marks the copy unpublished; `save(true)` is for the sync machinery only,
+  which manages that flag itself
 - Adding a field to tasks or partners means: add it to `SEED`, to the drawer form,
-  and add a backfill for data saved before it existed (see `backfillStarts`)
+  and add a backfill for data saved before it existed (see `backfillStarts`) —
+  people will be carrying older copies in their browsers
 
 ### Redeploying the published artifact
 

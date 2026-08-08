@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Lionscraft — Partner & Facility Desk</title>
 
 <style>
@@ -411,6 +412,31 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 .drawer > footer{padding:12px 18px; border-top:1px solid var(--line); display:flex; gap:8px}
 .drawer > footer .spacer{margin-left:auto}
 
+/* ─── Sync chip and banner ───────────────────────────────────────────── */
+.syncchip{
+  display:inline-flex; align-items:center; gap:7px; background:transparent; border:1px solid var(--line);
+  border-radius:20px; padding:4px 11px 4px 9px; cursor:pointer; color:var(--ink-3);
+  font-family:var(--data); font-size:10.5px; letter-spacing:.05em; white-space:nowrap;
+}
+.syncchip:hover{border-color:var(--line-strong); color:var(--ink-2)}
+.syncchip .dot{width:6px; height:6px; border-radius:50%; background:var(--ink-3); flex:none}
+.syncchip[data-s="synced"] .dot{background:var(--accent)}
+.syncchip[data-s="ahead"] .dot{background:var(--ochre)}
+.syncchip[data-s="behind"] .dot{background:var(--danger)}
+.syncchip[data-s="ahead"]{color:var(--ochre); border-color:var(--ochre-soft)}
+.syncchip[data-s="behind"]{color:var(--danger); border-color:var(--danger-soft)}
+
+#banner:empty{display:none}
+.bnr{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:9px 20px; border-bottom:1px solid var(--line); font-size:12.5px;
+  background:var(--ochre-soft); color:var(--ink);
+}
+.bnr.info{background:var(--accent-soft)}
+.bnr .grow{margin-left:auto; display:flex; gap:7px}
+.bnr b{font-weight:600}
+.bnr code{font-family:var(--data); font-size:11.5px}
+
 .empty{padding:30px 16px; text-align:center; color:var(--ink-3); font-size:13px}
 .toast{
   position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(14px);
@@ -443,10 +469,15 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
     <span>Partner &amp; Facility Desk</span>
   </div>
   <div class="tools">
+    <button class="syncchip" id="syncChip" title="Where this data stands">
+      <span class="dot"></span><span class="txt">…</span>
+    </button>
     <button class="btn ghost" id="themeBtn" title="Switch theme">Theme</button>
     <button class="btn" id="dataBtn">Data</button>
   </div>
 </header>
+
+<div id="banner"></div>
 
 <div class="shell">
   <nav class="rail" id="rail"></nav>
@@ -623,6 +654,7 @@ const SEED = {
     org:"Lionscraft",
     facility:"Sri Lanka Telecom Resilience Facility",
     product:"Response-Linked ART",
+    revision:1,
     updated:"2026-08-08"
   },
   partners: [
@@ -747,12 +779,96 @@ const SEED = {
 /* ══ Store ════════════════════════════════════════════════════════════ */
 
 const KEY = "lionscraft-desk-v1";
-let DB;
+const META_KEY = "lionscraft-desk-sync";
+const SHARED_URL = "data/desk.json";
+
+let DB, hadLocal = false;
 try {
   const raw = localStorage.getItem(KEY);
+  hadLocal = !!raw;
   DB = raw ? JSON.parse(raw) : structuredClone(SEED);
 } catch (e) { DB = structuredClone(SEED); }
-if (!DB.partners) DB = structuredClone(SEED);
+if (!DB.partners){ DB = structuredClone(SEED); hadLocal = false; }
+
+/* Sync state. `base` is the shared revision this browser's copy was taken from;
+   `dirty` means it has been edited since. Together they tell us whether the
+   shared file has moved on underneath us. */
+let sync = {base:0, dirty:false};
+try {
+  const m = localStorage.getItem(META_KEY);
+  if (m) sync = Object.assign(sync, JSON.parse(m));
+} catch (e) {}
+
+let shared = null;                 // the fetched shared dataset, if reachable
+let syncState = "local";           // local | synced | ahead | behind
+
+const saveSync = () => { try { localStorage.setItem(META_KEY, JSON.stringify(sync)); } catch (e) {} };
+const revOf = d => (d && d.meta && d.meta.revision) || 0;
+
+/* Load the shared dataset committed in the repo. Reachable over http(s) — which
+   is how the team uses it. On file:// and inside the claude.ai artifact the fetch
+   is blocked by design, so the embedded seed stands in and we say so plainly
+   rather than pretending to be in sync. */
+async function loadShared(){
+  try {
+    const res = await fetch(SHARED_URL, {cache:"no-store"});
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    if (!Array.isArray(json.partners) || !Array.isArray(json.tasks)) throw new Error("unexpected shape");
+    shared = json;
+  } catch (e) {
+    syncState = "local";
+    return;
+  }
+
+  if (!hadLocal){
+    DB = structuredClone(shared);
+    sync = {base:revOf(shared), dirty:false};
+    save(true); saveSync();
+    syncState = "synced";
+  } else if (revOf(shared) > sync.base){
+    syncState = "behind";
+  } else {
+    syncState = sync.dirty ? "ahead" : "synced";
+  }
+}
+
+/* Take the shared version, discarding local edits. */
+function adoptShared(){
+  DB = structuredClone(shared);
+  sync = {base:revOf(shared), dirty:false};
+  save(true); saveSync();
+  syncState = "synced";
+  renderRail(); renderBanner(); render();
+  toast("Loaded shared revision " + revOf(shared));
+}
+
+/* Keep working locally, but stop being told about a revision already seen. */
+function dismissShared(){
+  sync.base = revOf(shared);
+  sync.dirty = true;
+  saveSync();
+  syncState = "ahead";
+  renderBanner(); render();
+}
+
+/* Stamp the current data as the next shared revision, ready to be committed. */
+function publishPayload(){
+  const out = structuredClone(DB);
+  out.meta = Object.assign({}, out.meta, {
+    revision: Math.max(revOf(DB), revOf(shared)) + 1,
+    updated: TODAY
+  });
+  return out;
+}
+function markPublished(rev){
+  DB.meta.revision = rev;
+  DB.meta.updated = TODAY;
+  sync = {base:rev, dirty:false};
+  save(true); saveSync();
+  syncState = "synced";
+  renderRail(); renderBanner(); render();
+}
 
 /* Backfill start dates for data saved before the timeline existed. Only fills
    a missing field — never overwrites anything the team has edited. */
@@ -767,15 +883,26 @@ if (!DB.partners) DB = structuredClone(SEED);
   if (touched) try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {}
 })();
 
-const save = () => {
+/* `quiet` is used by the sync machinery, which manages the dirty flag itself.
+   Every other caller is a user edit, so it marks the copy as unpublished. */
+const save = (quiet) => {
   try { localStorage.setItem(KEY, JSON.stringify(DB)); }
-  catch (e) { toast("Could not save locally — this browser is blocking storage"); }
+  catch (e) { toast("Could not save locally — this browser is blocking storage"); return; }
+  if (!quiet && !sync.dirty){
+    sync.dirty = true; saveSync();
+    if (syncState === "synced"){ syncState = "ahead"; renderBanner(); }
+  }
 };
 const uid = p => p + Math.random().toString(36).slice(2, 8);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-const TODAY = "2026-08-08";
+/* Real calendar date in the viewer's own timezone, so "overdue" stays true
+   without anyone having to edit a constant. */
+const TODAY = (() => {
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+})();
 const fmtDate = d => {
   if (!d) return "—";
   const [y, m, dd] = d.split("-");
@@ -836,6 +963,45 @@ function renderRail(){
 }
 
 function go(id){ current = id; renderRail(); render(); window.scrollTo({top:0}); }
+
+/* ══ Sync surface ═════════════════════════════════════════════════════ */
+
+const SYNC_LABEL = {
+  synced: () => "rev " + revOf(DB) + " · in sync",
+  ahead:  () => "rev " + revOf(DB) + " · unpublished",
+  behind: () => "update available",
+  local:  () => "local copy"
+};
+
+function renderBanner(){
+  const chip = document.getElementById("syncChip");
+  chip.dataset.s = syncState;
+  chip.querySelector(".txt").textContent = SYNC_LABEL[syncState]();
+  chip.title = {
+    synced: "This browser matches the shared version committed to the repo.",
+    ahead:  "You have edits that are not in the shared version yet. Open Data to publish them.",
+    behind: "The shared version has moved on since your copy was taken.",
+    local:  "The shared file could not be loaded here, so this is a standalone local copy."
+  }[syncState];
+
+  const el = document.getElementById("banner");
+  if (syncState !== "behind"){ el.innerHTML = ""; return; }
+  el.innerHTML = `
+    <div class="bnr">
+      <span><b>Shared data has moved on.</b>
+        Revision <code>${revOf(shared)}</code> was published on ${fmtDate(shared.meta.updated)};
+        your copy came from revision <code>${sync.base}</code>.</span>
+      <span class="grow">
+        <button class="btn" id="keepMine">Keep mine</button>
+        <button class="btn primary" id="takeShared">Load shared version</button>
+      </span>
+    </div>`;
+  document.getElementById("takeShared").onclick = () => {
+    if (sync.dirty && !confirm("Loading the shared version replaces your local edits. Continue?")) return;
+    adoptShared();
+  };
+  document.getElementById("keepMine").onclick = dismissShared;
+}
 
 document.getElementById("rail").addEventListener("click", e => {
   const b = e.target.closest("[data-view]");
@@ -2203,41 +2369,74 @@ function taskDrawer(id){
 }
 
 function dataDrawer(){
+  const state = {
+    synced: `This browser matches shared revision <code>${revOf(DB)}</code>. Nothing to publish.`,
+    ahead:  `You have edits on top of shared revision <code>${sync.base}</code>. Publish them to put them in the repo.`,
+    behind: `Shared revision <code>${revOf(shared)}</code> exists; your copy came from <code>${sync.base}</code>. Resolve that before publishing.`,
+    local:  `The shared file could not be loaded here, so this is a standalone copy. Open the desk on GitHub Pages to work against the shared version.`
+  }[syncState];
+
   openDrawer(`
     <header><h3>Data</h3><button class="btn ghost" data-close>Close</button></header>
     <div class="body">
-      <div class="note">Your edits are saved in this browser only. To share them with the team, export and send the file back — the master copy lives in the project folder and the link is redeployed from it.</div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap">
-        <button class="btn primary" data-export>Export JSON</button>
-        <button class="btn" data-copy>Copy JSON</button>
-        <button class="btn danger" data-reset>Reset to seed</button>
+      <div class="${syncState === "synced" ? "note" : "note"}" style="${syncState === "synced" ? "border-left-color:var(--accent); background:var(--accent-soft)" : ""}">${state}</div>
+
+      <div>
+        <span class="eyebrow">Publish to the team</span>
+        <p style="margin:6px 0 9px; color:var(--ink-2); font-size:12.5px">
+          Stamps this data as revision <b>${Math.max(revOf(DB), revOf(shared)) + 1}</b> and copies it.
+          Commit it to <code style="font-family:var(--data)">${SHARED_URL}</code> in the repo and everyone
+          picks it up on their next reload.
+        </p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn primary" data-publish>Copy as revision ${Math.max(revOf(DB), revOf(shared)) + 1}</button>
+          <button class="btn" data-publishfile>Download it</button>
+        </div>
       </div>
+
+      <div>
+        <span class="eyebrow">Working copy</span>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:7px">
+          <button class="btn" data-copy>Copy JSON as-is</button>
+          <button class="btn danger" data-reset>${shared ? "Discard my edits" : "Reset to seed"}</button>
+        </div>
+      </div>
+
       <label class="field"><span>Paste JSON to import</span>
-        <textarea id="importBox" rows="12" placeholder="Paste an exported file here, then press Import."></textarea></label>
+        <textarea id="importBox" rows="9" placeholder="Paste an exported file here, then press Import."></textarea></label>
       <button class="btn" data-import style="align-self:flex-start">Import</button>
+
       <p style="color:var(--ink-3); font-size:12px; margin:0">
         ${DB.partners.length} partners · ${DB.tasks.length} tasks · ${DB.milestones.length} milestones
+        · last published ${fmtDate(DB.meta.updated)}
       </p>
     </div>
     <footer><span class="spacer"></span><button class="btn" data-close>Done</button></footer>`);
 
-  const json = () => JSON.stringify(DB, null, 2);
+  const copy = async (text, ok) => {
+    try { await navigator.clipboard.writeText(text); toast(ok); return true; }
+    catch (e) { toast("Clipboard blocked — use Download instead"); return false; }
+  };
 
-  drawer.querySelector("[data-export]").onclick = async () => {
-    if (!window.claude || !window.claude.downloads){ toast("Downloads unavailable here — use Copy JSON"); return; }
+  drawer.querySelector("[data-publish]").onclick = async () => {
+    const payload = publishPayload();
+    if (await copy(JSON.stringify(payload, null, 2), "Copied revision " + payload.meta.revision + " — commit it to " + SHARED_URL))
+      markPublished(payload.meta.revision);
+  };
+  drawer.querySelector("[data-publishfile]").onclick = async () => {
+    const payload = publishPayload();
+    if (!window.claude || !window.claude.downloads){ toast("Downloads only work on the claude.ai copy — use Copy"); return; }
     try {
-      await window.claude.downloads.save({filename:"lionscraft-desk.json", data:json()});
-      toast("Exported");
+      await window.claude.downloads.save({filename:"desk.json", data:JSON.stringify(payload, null, 2)});
+      markPublished(payload.meta.revision);
+      toast("Saved revision " + payload.meta.revision);
     } catch (err){
-      const code = err && err.code;
-      if (code === "declined") return;
-      toast(code === "rate_limited" ? "Try again in a moment" : "Could not export — use Copy JSON");
+      if (err && err.code === "declined") return;
+      toast("Could not save — use Copy instead");
     }
   };
-  drawer.querySelector("[data-copy]").onclick = async () => {
-    try { await navigator.clipboard.writeText(json()); toast("JSON copied"); }
-    catch (e) { toast("Clipboard blocked — export instead"); }
-  };
+  drawer.querySelector("[data-copy]").onclick = () => copy(JSON.stringify(DB, null, 2), "JSON copied");
+
   drawer.querySelector("[data-import]").onclick = () => {
     const raw = document.getElementById("importBox").value.trim();
     if (!raw){ toast("Paste some JSON first"); return; }
@@ -2247,11 +2446,18 @@ function dataDrawer(){
     if (!Array.isArray(next.partners) || !Array.isArray(next.tasks)){
       toast("That file is missing partners or tasks"); return;
     }
-    DB = next; save(); closeDrawer(); renderRail(); render(); toast("Imported");
+    DB = next; save(); closeDrawer(); renderRail(); renderBanner(); render(); toast("Imported");
   };
   drawer.querySelector("[data-reset]").onclick = () => {
-    if (!confirm("Reset everything to the seeded content? Your local edits will be lost.")) return;
-    DB = structuredClone(SEED); save(); closeDrawer(); renderRail(); render(); toast("Reset to seed");
+    const target = shared || SEED;
+    const what = shared ? "the shared version, revision " + revOf(shared) : "the seeded content";
+    if (!confirm("Discard everything in this browser and go back to " + what + "?")) return;
+    DB = structuredClone(target);
+    sync = {base:revOf(target), dirty:false};
+    save(true); saveSync();
+    syncState = shared ? "synced" : "local";
+    closeDrawer(); renderRail(); renderBanner(); render();
+    toast("Reset to " + what);
   };
 }
 
@@ -2325,6 +2531,15 @@ document.getElementById("themeBtn").onclick = () => {
   root.setAttribute("data-theme", dark ? "light" : "dark");
 };
 
-renderRail();
-render();
+document.getElementById("syncChip").onclick = dataDrawer;
+
+(async function init(){
+  renderRail();
+  render();
+  renderBanner();
+  await loadShared();
+  renderRail();
+  renderBanner();
+  render();
+})();
 </script>

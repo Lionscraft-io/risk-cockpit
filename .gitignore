@@ -9,6 +9,8 @@
 .idea/
 *.swp
 
-# Exported working copies of the desk data — commit deliberately, not by accident
+# data/desk.json is the shared source of truth and IS tracked.
+# Stray exports dropped anywhere else are not — commit deliberately, not by accident.
 lionscraft-desk*.json
-!data/lionscraft-desk.json
+desk*.json
+!data/desk.json
