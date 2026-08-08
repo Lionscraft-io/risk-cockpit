@@ -44,6 +44,36 @@ for what that means in practice.
 | **Outreach** | Eight formats (cold intro, warm intro, follow-up, MoU, agenda, one-pager, concept note, deck spine), tailored per partner type |
 | **Narrative** | The five-level hierarchy, six facility layers, guardrails, language bank, failure modes |
 
+### Tabs are addressable
+
+The open tab lives in the URL, so a refresh keeps you where you were, the back
+button works, and you can link someone straight to a view:
+
+```
+…/lionscraft-platform.html#partners
+…/lionscraft-platform.html#plan/gantt
+…/lionscraft-platform.html#board
+```
+
+The Pages root carries the fragment through the redirect, so
+`…/risk-cockpit/#board` works too.
+
+### On a phone
+
+The desk is usable on a phone, not just shrunk to fit:
+
+- The partner table becomes stacked cards with labelled fields — six columns
+  never scan sideways well
+- The board shows one column per screen with snap scrolling, swiped between
+- The timeline stays a timeline, with a narrower month scale; bars and milestones
+  are still draggable by touch (`touch-action: none` on the handles)
+- Inputs are 16px so iOS stops zooming in when you focus one
+- The theme toggle is hidden below 560px and the OS preference applies
+
+Watch for horizontal page scroll when adding anything wide. `.grid > *` carries
+`min-width: 0` for exactly this reason: without it a wide scroller inside a grid
+child sizes the whole track to its content and the page slides sideways.
+
 ### The hierarchy the whole thing is built around
 
 Never invert it — it is the most common way this story breaks.

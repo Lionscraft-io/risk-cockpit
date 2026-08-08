@@ -6,6 +6,11 @@
 <title>Lionscraft — Partner &amp; Facility Desk</title>
 <meta http-equiv="refresh" content="0; url=lionscraft-platform.html">
 <link rel="canonical" href="lionscraft-platform.html">
+<script>
+  /* A meta refresh drops the fragment, so /#partners would land on Overview.
+     Redirect in script when we can, and leave the meta as the fallback. */
+  location.replace("lionscraft-platform.html" + location.hash);
+</script>
 <style>
   :root{color-scheme:light dark}
   body{

@@ -1,4 +1,5 @@
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lionscraft — Partner & Facility Desk</title>
 
 <style>
@@ -127,6 +128,9 @@ main{padding:26px 28px 90px; min-width:0; max-width:1180px}
 .card > header h2{font-size:15px}
 .card > header .spacer{margin-left:auto}
 .grid{display:grid; gap:14px}
+/* Without this, a wide scroller inside a grid child (the board's columns, a
+   timeline) sizes the whole track to its content and the page scrolls sideways. */
+.grid > *{min-width:0}
 .tablewrap{overflow-x:auto}
 table{border-collapse:collapse; width:100%; font-size:13px}
 th{
@@ -457,14 +461,92 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 @media (max-width:900px){
   .shell{grid-template-columns:1fr}
   .rail{
-    position:static; height:auto; flex-direction:row; overflow-x:auto; border-right:0;
-    border-bottom:1px solid var(--line); padding:8px 10px; gap:4px;
+    position:sticky; top:56px; z-index:30; height:auto; flex-direction:row; overflow-x:auto;
+    border-right:0; border-bottom:1px solid var(--line); padding:8px 10px; gap:4px;
+    background:var(--surface); -webkit-overflow-scrolling:touch;
   }
   .rail .eyebrow{display:none}
   .navitem{width:auto; white-space:nowrap}
   .navitem em{display:none}
   main{padding:20px 16px 80px}
   .outgrid{grid-template-columns:1fr}
+}
+
+/* ─── Phones ─────────────────────────────────────────────────────────── */
+@media (max-width:640px){
+  .topbar{height:52px; padding:0 12px; gap:8px}
+  .mark b{font-size:16px}
+  .mark span{display:none}
+  .rail{top:52px}
+
+  main{padding:16px 12px 72px}
+  .pagehead{gap:12px; margin-bottom:16px}
+  .pagehead h1{font-size:21px}
+  .pagehead p{font-size:13px}
+  .pagehead .tools{margin-left:0; width:100%}
+  .pagehead .tools .btn{flex:1}
+
+  /* Comfortable tap targets, and 16px inputs so iOS stops zooming on focus */
+  .btn{padding:9px 13px}
+  .navitem{padding:9px 12px; font-size:14px}
+  select, input[type=text], input[type=date]{padding:8px 10px; font-size:16px}
+  .status{padding:5px 9px}
+  .filters{gap:8px}
+  .filters select, .filters input[type=text]{flex:1; min-width:130px; width:auto}
+
+  .card > header{padding:11px 13px}
+  th, td{padding:9px 11px}
+  .stats{gap:8px; grid-template-columns:repeat(auto-fit,minmax(108px,1fr))}
+  .stat{padding:11px 12px}
+  .stat b{font-size:21px}
+
+  /* Tables that are too wide to scan sideways become stacked cards */
+  .cardtable thead{display:none}
+  .cardtable, .cardtable tbody, .cardtable tr, .cardtable td{display:block; width:100%}
+  .cardtable{border-collapse:separate; margin:10px}
+  .cardtable tr{
+    border:1px solid var(--line); border-radius:var(--radius); background:var(--surface);
+    padding:11px 13px; margin-bottom:9px;
+  }
+  .cardtable tr:last-child{margin-bottom:0}
+  .cardtable td{border:0; padding:3px 0; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap}
+  .cardtable td .sub{flex-basis:100%; margin-left:84px; margin-top:1px}
+  .cardtable td.lead .sub{margin-left:0}
+  .cardtable td::before{
+    content:attr(data-label); flex:none; width:74px;
+    font-family:var(--data); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--ink-3); line-height:1.7;
+  }
+  .cardtable td.lead{display:block; margin-bottom:6px}
+  .cardtable td.lead::before{display:none}
+  .cardtable .tablewrap{overflow:visible}
+  .hide-sm{display:none}
+
+  /* One board column per screen, swiped between */
+  .board{
+    grid-auto-flow:column; grid-auto-columns:82vw; grid-template-columns:none;
+    gap:10px; scroll-snap-type:x mandatory; padding-bottom:10px;
+  }
+  .col{scroll-snap-align:start; max-height:none}
+  .col .stack{max-height:60vh}
+
+  /* The timeline stays a timeline — just fit more of it on screen */
+  .gantt{--mw:62px; --lw:148px; max-height:64vh}
+  .glabel{padding:6px 9px; font-size:12px}
+  .glegend{gap:10px; font-size:11px; padding:10px 12px}
+  .glegend span:last-child{width:100%; margin-left:0!important}
+
+  .out textarea{min-height:340px; padding:14px}
+  .bnr{padding:10px 12px}
+  .bnr .grow{margin-left:0; width:100%}
+  .bnr .grow .btn{flex:1}
+  .drawer > footer{padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+  .board, .tablewrap, .gantt{-webkit-overflow-scrolling:touch}
+}
+
+@media (max-width:560px){
+  #themeBtn{display:none}          /* falls back to the OS theme, which is right on a phone */
+  .syncchip{padding:4px 9px}
 }
 </style>
 
@@ -967,7 +1049,36 @@ function renderRail(){
        </button>`).join("");
 }
 
-function go(id){ current = id; renderRail(); render(); window.scrollTo({top:0}); }
+/* The open tab lives in the URL hash, so a refresh keeps you where you were,
+   back and forward work, and a tab can be linked to directly. Plan carries its
+   sub-view too: #plan/gantt. */
+function routeFromHash(){
+  const [view, mode] = (location.hash || "").replace(/^#\/?/, "").split("/");
+  return {
+    view: VIEWS.some(v => v.id === view) ? view : "overview",
+    mode: ["list", "gantt"].includes(mode) ? mode : null
+  };
+}
+
+function applyRoute(replace){
+  const h = "#" + current + (current === "plan" && planMode !== "list" ? "/" + planMode : "");
+  if (location.hash === h) return;
+  history[replace ? "replaceState" : "pushState"](null, "", h);
+}
+
+function go(id){
+  current = id;
+  applyRoute(false);
+  renderRail(); render();
+  window.scrollTo({top:0});
+}
+
+window.addEventListener("popstate", () => {
+  const r = routeFromHash();
+  current = r.view;
+  if (r.mode) planMode = r.mode;
+  renderRail(); render();
+});
 
 /* ══ Sync surface ═════════════════════════════════════════════════════ */
 
@@ -1195,19 +1306,19 @@ function viewPartners(){
       <span class="cat">${rows.length} of ${DB.partners.length}</span>
     </header>
     <div class="tablewrap">
-      <table>
+      <table class="cardtable">
         <thead><tr>
           <th>Organisation</th><th>Type</th><th>Stage</th><th>Owner</th><th>Next move</th><th>Due</th>
         </tr></thead>
         <tbody>
           ${rows.length ? rows.map(p => `
             <tr class="clickable" data-partner="${p.id}">
-              <td><b>${esc(p.name)}</b><span class="sub">${esc(p.why)}</span></td>
-              <td><span class="cat">${catLabel(p.cat)}</span><span class="sub">${esc(p.country)}</span></td>
-              <td><span class="chip ${stageClass(p.stage)}"><i class="dot"></i>${stageLabel(p.stage)}</span></td>
-              <td>${esc(p.owner) || '<span style="color:var(--ink-3)">—</span>'}</td>
-              <td>${esc(p.next) || '<span style="color:var(--ink-3)">—</span>'}</td>
-              <td class="num ${isOverdue(p.nextDate) ? "overdue" : ""}">${fmtDate(p.nextDate)}</td>
+              <td class="lead"><b>${esc(p.name)}</b><span class="sub">${esc(p.why)}</span></td>
+              <td data-label="Type"><span class="cat">${catLabel(p.cat)}</span><span class="sub">${esc(p.country)}</span></td>
+              <td data-label="Stage"><span class="chip ${stageClass(p.stage)}"><i class="dot"></i>${stageLabel(p.stage)}</span></td>
+              <td data-label="Owner">${esc(p.owner) || '<span style="color:var(--ink-3)">—</span>'}</td>
+              <td data-label="Next">${esc(p.next) || '<span style="color:var(--ink-3)">—</span>'}</td>
+              <td data-label="Due" class="num ${isOverdue(p.nextDate) ? "overdue" : ""}">${fmtDate(p.nextDate)}</td>
             </tr>`).join("") : '<tr><td colspan="6" class="empty">No partners match those filters.</td></tr>'}
         </tbody>
       </table>
@@ -1636,7 +1747,7 @@ function planList(){
           return `<tr class="clickable ${t.status === "done" ? "done" : ""}" data-task="${t.id}">
             <td style="width:88px"><button class="status" data-cycle="${t.id}" data-s="${t.status}">${statusLabel[t.status]}</button></td>
             <td>${esc(t.title)}${p ? `<span class="sub">${esc(p.name)}</span>` : ""}</td>
-            <td style="width:130px">${esc(t.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
+            <td style="width:130px" class="hide-sm">${esc(t.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
             <td style="width:82px" class="num ${isOverdue(t.due) && t.status !== "done" ? "overdue" : ""}">${fmtDate(t.due)}</td>
           </tr>`;
         }).join("") : '<tr><td class="empty">No tasks in this workstream yet.</td></tr>'}
@@ -2483,7 +2594,7 @@ document.getElementById("view").addEventListener("click", e => {
   }
 
   const mode = e.target.closest("[data-mode]");
-  if (mode){ planMode = mode.dataset.mode; render(); return; }
+  if (mode){ planMode = mode.dataset.mode; applyRoute(true); render(); return; }
 
   const col = e.target.closest("[data-collapse]");
   if (col){
@@ -2539,6 +2650,11 @@ document.getElementById("themeBtn").onclick = () => {
 document.getElementById("syncChip").onclick = dataDrawer;
 
 (async function init(){
+  const r = routeFromHash();
+  current = r.view;
+  if (r.mode) planMode = r.mode;
+  applyRoute(true);
+
   renderRail();
   render();
   renderBanner();
