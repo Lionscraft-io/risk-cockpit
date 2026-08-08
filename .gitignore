@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Exported working copies of the desk data — commit deliberately, not by accident
+lionscraft-desk*.json
+!data/lionscraft-desk.json

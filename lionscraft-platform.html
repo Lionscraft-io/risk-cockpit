@@ -1,0 +1,2330 @@
+<title>Lionscraft — Partner & Facility Desk</title>
+
+<style>
+/* ─── Tokens ─────────────────────────────────────────────────────────── */
+:root{
+  --paper:#F5F8F6; --surface:#FFFFFF; --surface-2:#EAF0ED; --surface-3:#DFE8E4;
+  --line:#D6E0DB; --line-strong:#BECBC5;
+  --ink:#111917; --ink-2:#44534E; --ink-3:#73827D;
+  --accent:#0E5F50; --accent-ink:#0B473C; --accent-soft:#D8EAE4;
+  --ochre:#8E6410; --ochre-soft:#F2E8D3;
+  --danger:#9C3627; --danger-soft:#F6E1DC;
+  --shadow:0 1px 2px rgba(17,25,23,.05), 0 8px 24px -12px rgba(17,25,23,.18);
+  --radius:6px;
+  --display:ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --body:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --data:ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#0C1211; --surface:#131A18; --surface-2:#1A2422; --surface-3:#222E2B;
+    --line:#283431; --line-strong:#3A4844;
+    --ink:#E7EFEC; --ink-2:#A2B1AC; --ink-3:#71817C;
+    --accent:#4FC2A4; --accent-ink:#7FD6BF; --accent-soft:#12302A;
+    --ochre:#D3A24C; --ochre-soft:#31270F;
+    --danger:#E08170; --danger-soft:#3A1C17;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="light"]{
+  --paper:#F5F8F6; --surface:#FFFFFF; --surface-2:#EAF0ED; --surface-3:#DFE8E4;
+  --line:#D6E0DB; --line-strong:#BECBC5;
+  --ink:#111917; --ink-2:#44534E; --ink-3:#73827D;
+  --accent:#0E5F50; --accent-ink:#0B473C; --accent-soft:#D8EAE4;
+  --ochre:#8E6410; --ochre-soft:#F2E8D3;
+  --danger:#9C3627; --danger-soft:#F6E1DC;
+  --shadow:0 1px 2px rgba(17,25,23,.05), 0 8px 24px -12px rgba(17,25,23,.18);
+}
+:root[data-theme="dark"]{
+  --paper:#0C1211; --surface:#131A18; --surface-2:#1A2422; --surface-3:#222E2B;
+  --line:#283431; --line-strong:#3A4844;
+  --ink:#E7EFEC; --ink-2:#A2B1AC; --ink-3:#71817C;
+  --accent:#4FC2A4; --accent-ink:#7FD6BF; --accent-soft:#12302A;
+  --ochre:#D3A24C; --ochre-soft:#31270F;
+  --danger:#E08170; --danger-soft:#3A1C17;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--body); font-size:14px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:var(--display); font-weight:600; text-wrap:balance; margin:0; letter-spacing:-.011em}
+button,input,select,textarea{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important; transition:none!important}}
+
+.eyebrow{
+  font-family:var(--data); font-size:10px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:500;
+}
+.num{font-variant-numeric:tabular-nums; font-family:var(--data)}
+
+/* ─── Shell ──────────────────────────────────────────────────────────── */
+.topbar{
+  display:flex; align-items:center; gap:16px; padding:0 20px; height:56px;
+  border-bottom:1px solid var(--line); background:var(--surface);
+  position:sticky; top:0; z-index:40;
+}
+.mark{display:flex; align-items:baseline; gap:9px; margin-right:auto; min-width:0}
+.mark b{font-family:var(--display); font-size:17px; font-weight:600; letter-spacing:-.02em}
+.mark span{
+  font-family:var(--data); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.tools{display:flex; align-items:center; gap:8px; flex:none}
+.btn{
+  background:var(--surface); border:1px solid var(--line-strong); border-radius:var(--radius);
+  padding:6px 11px; font-size:12.5px; cursor:pointer; color:var(--ink-2);
+  transition:background .12s, border-color .12s, color .12s; white-space:nowrap;
+}
+.btn:hover{background:var(--surface-2); color:var(--ink); border-color:var(--ink-3)}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+:root[data-theme="dark"] .btn.primary, :root:not([data-theme="light"]) .btn.primary{}
+@media (prefers-color-scheme: dark){.btn.primary{color:#08110F}}
+:root[data-theme="dark"] .btn.primary{color:#08110F}
+:root[data-theme="light"] .btn.primary{color:#fff}
+.btn.primary:hover{filter:brightness(1.08); background:var(--accent); color:inherit}
+.btn.ghost{border-color:transparent; background:transparent}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.danger{color:var(--danger); border-color:var(--line-strong)}
+.btn.danger:hover{background:var(--danger-soft); border-color:var(--danger)}
+
+.shell{display:grid; grid-template-columns:198px minmax(0,1fr); align-items:start}
+.rail{
+  position:sticky; top:56px; height:calc(100vh - 56px); overflow-y:auto;
+  border-right:1px solid var(--line); padding:18px 10px; display:flex; flex-direction:column; gap:2px;
+  background:var(--paper);
+}
+.rail .eyebrow{padding:14px 10px 6px}
+.navitem{
+  display:flex; align-items:baseline; gap:9px; width:100%; text-align:left;
+  background:none; border:0; padding:7px 10px; border-radius:var(--radius);
+  cursor:pointer; color:var(--ink-2); font-size:13.5px; transition:background .12s,color .12s;
+}
+.navitem:hover{background:var(--surface-2); color:var(--ink)}
+.navitem[aria-current="true"]{background:var(--accent-soft); color:var(--accent-ink); font-weight:600}
+:root[data-theme="dark"] .navitem[aria-current="true"]{color:var(--accent)}
+@media (prefers-color-scheme: dark){.navitem[aria-current="true"]{color:var(--accent)}}
+:root[data-theme="light"] .navitem[aria-current="true"]{color:var(--accent-ink)}
+.navitem em{font-style:normal; margin-left:auto; font-family:var(--data); font-size:11px; color:var(--ink-3)}
+
+main{padding:26px 28px 90px; min-width:0; max-width:1180px}
+.pagehead{display:flex; align-items:flex-end; gap:18px; margin-bottom:22px; flex-wrap:wrap}
+.pagehead h1{font-size:25px}
+.pagehead p{margin:5px 0 0; color:var(--ink-2); max-width:64ch; font-size:13.5px}
+.pagehead .tools{margin-left:auto}
+
+/* ─── Cards / tables ─────────────────────────────────────────────────── */
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius)}
+.card > header{
+  padding:12px 15px; border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+}
+.card > header h2{font-size:15px}
+.card > header .spacer{margin-left:auto}
+.grid{display:grid; gap:14px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-size:13px}
+th{
+  text-align:left; font-family:var(--data); font-size:10px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink-3); font-weight:500;
+  padding:9px 14px; border-bottom:1px solid var(--line); white-space:nowrap; background:var(--surface);
+}
+td{padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.clickable{cursor:pointer}
+tbody tr.clickable:hover{background:var(--surface-2)}
+td .sub{color:var(--ink-3); font-size:12px; display:block; margin-top:2px}
+td.num{white-space:nowrap}
+.grid.pair{align-items:start}
+
+/* ─── Chips / stage ──────────────────────────────────────────────────── */
+.chip{
+  display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:20px;
+  font-size:11.5px; font-weight:500; white-space:nowrap; border:1px solid transparent;
+}
+.chip .dot{width:6px; height:6px; border-radius:50%; background:currentColor; flex:none}
+.chip.s0{background:var(--surface-2); color:var(--ink-3); border-color:var(--line)}
+.chip.s1{background:var(--surface-2); color:var(--ink-2); border-color:var(--line-strong)}
+.chip.s2{background:var(--ochre-soft); color:var(--ochre)}
+.chip.s3{background:var(--ochre-soft); color:var(--ochre)}
+.chip.s4{background:var(--accent-soft); color:var(--accent-ink)}
+.chip.s5{background:var(--accent-soft); color:var(--accent-ink)}
+.chip.s6{background:var(--accent); color:var(--paper)}
+.chip.out{background:transparent; color:var(--ink-3); border-color:var(--line-strong); opacity:.75}
+.chip.warn{background:var(--danger-soft); color:var(--danger)}
+:root[data-theme="dark"] .chip.s4,:root[data-theme="dark"] .chip.s5{color:var(--accent)}
+@media (prefers-color-scheme: dark){.chip.s4,.chip.s5{color:var(--accent)}}
+:root[data-theme="light"] .chip.s4,:root[data-theme="light"] .chip.s5{color:var(--accent-ink)}
+.cat{font-family:var(--data); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3)}
+
+/* ─── Stat strip ─────────────────────────────────────────────────────── */
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+.stat{background:var(--surface); padding:13px 15px}
+.stat b{display:block; font-family:var(--data); font-size:24px; font-weight:600; letter-spacing:-.02em; line-height:1.15; font-variant-numeric:tabular-nums}
+.stat small{display:block; margin-top:3px; font-size:11.5px; color:var(--ink-3)}
+.stat.alert b{color:var(--danger)}
+.stat.go b{color:var(--accent)}
+
+/* ─── Funnel ─────────────────────────────────────────────────────────── */
+.funnel{display:flex; flex-direction:column; gap:7px; padding:15px}
+.frow{display:grid; grid-template-columns:120px 1fr 34px; align-items:center; gap:11px; font-size:12.5px}
+.frow .bar{height:20px; background:var(--surface-2); border-radius:3px; overflow:hidden; position:relative}
+.frow .bar i{display:block; height:100%; background:var(--accent); opacity:.28; border-radius:3px; transition:width .3s}
+.frow.hot .bar i{opacity:.75}
+.frow .n{text-align:right; font-family:var(--data); font-variant-numeric:tabular-nums; color:var(--ink-2)}
+.frow label{color:var(--ink-2); cursor:pointer}
+.frow:hover label{color:var(--ink)}
+
+/* ─── Filters ────────────────────────────────────────────────────────── */
+.filters{display:flex; gap:7px; flex-wrap:wrap; align-items:center}
+select, input[type=text], input[type=date], textarea{
+  background:var(--surface); border:1px solid var(--line-strong); border-radius:var(--radius);
+  padding:5px 8px; font-size:12.5px; max-width:100%;
+}
+textarea{width:100%; font-family:var(--data); font-size:12px; line-height:1.6; resize:vertical}
+label.field{display:flex; flex-direction:column; gap:4px}
+label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3)}
+
+/* ─── Plan ───────────────────────────────────────────────────────────── */
+.ws{margin-bottom:14px}
+.ws > header{cursor:pointer; user-select:none}
+.ws code{font-family:var(--data); font-size:11px; color:var(--accent); background:var(--accent-soft); padding:2px 6px; border-radius:3px}
+:root[data-theme="dark"] .ws code{color:var(--accent)}
+.progress{width:88px; height:5px; background:var(--surface-3); border-radius:3px; overflow:hidden; flex:none}
+.progress i{display:block; height:100%; background:var(--accent); transition:width .3s}
+.status{
+  font-family:var(--data); font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;
+  border:1px solid var(--line-strong); background:var(--surface); border-radius:3px;
+  padding:2px 7px; cursor:pointer; white-space:nowrap;
+}
+.status[data-s="done"]{background:var(--accent-soft); color:var(--accent-ink); border-color:transparent}
+:root[data-theme="dark"] .status[data-s="done"]{color:var(--accent)}
+@media (prefers-color-scheme: dark){.status[data-s="done"]{color:var(--accent)}}
+:root[data-theme="light"] .status[data-s="done"]{color:var(--accent-ink)}
+.status[data-s="doing"]{background:var(--ochre-soft); color:var(--ochre); border-color:transparent}
+.status[data-s="blocked"]{background:var(--danger-soft); color:var(--danger); border-color:transparent}
+.done td:nth-child(2){text-decoration:line-through; text-decoration-color:var(--ink-3); color:var(--ink-3)}
+.overdue{color:var(--danger); font-weight:600}
+
+/* ─── Timeline (Gantt) ───────────────────────────────────────────────── */
+.seg{display:inline-flex; border:1px solid var(--line-strong); border-radius:var(--radius); overflow:hidden}
+.seg button{
+  background:var(--surface); border:0; padding:6px 13px; font-size:12.5px; cursor:pointer;
+  color:var(--ink-2); border-right:1px solid var(--line-strong);
+}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--surface-2); color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--accent-soft); color:var(--accent-ink); font-weight:600}
+:root[data-theme="dark"] .seg button[aria-pressed="true"]{color:var(--accent)}
+@media (prefers-color-scheme: dark){.seg button[aria-pressed="true"]{color:var(--accent)}}
+:root[data-theme="light"] .seg button[aria-pressed="true"]{color:var(--accent-ink)}
+
+.gantt{--mw:88px; --lw:246px; overflow:auto; max-height:min(72vh,640px); overscroll-behavior:contain}
+.gantt .inner{min-width:calc(var(--lw) + var(--n) * var(--mw))}
+.grow{display:grid; grid-template-columns:var(--lw) 1fr; border-bottom:1px solid var(--line); min-height:31px}
+.grow:last-child{border-bottom:0}
+.glabel{
+  position:sticky; left:0; z-index:2; background:var(--surface);
+  border-right:1px solid var(--line); padding:6px 13px; font-size:12.5px;
+  display:flex; align-items:center; gap:8px; min-width:0;
+}
+.glabel span.t{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.gtrack{position:relative; min-width:calc(var(--n) * var(--mw))}
+
+/* month grid drawn as a repeating background so every row lines up exactly */
+.gtrack{
+  background-image:linear-gradient(to right, var(--line) 0 1px, transparent 1px 100%);
+  background-size:var(--mw) 100%;
+}
+
+.ghead{display:grid; grid-template-columns:var(--lw) 1fr; border-bottom:1px solid var(--line-strong); position:sticky; top:0; z-index:5; background:var(--surface)}
+.ghead .glabel{z-index:6; border-bottom:0}
+.gmonths{display:grid; min-width:calc(var(--n) * var(--mw))}
+.gmonths span{
+  font-family:var(--data); font-size:10px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-3); padding:8px 0 8px 9px; border-left:1px solid var(--line); white-space:nowrap;
+}
+.gmonths span.q{border-left-color:var(--line-strong); color:var(--ink-2)}
+
+.gbar{
+  position:absolute; top:6px; height:17px; border-radius:3px; min-width:9px;
+  font-size:10.5px; overflow:hidden; white-space:nowrap; touch-action:none;
+  color:var(--ink-2); background:var(--surface-3); border:1px solid var(--line-strong);
+  cursor:grab;
+}
+.gbar:hover{filter:brightness(.97); border-color:var(--ink-3)}
+.gbar.dragging{cursor:grabbing; box-shadow:0 2px 8px rgba(0,0,0,.22); z-index:3; filter:none}
+.gbar .grip{position:absolute; top:-2px; bottom:-2px; width:7px; cursor:col-resize}
+.gbar .grip.l{left:0} .gbar .grip.r{right:0}
+.gbar:hover .grip{background:linear-gradient(var(--ink-3),var(--ink-3)) center/1px 9px no-repeat}
+.dragtip{
+  position:fixed; z-index:90; pointer-events:none; opacity:0; transition:opacity .1s;
+  background:var(--ink); color:var(--paper); font-family:var(--data); font-size:11px;
+  padding:4px 9px; border-radius:4px; white-space:nowrap; transform:translate(-50%,-190%);
+}
+.dragtip.show{opacity:1}
+.gbar.doing{background:var(--ochre-soft); border-color:var(--ochre); color:var(--ochre)}
+.gbar.blocked{background:var(--danger-soft); border-color:var(--danger); color:var(--danger)}
+.gbar.done{background:var(--accent-soft); border-color:transparent; color:var(--accent-ink); opacity:.7}
+:root[data-theme="dark"] .gbar.done{color:var(--accent)}
+@media (prefers-color-scheme: dark){.gbar.done{color:var(--accent)}}
+:root[data-theme="light"] .gbar.done{color:var(--accent-ink)}
+.gbar.late{border-color:var(--danger); border-style:dashed}
+
+.grow.wsrow{background:var(--surface-2)}
+.grow.wsrow .glabel{background:var(--surface-2); font-weight:600; cursor:pointer}
+.grow.wsrow .gtrack{background-color:var(--surface-2)}
+.gsum{position:absolute; top:11px; height:7px; border-radius:4px; background:var(--line-strong); overflow:hidden}
+.gsum i{display:block; height:100%; background:var(--accent); border-radius:4px}
+.gcode{font-family:var(--data); font-size:10px; color:var(--ink-3); flex:none}
+.gcaret{font-family:var(--data); font-size:9px; color:var(--ink-3); width:9px; flex:none}
+
+.today{position:absolute; top:0; bottom:0; width:0; border-left:1px dashed var(--danger); opacity:.55; z-index:1}
+.grow.msrow{background:var(--surface); min-height:34px}
+.gms{
+  position:absolute; top:9px; width:11px; height:11px; margin-left:-5.5px; transform:rotate(45deg);
+  background:var(--surface); border:1.5px solid var(--ink-2); border-radius:2px;
+  cursor:grab; touch-action:none;
+}
+.gms:hover{border-color:var(--accent)}
+.gms.dragging{cursor:grabbing; border-color:var(--accent); z-index:3}
+.gms.hit{background:var(--accent); border-color:var(--accent)}
+.gmslabel{position:absolute; top:8px; font-family:var(--data); font-size:9.5px; color:var(--ink-3); margin-left:9px; white-space:nowrap}
+.glegend{display:flex; gap:15px; flex-wrap:wrap; padding:11px 15px; font-size:11.5px; color:var(--ink-3); border-top:1px solid var(--line)}
+.glegend b{display:inline-block; width:15px; height:9px; border-radius:2px; margin-right:5px; vertical-align:middle; border:1px solid var(--line-strong); background:var(--surface-3)}
+.glegend b.doing{background:var(--ochre-soft); border-color:var(--ochre)}
+.glegend b.blocked{background:var(--danger-soft); border-color:var(--danger)}
+.glegend b.done{background:var(--accent-soft); border-color:transparent}
+.glegend b.today{border:0; border-left:1px dashed var(--danger); width:1px; height:11px; border-radius:0; margin-right:9px}
+
+/* ─── Board (Kanban) ─────────────────────────────────────────────────── */
+.board{display:grid; grid-template-columns:repeat(4,minmax(210px,1fr)); gap:12px; align-items:start; overflow-x:auto; padding-bottom:6px}
+.col{background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius); min-height:150px; display:flex; flex-direction:column}
+.col > header{
+  display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--line);
+  font-family:var(--data); font-size:10px; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3);
+}
+.col > header b{margin-left:auto; font-family:var(--data); font-size:11px; color:var(--ink-2); font-weight:500}
+.col .rail-dot{width:7px; height:7px; border-radius:2px; background:var(--line-strong)}
+.col[data-col="doing"] .rail-dot{background:var(--ochre)}
+.col[data-col="blocked"] .rail-dot{background:var(--danger)}
+.col[data-col="done"] .rail-dot{background:var(--accent)}
+.col{max-height:min(68vh,660px)}
+.col .stack{padding:9px; display:flex; flex-direction:column; gap:8px; flex:1; overflow-y:auto; overscroll-behavior:contain}
+.col.over{border-color:var(--accent); background:var(--accent-soft)}
+.kcard{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:9px 11px; cursor:grab; display:flex; flex-direction:column; gap:5px;
+  border-left:2px solid var(--line-strong);
+}
+.kcard:hover{border-color:var(--line-strong); box-shadow:var(--shadow)}
+.kcard.dragging{opacity:.4}
+.kcard[data-s="doing"]{border-left-color:var(--ochre)}
+.kcard[data-s="blocked"]{border-left-color:var(--danger)}
+.kcard[data-s="done"]{border-left-color:var(--accent)}
+.kcard[data-s="done"] .kt{color:var(--ink-3); text-decoration:line-through; text-decoration-color:var(--line-strong)}
+.kcard .kt{font-size:12.5px; line-height:1.4}
+.kcard .kmeta{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:var(--ink-3)}
+.kcard .kmeta .num{font-variant-numeric:tabular-nums}
+.kcard .kws{font-family:var(--data); font-size:9.5px; letter-spacing:.06em; color:var(--accent); background:var(--accent-soft); padding:1px 5px; border-radius:3px}
+:root[data-theme="light"] .kcard .kws{color:var(--accent-ink)}
+.kcard .kpartner{color:var(--ink-3); font-size:11px}
+.colempty{padding:16px 4px; text-align:center; color:var(--ink-3); font-size:11.5px}
+
+/* ─── Milestones ─────────────────────────────────────────────────────── */
+.ms{display:flex; flex-direction:column}
+.ms-item{display:grid; grid-template-columns:16px 1fr auto; gap:13px; padding:11px 15px; border-bottom:1px solid var(--line); align-items:start}
+.ms-item:last-child{border-bottom:0}
+.ms-item .pip{width:11px; height:11px; border-radius:50%; border:2px solid var(--line-strong); margin-top:4px; background:var(--surface)}
+.ms-item.hit .pip{background:var(--accent); border-color:var(--accent)}
+.ms-item b{font-weight:600; font-size:13.5px}
+.ms-item p{margin:3px 0 0; color:var(--ink-2); font-size:12.5px}
+
+/* ─── Outreach ───────────────────────────────────────────────────────── */
+.outgrid{display:grid; grid-template-columns:270px minmax(0,1fr); gap:14px; align-items:start}
+.tpl{display:flex; flex-direction:column; gap:2px; padding:9px}
+.tplbtn{
+  text-align:left; background:none; border:0; padding:8px 10px; border-radius:var(--radius);
+  cursor:pointer; color:var(--ink-2); font-size:13px; transition:background .12s;
+}
+.tplbtn:hover{background:var(--surface-2); color:var(--ink)}
+.tplbtn[aria-current="true"]{background:var(--accent-soft); color:var(--accent-ink); font-weight:600}
+:root[data-theme="dark"] .tplbtn[aria-current="true"]{color:var(--accent)}
+@media (prefers-color-scheme: dark){.tplbtn[aria-current="true"]{color:var(--accent)}}
+:root[data-theme="light"] .tplbtn[aria-current="true"]{color:var(--accent-ink)}
+.tplbtn small{display:block; font-weight:400; color:var(--ink-3); font-size:11.5px; margin-top:1px}
+.out{padding:0}
+.out textarea{border:0; border-radius:0; min-height:520px; padding:17px 19px; background:var(--surface); font-size:12.5px}
+.out textarea:focus-visible{outline-offset:-2px}
+
+/* ─── Narrative ──────────────────────────────────────────────────────── */
+.prose{max-width:none}
+.ladder{display:flex; flex-direction:column; gap:0; padding:4px 0}
+.rung{display:grid; grid-template-columns:104px minmax(0,1fr); gap:14px; padding:11px 15px; border-bottom:1px solid var(--line); align-items:baseline}
+.rung:last-child{border-bottom:0}
+.rung > b{
+  font-family:var(--data); font-size:10px; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:500; overflow-wrap:anywhere;
+}
+.rung div b{font-size:14px; font-family:var(--display)}
+.rung p{margin:3px 0 0; color:var(--ink-2); font-size:12.5px}
+.pull{
+  font-family:var(--display); font-size:16px; line-height:1.45; color:var(--ink);
+  padding:13px 16px; border-left:2px solid var(--accent); background:var(--surface-2);
+  border-radius:0 var(--radius) var(--radius) 0; margin:0;
+}
+.bank{display:grid; grid-template-columns:repeat(auto-fill,minmax(266px,1fr)); gap:9px; padding:15px}
+.bank q{
+  display:block; quotes:none; font-family:var(--display); font-size:13.5px; line-height:1.45;
+  padding:11px 13px; background:var(--surface-2); border-radius:var(--radius); color:var(--ink);
+}
+.rules{display:grid; gap:1px; background:var(--line)}
+.rule{background:var(--surface); padding:12px 15px; display:grid; grid-template-columns:22px 1fr; gap:11px; align-items:start}
+.rule .glyph{font-family:var(--data); font-weight:600; font-size:13px; line-height:1.5}
+.rule.no .glyph{color:var(--danger)}
+.rule.yes .glyph{color:var(--accent)}
+.rule b{display:block; font-size:13px; font-weight:600}
+.rule p{margin:2px 0 0; color:var(--ink-2); font-size:12.5px}
+.six{display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:1px; background:var(--line)}
+.layer{background:var(--surface); padding:14px 15px}
+.layer .eyebrow{color:var(--accent)}
+:root[data-theme="light"] .layer .eyebrow{color:var(--accent-ink)}
+.layer b{display:block; font-family:var(--display); font-size:15px; margin:5px 0 3px}
+.layer p{margin:0; font-size:12.5px; color:var(--ink-2)}
+
+/* ─── Drawer ─────────────────────────────────────────────────────────── */
+.scrim{position:fixed; inset:0; background:rgba(10,16,15,.42); z-index:60; opacity:0; pointer-events:none; transition:opacity .18s}
+.scrim.open{opacity:1; pointer-events:auto}
+.drawer{
+  position:fixed; top:0; right:0; height:100%; width:min(460px,100%); z-index:61;
+  background:var(--surface); border-left:1px solid var(--line); box-shadow:var(--shadow);
+  transform:translateX(100%); transition:transform .22s ease; display:flex; flex-direction:column;
+}
+.drawer.open{transform:none}
+.drawer > header{padding:15px 18px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px}
+.drawer > header h3{font-size:16px; margin-right:auto}
+.drawer .body{padding:16px 18px; overflow-y:auto; display:flex; flex-direction:column; gap:13px; flex:1}
+.drawer > footer{padding:12px 18px; border-top:1px solid var(--line); display:flex; gap:8px}
+.drawer > footer .spacer{margin-left:auto}
+
+.empty{padding:30px 16px; text-align:center; color:var(--ink-3); font-size:13px}
+.toast{
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(14px);
+  background:var(--ink); color:var(--paper); padding:9px 16px; border-radius:20px; font-size:12.5px;
+  z-index:80; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+}
+.toast.show{opacity:1; transform:translateX(-50%)}
+.note{
+  font-size:12px; color:var(--ink-2); background:var(--ochre-soft); border-radius:var(--radius);
+  padding:9px 13px; border-left:2px solid var(--ochre);
+}
+
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .rail{
+    position:static; height:auto; flex-direction:row; overflow-x:auto; border-right:0;
+    border-bottom:1px solid var(--line); padding:8px 10px; gap:4px;
+  }
+  .rail .eyebrow{display:none}
+  .navitem{width:auto; white-space:nowrap}
+  .navitem em{display:none}
+  main{padding:20px 16px 80px}
+  .outgrid{grid-template-columns:1fr}
+}
+</style>
+
+<header class="topbar">
+  <div class="mark">
+    <b>Lionscraft</b>
+    <span>Partner &amp; Facility Desk</span>
+  </div>
+  <div class="tools">
+    <button class="btn ghost" id="themeBtn" title="Switch theme">Theme</button>
+    <button class="btn" id="dataBtn">Data</button>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="rail" id="rail"></nav>
+  <main id="view"></main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-hidden="true"></aside>
+<div class="toast" id="toast" role="status"></div>
+<div class="dragtip" id="dragtip" aria-hidden="true"></div>
+
+<script>
+"use strict";
+
+/* ══ Reference data ═══════════════════════════════════════════════════ */
+
+const STAGES = [
+  {id:"identified", label:"Identified",   hint:"On the target list, no contact yet"},
+  {id:"researched", label:"Researched",   hint:"Right person and angle worked out"},
+  {id:"approached", label:"Approached",   hint:"Outreach sent, awaiting reply"},
+  {id:"meeting",    label:"Meeting held", hint:"First substantive conversation done"},
+  {id:"mou_sent",   label:"MoU sent",     hint:"Cooperation agreement with them"},
+  {id:"mou_signed", label:"MoU signed",   hint:"Non-binding commitment in place"},
+  {id:"active",     label:"Active",       hint:"Working on the facility together"}
+];
+const OUT_STAGES = [
+  {id:"parked",   label:"Parked",   hint:"Right partner, wrong moment"},
+  {id:"declined", label:"Declined", hint:"Not proceeding"}
+];
+const ALL_STAGES = STAGES.concat(OUT_STAGES);
+const stageRank = id => STAGES.findIndex(s => s.id === id);
+const stageLabel = id => (ALL_STAGES.find(s => s.id === id) || {label:id}).label;
+const stageClass = id => stageRank(id) < 0 ? (id === "declined" ? "out" : "out") : "s" + stageRank(id);
+
+const CATEGORIES = {
+  carrier: {
+    label:"Risk carriers",
+    blurb:"Insurers and reinsurers who can carry the catastrophe layer.",
+    hook:"you already price and carry catastrophe risk of exactly this shape — what we are adding is what the capital does after the trigger",
+    ask:"a technical read on our trigger design, and an indication of appetite for a small collateralised layer",
+    give:"a live test of response-linked structuring on a bounded, well-instrumented risk, with the modelling and evidence work done alongside you",
+    questions:[
+      "How do you currently see Sri Lanka / South Asia telecom exposure?",
+      "Where does a response-linked structure create problems for you — reserving, capital treatment, or rating?",
+      "What trigger types would you actually quote on: parametric, modelled loss, or hybrid?",
+      "What minimum size makes a layer worth your underwriting time?",
+      "Who inside your house owns public-sector and infrastructure risk?"
+    ]
+  },
+  capital: {
+    label:"Capital providers",
+    blurb:"ILS funds and investors who take collateralised risk positions.",
+    hook:"the structure is fully collateralised and the underlying peril is one your models already cover — the novelty is in what the contract obliges, not in the risk",
+    ask:"a view on investability, and what you would need to see before an indicative position",
+    give:"early sight of a new instrument class with a clean, bounded first implementation and real telemetry behind the trigger",
+    questions:[
+      "What is your minimum ticket and what wrapper do you need — note, cat bond lite, or private ILS?",
+      "Does a purpose-linked obligation on the capital break anything in your mandate?",
+      "What collateral and custody arrangement would you require?",
+      "How do you underwrite basis risk on a modelled or parametric trigger?",
+      "What would make this a portfolio diversifier rather than a curiosity?"
+    ]
+  },
+  donor: {
+    label:"Donors & foundations",
+    blurb:"Philanthropic and public funders who can sponsor protection.",
+    hook:"the people most exposed here are not the people who can pay to transfer the risk — sponsored premium is what closes that gap",
+    ask:"grant or premium-support funding for the first facility, and a view on which of your programmes it fits",
+    give:"a protection instrument where the money is tied to delivered response, restoration and recovery, with outcome evidence built into the contract rather than added as reporting",
+    questions:[
+      "Which of your windows funds premium support versus technical assistance?",
+      "What outcome evidence would you need to see to justify sponsoring a renewal?",
+      "Do you have an existing relationship with the Sri Lankan authorities we should route through?",
+      "What is your timeline from concept note to decision?",
+      "Would you co-fund with another donor or do you need to be sole sponsor?"
+    ]
+  },
+  dfi: {
+    label:"Development finance",
+    blurb:"Multilateral banks and development finance institutions.",
+    hook:"critical telecom is the dependency behind almost every other emergency function, and it is currently unfunded in most disaster risk financing frameworks",
+    ask:"technical partnership, and a route into your disaster risk financing programme for the country",
+    give:"a replicable facility design for an infrastructure class your existing DRF instruments do not reach",
+    questions:[
+      "Where does telecom sit in your current DRF work for Sri Lanka?",
+      "What is the path from concept to an instrument you could co-finance?",
+      "Do you need a sovereign counterparty, or can this sit with the operator?",
+      "What procurement or eligibility rules would we need to design around?",
+      "Which of your teams — DRF, digital infrastructure, or country office — should own this?"
+    ]
+  },
+  operator: {
+    label:"Infrastructure operators",
+    blurb:"Telecom operators whose network is the protected asset.",
+    hook:"you already carry the cost of emergency restoration and you already hold the telemetry that proves it — this turns both into a financed, contracted capability",
+    ask:"a working session on your restoration cost experience, and access to outage telemetry under NDA",
+    give:"pre-funded emergency response and restoration capacity, priced ahead of the event rather than absorbed on your balance sheet after it",
+    questions:[
+      "What did the last major event actually cost you in restoration, and over what period?",
+      "Which sites are the critical dependency for emergency services?",
+      "What outage and restoration telemetry do you hold, at what granularity, and who owns it?",
+      "What emergency commitments are you already obliged to meet by licence or regulation?",
+      "Who signs off on a risk transfer arrangement — treasury, network, or the board?"
+    ]
+  },
+  digital: {
+    label:"Digital-asset infrastructure",
+    blurb:"Regulated issuance, custody and settlement providers.",
+    hook:"we need capital states, claims and settlement to be machine-readable and auditable — not a token for its own sake",
+    ask:"an architecture conversation and a view on the regulated issuance path",
+    give:"a real financial instrument with genuine state complexity, rather than another tokenisation demo",
+    questions:[
+      "What regulated wrapper do you support for a collateralised risk instrument?",
+      "How do you handle conditional release of collateral against off-chain evidence?",
+      "What custody model applies, and under which regulator?",
+      "Can rights and obligations be represented natively, or only referenced?",
+      "What does the audit trail look like to an insurance regulator?"
+    ]
+  },
+  data: {
+    label:"AI & data partners",
+    blurb:"Hazard modelling, telemetry, and administration technology.",
+    hook:"the trigger is only as good as the data behind it, and the administration cost is what has historically killed granular structures",
+    ask:"data access or a modelling collaboration for the Sri Lanka peril set",
+    give:"a defined, fundable use case with a real counterparty rather than a research exercise",
+    questions:[
+      "What hazard and exposure data do you hold for Sri Lanka, and at what resolution?",
+      "What is your licensing model for use inside a financial trigger?",
+      "Could your data be referenced contractually as the settlement source?",
+      "What is your view on basis risk for this peril set?",
+      "What would a joint validation exercise look like?"
+    ]
+  },
+  verifier: {
+    label:"Verification & assurance",
+    blurb:"Independent parties who evidence what was delivered.",
+    hook:"if the capital is tied to delivered response, someone independent has to be able to say what was actually delivered",
+    ask:"a view on what an assurable evidence standard for emergency response would look like",
+    give:"a chance to define the verification standard for a new instrument class at the point it is being designed",
+    questions:[
+      "What would you need to attest that emergency connectivity was actually delivered?",
+      "Can telemetry alone carry an assurance opinion, or do you need field evidence?",
+      "What is your turnaround under emergency conditions?",
+      "Have you assured parametric or outcome-linked instruments before?",
+      "What would you refuse to attest to?"
+    ]
+  },
+  public: {
+    label:"Regulators & public bodies",
+    blurb:"Authorities whose approval or cooperation the facility needs.",
+    hook:"this is a protection arrangement for critical national infrastructure, and we would rather design it with you than present it to you",
+    ask:"an early, informal view on the regulatory pathway before we fix the structure",
+    give:"visibility of the design while it can still be shaped, and a facility that strengthens national resilience without public balance-sheet cost",
+    questions:[
+      "Which regime would this fall under — insurance, capital markets, or neither?",
+      "Is an admitted local wrapper required, or can risk be placed offshore?",
+      "What is your view on parametric settlement under local law?",
+      "Who else in government needs to be in the room?",
+      "What would a pre-approval or no-objection process look like?"
+    ]
+  }
+};
+const catLabel = id => (CATEGORIES[id] || {label:id}).label;
+
+/* ══ Seed content ═════════════════════════════════════════════════════ */
+
+const P = (id,name,cat,country,why,ask) =>
+  ({id, name, cat, country, why, ask, stage:"identified", owner:"", contact:"",
+    next:"Research the right entry point and warm intro path", nextDate:"", notes:"", seeded:true});
+
+const SEED = {
+  version: 1,
+  meta: {
+    org:"Lionscraft",
+    facility:"Sri Lanka Telecom Resilience Facility",
+    product:"Response-Linked ART",
+    updated:"2026-08-08"
+  },
+  partners: [
+    P("p01","Swiss Re — Public Sector Solutions","carrier","CH","Most active reinsurer in sovereign and public-sector parametric structures.","Technical review of trigger design; appetite for a collateralised layer."),
+    P("p02","Munich Re","carrier","DE","Deep catastrophe and infrastructure book; existing parametric capability.","Underwriting view and indicative pricing range."),
+    P("p03","Hannover Re","carrier","DE","Active in structured and non-traditional reinsurance solutions.","Appetite for a structured, response-linked layer."),
+    P("p04","AXA Climate","carrier","FR","Purpose-built for parametric and climate-linked covers.","Co-design of the parametric component."),
+    P("p05","Guy Carpenter","carrier","UK","Broker and structurer with public-sector risk practice.","Placement advice and access to carrier appetite."),
+    P("p06","Aon — Reinsurance Solutions","carrier","UK","Broker with strong DRF and public-sector team.","Structuring support and market sounding."),
+
+    P("p10","Fermat Capital Management","capital","US","One of the largest dedicated ILS managers.","Investability read and indicative appetite."),
+    P("p11","Twelve Capital","capital","CH","ILS manager active in private and structured transactions.","View on wrapper and minimum size."),
+    P("p12","Schroders Capital — ILS","capital","CH","Institutional ILS platform with impact-oriented mandates.","Mandate fit for a purpose-linked instrument."),
+    P("p13","Blue Marble","capital","CH","Consortium focused on protection for underserved risks.","Partnership on sponsored-protection design."),
+
+    P("p20","Rockefeller Foundation","donor","US","Funds resilience and climate-adaptation infrastructure.","Grant funding for facility design and first premium."),
+    P("p21","Z Zurich Foundation","donor","CH","Long-standing flood and climate resilience programme.","Premium support and technical partnership."),
+    P("p22","UK FCDO","donor","UK","Funds disaster risk financing across South Asia.","Programme fit and concept-note route."),
+    P("p23","Start Network","donor","UK","Pioneer of anticipatory action and crisis financing.","Design input on anticipatory triggers; possible co-funding."),
+
+    P("p30","Asian Development Bank","dfi","PH","Principal DFI in Sri Lanka; active DRF portfolio.","Technical partnership and route into the country DRF programme."),
+    P("p31","World Bank / GFDRR","dfi","US","Global DRF standard-setter; Sri Lanka country programme.","Technical review and possible co-financing path."),
+    P("p32","IFC","dfi","US","Private-sector arm; infrastructure and digital investment.","View on operator-side counterparty structure."),
+    P("p33","Global Shield against Climate Risks","dfi","DE","Financing vehicle for pre-arranged climate risk finance.","Eligibility of the facility for Global Shield support."),
+    P("p34","InsuResilience Global Partnership","dfi","DE","Convening body for climate risk insurance.","Visibility, endorsement and partner introductions."),
+
+    P("p40","Dialog Axiata","operator","LK","Largest mobile operator in Sri Lanka; extensive network telemetry.","Restoration cost data, telemetry access under NDA, MoU on response commitments."),
+    P("p41","SLT-Mobitel","operator","LK","State-linked incumbent; fixed and mobile critical infrastructure.","Restoration cost experience and emergency obligations discussion."),
+    P("p42","Airtel Lanka","operator","LK","Third operator; useful for cross-network coverage design.","Interest in shared emergency capacity arrangements."),
+    P("p43","GSMA","operator","UK","Industry body running disaster resilience programmes for operators.","Introductions, standards input, and validation of the operator proposition."),
+
+    P("p50","Taurus","digital","CH","Regulated digital-asset infrastructure and tokenisation.","Architecture review and regulated issuance path."),
+    P("p51","Obligate","digital","CH","On-chain issuance of regulated debt instruments.","Feasibility of a note-form facility instrument."),
+    P("p52","Sygnum","digital","CH","Regulated bank with digital-asset issuance and custody.","Custody and issuance options under a recognised regime."),
+
+    P("p60","Verisk — Extreme Event Solutions","data","US","Catastrophe models covering South Asian perils.","Licensing for use inside a financial trigger."),
+    P("p61","JBA Risk Management","data","UK","Flood modelling with strong Asian coverage.","Flood hazard layer for trigger design."),
+    P("p62","Fathom","data","UK","Global high-resolution flood hazard data.","Hazard data for the Sri Lanka peril set."),
+    P("p63","Ookla","data","US","Independent network performance measurement.","Independent connectivity measurement as evidence source."),
+
+    P("p70","DNV","verifier","NO","Independent assurance across infrastructure and energy.","Definition of an assurable response-evidence standard."),
+    P("p71","Bureau Veritas","verifier","FR","Global testing, inspection and certification.","View on field verification under emergency conditions."),
+
+    P("p80","Insurance Regulatory Commission of Sri Lanka","public","LK","Regulator for any admitted insurance element.","Informal view on regulatory pathway and admitted requirements."),
+    P("p81","Telecommunications Regulatory Commission of Sri Lanka","public","LK","Sets operator emergency and licence obligations.","Alignment of contracted commitments with licence conditions."),
+    P("p82","Central Bank of Sri Lanka","public","LK","Oversees cross-border capital and payment arrangements.","Treatment of collateral and offshore settlement."),
+    P("p83","Disaster Management Centre, Sri Lanka","public","LK","National coordination body for emergency response.","Alignment of response commitments with national plans.")
+  ],
+
+  workstreams: [
+    {id:"WS1", name:"Risk & modelling",            layer:"Layer 1 — Risk and modelling",        lead:""},
+    {id:"WS2", name:"Capital & structure",         layer:"Layer 2 — Financial structure",       lead:""},
+    {id:"WS3", name:"Legal & regulatory",          layer:"Layer 3 — Rights and obligations",    lead:""},
+    {id:"WS4", name:"Operator engagement",         layer:"Layers 3 & 5 — Obligations, evidence",lead:""},
+    {id:"WS5", name:"Digital-asset infrastructure",layer:"Layer 4 — Digital asset infrastructure",lead:""},
+    {id:"WS6", name:"Data & evidence",             layer:"Layer 5 — Data and evidence",         lead:""},
+    {id:"WS7", name:"AI administration",           layer:"Layer 6 — AI administration",         lead:""},
+    {id:"WS8", name:"Funding & partnerships",      layer:"Cross-cutting",                       lead:""},
+    {id:"WS9", name:"Narrative & materials",       layer:"Cross-cutting",                       lead:""}
+  ],
+
+  tasks: [
+    {id:"t101", ws:"WS1", title:"Fix covered perils and geographic scope", owner:"", start:"2026-08-11", due:"2026-09-05", status:"todo", partner:""},
+    {id:"t102", ws:"WS1", title:"Assemble historical outage and hazard dataset for Sri Lanka", owner:"", start:"2026-08-25", due:"2026-09-26", status:"todo", partner:"p40"},
+    {id:"t103", ws:"WS1", title:"Draft three trigger design options: parametric, modelled, hybrid", owner:"", start:"2026-09-14", due:"2026-10-17", status:"todo", partner:""},
+    {id:"t104", ws:"WS1", title:"Basis-risk assessment against operator loss experience", owner:"", start:"2026-10-19", due:"2026-11-14", status:"todo", partner:""},
+    {id:"t105", ws:"WS1", title:"Indicative pricing range for the respond / restore layers", owner:"", start:"2026-11-09", due:"2026-12-05", status:"todo", partner:"p01"},
+
+    {id:"t201", ws:"WS2", title:"Facility sizing and layer structure (respond / restore / recover)", owner:"", start:"2026-08-24", due:"2026-09-19", status:"todo", partner:""},
+    {id:"t202", ws:"WS2", title:"Decide who pays premium: sponsor, operator, or blended", owner:"", start:"2026-09-14", due:"2026-10-03", status:"todo", partner:""},
+    {id:"t203", ws:"WS2", title:"Collateral and custody model options paper", owner:"", start:"2026-09-28", due:"2026-10-31", status:"todo", partner:"p52"},
+    {id:"t204", ws:"WS2", title:"Term sheet v0.1", owner:"", start:"2026-10-26", due:"2026-11-21", status:"todo", partner:""},
+    {id:"t205", ws:"WS2", title:"Sound five capital providers on indicative appetite", owner:"", start:"2026-11-23", due:"2027-01-16", status:"todo", partner:"p10"},
+
+    {id:"t301", ws:"WS3", title:"Jurisdiction options paper for the facility vehicle", owner:"", start:"2026-09-07", due:"2026-10-10", status:"todo", partner:""},
+    {id:"t302", ws:"WS3", title:"Wrapper decision: insurance, note, or collateralised contract", owner:"", start:"2026-10-05", due:"2026-11-07", status:"todo", partner:""},
+    {id:"t303", ws:"WS3", title:"Sri Lanka admitted vs non-admitted analysis", owner:"", start:"2026-10-05", due:"2026-11-07", status:"todo", partner:"p80"},
+    {id:"t304", ws:"WS3", title:"Appoint counsel in structuring jurisdiction and in Sri Lanka", owner:"", start:"2026-11-02", due:"2026-11-28", status:"todo", partner:""},
+    {id:"t305", ws:"WS3", title:"Informal regulatory pre-engagement: IRCSL, TRCSL, CBSL", owner:"", start:"2026-11-09", due:"2026-12-12", status:"todo", partner:"p80"},
+
+    {id:"t401", ws:"WS4", title:"Shortlist target operators and map warm introduction routes", owner:"", start:"2026-08-10", due:"2026-08-22", status:"todo", partner:"p43"},
+    {id:"t402", ws:"WS4", title:"First discovery meeting with lead operator", owner:"", start:"2026-08-24", due:"2026-09-12", status:"todo", partner:"p40"},
+    {id:"t403", ws:"WS4", title:"Data NDA and telemetry access agreement", owner:"", start:"2026-09-14", due:"2026-10-10", status:"todo", partner:"p40"},
+    {id:"t404", ws:"WS4", title:"Define candidate response commitments with the operator", owner:"", start:"2026-10-12", due:"2026-11-14", status:"todo", partner:"p40"},
+    {id:"t405", ws:"WS4", title:"Operator MoU signed", owner:"", start:"2026-11-16", due:"2026-12-19", status:"todo", partner:"p40"},
+
+    {id:"t501", ws:"WS5", title:"Requirements spec: capital states, claims, settlement, audit trail", owner:"", start:"2026-09-07", due:"2026-10-03", status:"todo", partner:""},
+    {id:"t502", ws:"WS5", title:"Vendor shortlist and technical demos", owner:"", start:"2026-10-05", due:"2026-11-07", status:"todo", partner:"p50"},
+    {id:"t503", ws:"WS5", title:"Custody and regulated-issuance path decision", owner:"", start:"2026-11-09", due:"2026-12-12", status:"todo", partner:"p52"},
+    {id:"t504", ws:"WS5", title:"Integration architecture v0.1", owner:"", start:"2026-12-14", due:"2027-01-23", status:"todo", partner:""},
+
+    {id:"t601", ws:"WS6", title:"Evidence taxonomy: what proves respond, restore and recover delivery", owner:"", start:"2026-09-28", due:"2026-10-24", status:"todo", partner:""},
+    {id:"t602", ws:"WS6", title:"Telemetry specification agreed with the operator", owner:"", start:"2026-10-26", due:"2026-11-28", status:"todo", partner:"p40"},
+    {id:"t603", ws:"WS6", title:"Third-party verification standard drafted", owner:"", start:"2026-11-30", due:"2027-01-09", status:"todo", partner:"p70"},
+    {id:"t604", ws:"WS6", title:"Outcome reporting framework for sponsors", owner:"", start:"2027-01-04", due:"2027-01-30", status:"todo", partner:""},
+
+    {id:"t701", ws:"WS7", title:"Map facility administration workflow end to end", owner:"", start:"2026-09-21", due:"2026-10-17", status:"todo", partner:""},
+    {id:"t702", ws:"WS7", title:"Prototype: contract to obligations to evidence matching", owner:"", start:"2026-10-19", due:"2026-12-19", status:"todo", partner:""},
+    {id:"t703", ws:"WS7", title:"Reporting output specification", owner:"", start:"2027-01-04", due:"2027-01-30", status:"todo", partner:""},
+
+    {id:"t801", ws:"WS8", title:"Map the grant pipeline and deadlines", owner:"", start:"2026-08-10", due:"2026-08-29", status:"todo", partner:"p33"},
+    {id:"t802", ws:"WS8", title:"Concept note v1", owner:"", start:"2026-08-31", due:"2026-09-19", status:"todo", partner:""},
+    {id:"t803", ws:"WS8", title:"Two grant submissions", owner:"", start:"2026-09-21", due:"2026-11-21", status:"todo", partner:"p22"},
+    {id:"t804", ws:"WS8", title:"Investor materials for the company round", owner:"", start:"2026-11-02", due:"2026-12-12", status:"todo", partner:""},
+
+    {id:"t901", ws:"WS9", title:"Build the 14-slide deck from the narrative spine", owner:"", start:"2026-08-10", due:"2026-08-22", status:"doing", partner:""},
+    {id:"t902", ws:"WS9", title:"One-pager per partner category", owner:"", start:"2026-08-24", due:"2026-09-12", status:"todo", partner:""},
+    {id:"t903", ws:"WS9", title:"MoU template reviewed by counsel", owner:"", start:"2026-09-14", due:"2026-10-10", status:"todo", partner:""},
+    {id:"t904", ws:"WS9", title:"Website copy from the master narrative", owner:"", start:"2026-10-05", due:"2026-10-31", status:"todo", partner:""}
+  ],
+
+  milestones: [
+    {id:"m1", name:"Operator MoU signed",            date:"2026-12-19", hit:false, note:"Lead operator committed to co-design, telemetry access and candidate response commitments."},
+    {id:"m2", name:"Term sheet v1 issued",           date:"2027-01-16", hit:false, note:"Risk, layers, capital, triggers and obligations described well enough to quote against."},
+    {id:"m3", name:"Capital indication received",     date:"2027-02-27", hit:false, note:"Non-binding appetite from at least one risk carrier and one investor."},
+    {id:"m4", name:"Regulatory pathway confirmed",    date:"2027-03-27", hit:false, note:"Wrapper and jurisdiction settled; no-objection or clear route from the relevant authorities."},
+    {id:"m5", name:"Sponsor funding secured",         date:"2027-04-30", hit:false, note:"Premium support or grant funding committed for the first period."},
+    {id:"m6", name:"Facility go-live decision",       date:"2027-06-30", hit:false, note:"Bind or rebuild. Either way the architecture has been tested against reality."}
+  ]
+};
+
+/* ══ Store ════════════════════════════════════════════════════════════ */
+
+const KEY = "lionscraft-desk-v1";
+let DB;
+try {
+  const raw = localStorage.getItem(KEY);
+  DB = raw ? JSON.parse(raw) : structuredClone(SEED);
+} catch (e) { DB = structuredClone(SEED); }
+if (!DB.partners) DB = structuredClone(SEED);
+
+/* Backfill start dates for data saved before the timeline existed. Only fills
+   a missing field — never overwrites anything the team has edited. */
+(function backfillStarts(){
+  let touched = false;
+  DB.tasks.forEach(t => {
+    if (t.start) return;
+    const seeded = SEED.tasks.find(s => s.id === t.id);
+    t.start = seeded ? seeded.start : shiftDays(t.due, -21);
+    touched = true;
+  });
+  if (touched) try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {}
+})();
+
+const save = () => {
+  try { localStorage.setItem(KEY, JSON.stringify(DB)); }
+  catch (e) { toast("Could not save locally — this browser is blocking storage"); }
+};
+const uid = p => p + Math.random().toString(36).slice(2, 8);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+const TODAY = "2026-08-08";
+const fmtDate = d => {
+  if (!d) return "—";
+  const [y, m, dd] = d.split("-");
+  return dd + " " + ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m - 1] + " " + y.slice(2);
+};
+const isOverdue = d => !!d && d < TODAY;
+
+/* Date maths for the timeline. All dates are plain YYYY-MM-DD, handled in UTC
+   so a viewer's timezone can never shift a bar by a day. */
+const DAY = 86400000;
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function toMs(d){ return Date.parse(d + "T00:00:00Z"); }
+function shiftDays(d, n){
+  if (!d) return "";
+  return new Date(toMs(d) + n * DAY).toISOString().slice(0, 10);
+}
+function monthsBetween(from, to){
+  const out = [];
+  let y = +from.slice(0, 4), m = +from.slice(5, 7);
+  const ey = +to.slice(0, 4), em = +to.slice(5, 7);
+  while (y < ey || (y === ey && m <= em)){
+    out.push({y, m, key:y + "-" + String(m).padStart(2, "0")});
+    if (++m > 12){ m = 1; y++; }
+  }
+  return out;
+}
+const monthStart = mo => mo.key + "-01";
+const monthEnd = mo => new Date(Date.UTC(mo.y, mo.m, 0)).toISOString().slice(0, 10);
+
+let toastTimer;
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
+}
+
+/* ══ Navigation ═══════════════════════════════════════════════════════ */
+
+const VIEWS = [
+  {id:"overview",  label:"Overview",   count:() => ""},
+  {id:"partners",  label:"Partners",   count:() => DB.partners.length},
+  {id:"plan",      label:"Plan",       count:() => DB.tasks.filter(t => t.status !== "done").length},
+  {id:"board",     label:"Board",      count:() => DB.tasks.filter(t => t.status === "doing" || t.status === "blocked").length},
+  {id:"outreach",  label:"Outreach",   count:() => ""},
+  {id:"narrative", label:"Narrative",  count:() => ""}
+];
+let current = "overview";
+let filters = {stage:"", cat:"", q:""};
+
+function renderRail(){
+  document.getElementById("rail").innerHTML =
+    '<div class="eyebrow">Desk</div>' +
+    VIEWS.map(v =>
+      `<button class="navitem" data-view="${v.id}" aria-current="${v.id === current}">
+         ${v.label}<em class="num">${v.count()}</em>
+       </button>`).join("");
+}
+
+function go(id){ current = id; renderRail(); render(); window.scrollTo({top:0}); }
+
+document.getElementById("rail").addEventListener("click", e => {
+  const b = e.target.closest("[data-view]");
+  if (b) go(b.dataset.view);
+});
+
+/* ══ Views ════════════════════════════════════════════════════════════ */
+
+function render(){
+  const v = document.getElementById("view");
+  v.innerHTML = ({
+    overview:  viewOverview,
+    partners:  viewPartners,
+    plan:      viewPlan,
+    board:     viewBoard,
+    outreach:  viewOutreach,
+    narrative: viewNarrative
+  })[current]();
+  if (current === "outreach") wireOutreach();
+  if (current === "board") wireBoard();
+  if (current === "plan" && planMode === "gantt") wireGantt();
+}
+
+/* ── Overview ─────────────────────────────────────────────────────── */
+
+function viewOverview(){
+  const ps = DB.partners;
+  const live = ps.filter(p => stageRank(p.stage) >= 0);
+  const engaged = ps.filter(p => stageRank(p.stage) >= 3).length;
+  const signed = ps.filter(p => ["mou_signed","active"].includes(p.stage)).length;
+  const openTasks = DB.tasks.filter(t => t.status !== "done");
+  const overdue = openTasks.filter(t => isOverdue(t.due)).length;
+  const blocked = openTasks.filter(t => t.status === "blocked").length;
+
+  const actions = ps
+    .filter(p => p.next && stageRank(p.stage) >= 0)
+    .sort((a, b) => (a.nextDate || "9999") .localeCompare(b.nextDate || "9999"))
+    .slice(0, 8);
+
+  const soon = DB.tasks
+    .filter(t => t.status !== "done")
+    .sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"))
+    .slice(0, 8);
+
+  const funnel = STAGES.map(s => {
+    const n = ps.filter(p => p.stage === s.id).length;
+    return {s, n};
+  });
+  const max = Math.max(1, ...funnel.map(f => f.n));
+
+  const byCat = Object.keys(CATEGORIES).map(c => {
+    const list = ps.filter(p => p.cat === c);
+    return {c, n:list.length, adv:list.filter(p => stageRank(p.stage) >= 3).length};
+  });
+
+  return `
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">${esc(DB.meta.product)} · ${esc(DB.meta.facility)}</div>
+      <h1>Where the first facility stands</h1>
+      <p>Level 5 of the hierarchy. The pilot is the wedge, not the company — but nothing above it gets proved until this facility is real.</p>
+    </div>
+  </div>
+
+  <div class="grid" style="gap:16px">
+    <div class="stats">
+      <div class="stat"><b>${live.length}</b><small>Partners in play</small></div>
+      <div class="stat"><b>${engaged}</b><small>Past first meeting</small></div>
+      <div class="stat ${signed ? "go" : ""}"><b>${signed}</b><small>MoU signed or active</small></div>
+      <div class="stat"><b>${openTasks.length}</b><small>Open tasks</small></div>
+      <div class="stat ${overdue ? "alert" : ""}"><b>${overdue}</b><small>Overdue</small></div>
+      <div class="stat ${blocked ? "alert" : ""}"><b>${blocked}</b><small>Blocked</small></div>
+    </div>
+
+    <div class="grid pair" style="grid-template-columns:repeat(auto-fit,minmax(330px,1fr))">
+      <section class="card">
+        <header><h2>Partner pipeline</h2><span class="spacer"></span>
+          <button class="btn ghost" data-view="partners">Open ›</button></header>
+        <div class="funnel">
+          ${funnel.map(f => `
+            <div class="frow ${f.n && stageRank(f.s.id) >= 3 ? "hot" : ""}">
+              <label title="${esc(f.s.hint)}">${f.s.label}</label>
+              <div class="bar"><i style="width:${(f.n / max * 100).toFixed(1)}%"></i></div>
+              <span class="n">${f.n}</span>
+            </div>`).join("")}
+        </div>
+      </section>
+
+      <section class="card">
+        <header><h2>Coverage by partner type</h2></header>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Type</th><th>Targets</th><th>Engaged</th></tr></thead>
+            <tbody>
+              ${byCat.map(r => `<tr>
+                <td>${catLabel(r.c)}<span class="sub">${esc(CATEGORIES[r.c].blurb)}</span></td>
+                <td class="num">${r.n}</td>
+                <td class="num">${r.adv || "—"}</td>
+              </tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="grid pair" style="grid-template-columns:repeat(auto-fit,minmax(330px,1fr))">
+      <section class="card">
+        <header><h2>Next moves on partners</h2></header>
+        <div class="tablewrap"><table><tbody>
+          ${actions.length ? actions.map(p => `
+            <tr class="clickable" data-partner="${p.id}">
+              <td style="width:38%">${esc(p.name)}<span class="sub">${catLabel(p.cat)}</span></td>
+              <td>${esc(p.next)}</td>
+              <td style="width:78px" class="num ${isOverdue(p.nextDate) ? "overdue" : ""}">${fmtDate(p.nextDate)}</td>
+            </tr>`).join("") : '<tr><td class="empty">Nothing queued. Open Partners and set a next move.</td></tr>'}
+        </tbody></table></div>
+      </section>
+
+      <section class="card">
+        <header><h2>Tasks due next</h2><span class="spacer"></span>
+          <button class="btn ghost" data-view="plan">Open ›</button></header>
+        <div class="tablewrap"><table><tbody>
+          ${soon.map(t => `
+            <tr>
+              <td style="width:46px"><span class="cat">${t.ws}</span></td>
+              <td>${esc(t.title)}</td>
+              <td style="width:78px" class="num ${isOverdue(t.due) ? "overdue" : ""}">${fmtDate(t.due)}</td>
+            </tr>`).join("")}
+        </tbody></table></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <header><h2>Milestones</h2></header>
+      <div class="ms">
+        ${DB.milestones.map(m => `
+          <div class="ms-item ${m.hit ? "hit" : ""}">
+            <span class="pip"></span>
+            <div><b>${esc(m.name)}</b><p>${esc(m.note)}</p></div>
+            <span class="num" style="color:var(--ink-3)">${fmtDate(m.date)}</span>
+          </div>`).join("")}
+      </div>
+    </section>
+  </div>`;
+}
+
+/* ── Partners ─────────────────────────────────────────────────────── */
+
+function viewPartners(){
+  let rows = DB.partners.slice();
+  if (filters.stage) rows = rows.filter(p => p.stage === filters.stage);
+  if (filters.cat) rows = rows.filter(p => p.cat === filters.cat);
+  if (filters.q){
+    const q = filters.q.toLowerCase();
+    rows = rows.filter(p => (p.name + " " + p.why + " " + p.ask + " " + p.notes + " " + p.owner).toLowerCase().includes(q));
+  }
+  rows.sort((a, b) => (stageRank(b.stage) - stageRank(a.stage)) || a.name.localeCompare(b.name));
+
+  return `
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">Slide 14 — How partners can help</div>
+      <h1>Partners</h1>
+      <p>Every organisation we need for the first facilities, what we want from each, and where the conversation has got to.</p>
+    </div>
+    <div class="tools">
+      <button class="btn primary" id="addPartner">Add partner</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <header>
+      <div class="filters">
+        <select id="fStage">
+          <option value="">All stages</option>
+          ${ALL_STAGES.map(s => `<option value="${s.id}" ${filters.stage === s.id ? "selected" : ""}>${s.label}</option>`).join("")}
+        </select>
+        <select id="fCat">
+          <option value="">All types</option>
+          ${Object.entries(CATEGORIES).map(([k, c]) => `<option value="${k}" ${filters.cat === k ? "selected" : ""}>${c.label}</option>`).join("")}
+        </select>
+        <input type="text" id="fQ" placeholder="Search…" value="${esc(filters.q)}" style="width:180px">
+        ${(filters.stage || filters.cat || filters.q) ? '<button class="btn ghost" id="fClear">Clear</button>' : ""}
+      </div>
+      <span class="spacer"></span>
+      <span class="cat">${rows.length} of ${DB.partners.length}</span>
+    </header>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>Organisation</th><th>Type</th><th>Stage</th><th>Owner</th><th>Next move</th><th>Due</th>
+        </tr></thead>
+        <tbody>
+          ${rows.length ? rows.map(p => `
+            <tr class="clickable" data-partner="${p.id}">
+              <td><b>${esc(p.name)}</b><span class="sub">${esc(p.why)}</span></td>
+              <td><span class="cat">${catLabel(p.cat)}</span><span class="sub">${esc(p.country)}</span></td>
+              <td><span class="chip ${stageClass(p.stage)}"><i class="dot"></i>${stageLabel(p.stage)}</span></td>
+              <td>${esc(p.owner) || '<span style="color:var(--ink-3)">—</span>'}</td>
+              <td>${esc(p.next) || '<span style="color:var(--ink-3)">—</span>'}</td>
+              <td class="num ${isOverdue(p.nextDate) ? "overdue" : ""}">${fmtDate(p.nextDate)}</td>
+            </tr>`).join("") : '<tr><td colspan="6" class="empty">No partners match those filters.</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="note">Seeded organisations are research targets drawn from the narrative's partner types — not existing relationships. Verify the right entity and entry point before you use anything here in outreach.</div>`;
+}
+
+/* ── Plan ─────────────────────────────────────────────────────────── */
+
+const STATUS_CYCLE = ["todo","doing","blocked","done"];
+const statusLabel = {todo:"To do", doing:"Doing", blocked:"Blocked", done:"Done"};
+
+let planMode = "list";
+const collapsed = new Set();
+
+function viewPlan(){
+  return `
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">${esc(DB.meta.facility)}</div>
+      <h1>Plan</h1>
+      <p>${planMode === "gantt"
+        ? "The same tasks over time. Drag a bar to move it, drag its edges to change start or end, drag a diamond to move a milestone."
+        : "Nine workstreams mapped onto the product stack. Click a status to move it on; click a row to edit it."}</p>
+    </div>
+    <div class="tools">
+      <div class="seg">
+        <button data-mode="list" aria-pressed="${planMode === "list"}">List</button>
+        <button data-mode="gantt" aria-pressed="${planMode === "gantt"}">Timeline</button>
+      </div>
+      <button class="btn primary" id="addTask">Add task</button>
+    </div>
+  </div>
+
+  ${planMode === "gantt" ? planGantt() : planList()}
+
+  <section class="card">
+    <header><h2>Milestones</h2><span class="spacer"></span><span class="cat">Click to mark hit</span></header>
+    <div class="ms">
+      ${DB.milestones.map((m, i) => `
+        <div class="ms-item ${m.hit ? "hit" : ""}" data-ms="${m.id}" style="cursor:pointer">
+          <span class="pip"></span>
+          <div><b>M${i + 1} · ${esc(m.name)}</b><p>${esc(m.note)}</p></div>
+          <span class="num" style="color:var(--ink-3)">${fmtDate(m.date)}</span>
+        </div>`).join("")}
+    </div>
+  </section>`;
+}
+
+/* ── Board ────────────────────────────────────────────────────────── */
+
+let boardWs = "", boardOwner = "", boardQ = "";
+
+function viewBoard(){
+  let list = DB.tasks.slice();
+  if (boardWs) list = list.filter(t => t.ws === boardWs);
+  if (boardOwner) list = list.filter(t => (t.owner || "") === (boardOwner === "—" ? "" : boardOwner));
+  if (boardQ){
+    const q = boardQ.toLowerCase();
+    list = list.filter(t => (t.title + " " + t.owner + " " + t.ws).toLowerCase().includes(q));
+  }
+  list.sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
+
+  const owners = [...new Set(DB.tasks.map(t => t.owner).filter(Boolean))].sort();
+  const inFlight = list.filter(t => t.status === "doing").length;
+  const blocked = list.filter(t => t.status === "blocked").length;
+  const late = list.filter(t => isOverdue(t.due) && t.status !== "done").length;
+  const unassigned = list.filter(t => !t.owner && t.status !== "done").length;
+
+  return `
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">${esc(DB.meta.facility)}</div>
+      <h1>Board</h1>
+      <p>Every task by state. Drag a card between columns to change its status; click it to edit. Same tasks as the plan — this is the working view.</p>
+    </div>
+    <div class="tools"><button class="btn primary" id="addTask">Add task</button></div>
+  </div>
+
+  <div class="grid" style="gap:14px">
+    <div class="stats">
+      <div class="stat"><b>${list.length}</b><small>In view</small></div>
+      <div class="stat ${inFlight ? "go" : ""}"><b>${inFlight}</b><small>In flight</small></div>
+      <div class="stat ${blocked ? "alert" : ""}"><b>${blocked}</b><small>Blocked</small></div>
+      <div class="stat ${late ? "alert" : ""}"><b>${late}</b><small>Overdue</small></div>
+      <div class="stat"><b>${unassigned}</b><small>Unassigned</small></div>
+    </div>
+
+    <div class="card">
+      <header>
+        <div class="filters">
+          <select id="boardWs">
+            <option value="">All workstreams</option>
+            ${DB.workstreams.map(w => `<option value="${w.id}" ${boardWs === w.id ? "selected" : ""}>${w.id} — ${esc(w.name)}</option>`).join("")}
+          </select>
+          <select id="boardOwner">
+            <option value="">Anyone</option>
+            <option value="—" ${boardOwner === "—" ? "selected" : ""}>Unassigned</option>
+            ${owners.map(o => `<option value="${esc(o)}" ${boardOwner === o ? "selected" : ""}>${esc(o)}</option>`).join("")}
+          </select>
+          <input type="text" id="boardQ" placeholder="Search…" value="${esc(boardQ)}" style="width:170px">
+          ${(boardWs || boardOwner || boardQ) ? '<button class="btn ghost" id="boardClear">Clear</button>' : ""}
+        </div>
+        <span class="spacer"></span>
+        <span class="cat">Sorted by due date</span>
+      </header>
+      <div style="padding:12px">
+        <div class="board">
+          ${STATUS_CYCLE.map(s => {
+            const cards = list.filter(t => t.status === s);
+            return `
+            <div class="col" data-col="${s}">
+              <header><span class="rail-dot"></span>${statusLabel[s]}<b>${cards.length}</b></header>
+              <div class="stack">
+                ${cards.length ? cards.map(t => {
+                  const p = DB.partners.find(x => x.id === t.partner);
+                  const isLate = isOverdue(t.due) && t.status !== "done";
+                  return `
+                  <article class="kcard" draggable="true" data-card="${t.id}" data-s="${t.status}">
+                    <span class="kt">${esc(t.title)}</span>
+                    ${p ? `<span class="kpartner">${esc(p.name)}</span>` : ""}
+                    <span class="kmeta">
+                      <span class="kws" title="${esc((DB.workstreams.find(w => w.id === t.ws) || {}).name || "")}">${t.ws}</span>
+                      ${t.owner ? `<span>${esc(t.owner)}</span>` : "<span>unassigned</span>"}
+                      <span class="num ${isLate ? "overdue" : ""}" style="margin-left:auto">${fmtDate(t.due)}</span>
+                    </span>
+                  </article>`;
+                }).join("") : '<div class="colempty">Nothing here</div>'}
+              </div>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function wireBoard(){
+  const ws = document.getElementById("boardWs");
+  if (ws) ws.onchange = e => { boardWs = e.target.value; render(); };
+  const ow = document.getElementById("boardOwner");
+  if (ow) ow.onchange = e => { boardOwner = e.target.value; render(); };
+  const q = document.getElementById("boardQ");
+  if (q) q.oninput = e => {
+    boardQ = e.target.value;
+    const pos = e.target.selectionStart;
+    render();
+    const el = document.getElementById("boardQ");
+    if (el){ el.focus(); el.setSelectionRange(pos, pos); }
+  };
+  const cl = document.getElementById("boardClear");
+  if (cl) cl.onclick = () => { boardWs = boardOwner = boardQ = ""; render(); };
+
+  let dragId = null;
+  document.querySelectorAll(".kcard").forEach(card => {
+    card.addEventListener("dragstart", e => {
+      dragId = card.dataset.card;
+      card.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", dragId);
+    });
+    card.addEventListener("dragend", () => {
+      card.classList.remove("dragging");
+      document.querySelectorAll(".col.over").forEach(c => c.classList.remove("over"));
+    });
+  });
+
+  document.querySelectorAll(".col").forEach(col => {
+    col.addEventListener("dragover", e => { e.preventDefault(); col.classList.add("over"); });
+    col.addEventListener("dragleave", e => {
+      if (!col.contains(e.relatedTarget)) col.classList.remove("over");
+    });
+    col.addEventListener("drop", e => {
+      e.preventDefault();
+      col.classList.remove("over");
+      const id = dragId || e.dataTransfer.getData("text/plain");
+      const t = DB.tasks.find(x => x.id === id);
+      if (!t || t.status === col.dataset.col) return;
+      t.status = col.dataset.col;
+      save(); renderRail(); render();
+      toast("Moved to " + statusLabel[t.status]);
+    });
+  });
+}
+
+/* ── Timeline ─────────────────────────────────────────────────────── */
+
+function planGantt(){
+  const ts = DB.tasks.filter(t => t.due);
+  if (!ts.length) return '<div class="card"><div class="empty">No dated tasks to plot yet.</div></div>';
+
+  const starts = ts.map(t => t.start || shiftDays(t.due, -21));
+  const ends = ts.map(t => t.due).concat(DB.milestones.map(m => m.date));
+  const first = starts.concat(DB.milestones.map(m => m.date)).sort()[0];
+  const last = ends.sort()[ends.length - 1];
+  const months = monthsBetween(first, last);
+  const t0 = toMs(monthStart(months[0]));
+  const t1 = toMs(monthEnd(months[months.length - 1])) + DAY;
+  const pct = d => ((toMs(d) - t0) / (t1 - t0) * 100);
+  const clamp = n => Math.max(0, Math.min(100, n));
+
+  const bar = (from, to) => {
+    const l = clamp(pct(from));
+    const w = Math.max(0.6, clamp(pct(to) + (100 / months.length / 30)) - l);
+    return `left:${l.toFixed(3)}%; width:${w.toFixed(3)}%`;
+  };
+
+  const todayLine = pct(TODAY) >= 0 && pct(TODAY) <= 100
+    ? `<div class="today" style="left:${pct(TODAY).toFixed(3)}%"></div>` : "";
+
+  const rows = DB.workstreams.map(ws => {
+    const list = ts.filter(t => t.ws === ws.id);
+    if (!list.length) return "";
+    const done = list.filter(t => t.status === "done").length;
+    const wsStart = list.map(t => t.start || shiftDays(t.due, -21)).sort()[0];
+    const wsEnd = list.map(t => t.due).sort()[list.length - 1];
+    const isOpen = !collapsed.has(ws.id);
+
+    const head = `
+      <div class="grow wsrow">
+        <div class="glabel" data-collapse="${ws.id}" title="${isOpen ? "Collapse" : "Expand"} ${esc(ws.name)}">
+          <span class="gcaret">${isOpen ? "▾" : "▸"}</span>
+          <span class="gcode">${ws.id}</span>
+          <span class="t">${esc(ws.name)}</span>
+          <span class="gcode" style="margin-left:auto">${done}/${list.length}</span>
+        </div>
+        <div class="gtrack">
+          ${todayLine}
+          <div class="gsum" style="${bar(wsStart, wsEnd)}" title="${fmtDate(wsStart)} → ${fmtDate(wsEnd)}">
+            <i style="width:${Math.round(done / list.length * 100)}%"></i>
+          </div>
+        </div>
+      </div>`;
+
+    if (!isOpen) return head;
+
+    return head + list.map(t => {
+      const s = t.start || shiftDays(t.due, -21);
+      const late = isOverdue(t.due) && t.status !== "done";
+      return `
+      <div class="grow">
+        <div class="glabel" data-task="${t.id}" style="cursor:pointer; padding-left:31px">
+          <span class="t" title="${esc(t.title)}">${esc(t.title)}</span>
+          ${t.owner ? `<span class="gcode" style="margin-left:auto">${esc(t.owner)}</span>` : ""}
+        </div>
+        <div class="gtrack">
+          ${todayLine}
+          <div class="gbar ${t.status} ${late ? "late" : ""}" data-task="${t.id}" data-drag="task"
+               style="${bar(s, t.due)}"
+               title="${esc(t.title)} — ${fmtDate(s)} → ${fmtDate(t.due)}${late ? " (overdue)" : ""}"
+            ><i class="grip l"></i><i class="grip r"></i></div>
+        </div>
+      </div>`;
+    }).join("");
+  }).join("");
+
+  return `
+  <section class="card ws" style="margin-bottom:14px">
+    <div class="gantt" style="--n:${months.length}" data-t0="${monthStart(months[0])}" data-t1="${shiftDays(monthEnd(months[months.length - 1]), 1)}">
+      <div class="inner">
+        <div class="ghead">
+          <div class="glabel"><span class="eyebrow">Workstream / task</span></div>
+          <div class="gmonths" style="grid-template-columns:repeat(${months.length},1fr)">
+            ${months.map(mo => `<span class="${[1,4,7,10].includes(mo.m) ? "q" : ""}">${MONTHS[mo.m - 1]}${mo.m === 1 || mo === months[0] ? " " + String(mo.y).slice(2) : ""}</span>`).join("")}
+          </div>
+        </div>
+
+        <div class="grow msrow">
+          <div class="glabel"><span class="eyebrow">Milestones</span></div>
+          <div class="gtrack">
+            ${todayLine}
+            ${DB.milestones.map((m, i) => `
+              <div class="gms ${m.hit ? "hit" : ""}" style="left:${clamp(pct(m.date)).toFixed(3)}%"
+                   data-drag="ms" data-msid="${m.id}"
+                   title="M${i + 1} — ${esc(m.name)} · ${fmtDate(m.date)} — drag to move"></div>
+              <div class="gmslabel" style="left:${clamp(pct(m.date)).toFixed(3)}%">M${i + 1}</div>`).join("")}
+          </div>
+        </div>
+
+        ${rows}
+      </div>
+    </div>
+    <div class="glegend">
+      <span><b></b>To do</span>
+      <span><b class="doing"></b>Doing</span>
+      <span><b class="blocked"></b>Blocked</span>
+      <span><b class="done"></b>Done</span>
+      <span><b class="today"></b>Today, ${fmtDate(TODAY)}</span>
+      <span style="margin-left:auto">Drag to reschedule · dashed outline = past its due date</span>
+    </div>
+  </section>`;
+}
+
+/* Dragging on the timeline. Bars move or resize by whole days; milestone
+   diamonds move their date. Nothing is written until the pointer is released,
+   so an abandoned drag changes nothing. */
+let ganttScroll = {x:0, y:0};
+let drag = null;
+
+function wireGantt(){
+  const g = document.querySelector(".gantt");
+  if (!g) return;
+
+  g.scrollLeft = ganttScroll.x;
+  g.scrollTop = ganttScroll.y;
+  g.addEventListener("scroll", () => { ganttScroll = {x:g.scrollLeft, y:g.scrollTop}; }, {passive:true});
+
+  const spanDays = Math.round((toMs(g.dataset.t1) - toMs(g.dataset.t0)) / DAY);
+  const tip = document.getElementById("dragtip");
+
+  g.addEventListener("pointerdown", e => {
+    const handle = e.target.closest("[data-drag]");
+    if (!handle || e.button !== 0) return;
+    const track = handle.parentElement;
+    const kind = handle.dataset.drag;
+    const rec = kind === "ms"
+      ? DB.milestones.find(m => m.id === handle.dataset.msid)
+      : DB.tasks.find(t => t.id === handle.dataset.task);
+    if (!rec) return;
+
+    const mode = kind === "ms" ? "ms"
+      : e.target.classList.contains("grip")
+        ? (e.target.classList.contains("l") ? "start" : "end")
+        : "move";
+
+    drag = {
+      handle, rec, mode, kind, moved:false,
+      x0:e.clientX,
+      perDay: track.clientWidth / spanDays,
+      pctDay: 100 / spanDays,
+      left0: parseFloat(handle.style.left) || 0,
+      width0: parseFloat(handle.style.width) || 0,
+      s0: kind === "ms" ? rec.date : (rec.start || shiftDays(rec.due, -21)),
+      d0: kind === "ms" ? rec.date : rec.due
+    };
+    try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+    handle.classList.add("dragging");
+    e.preventDefault();
+  });
+
+  g.addEventListener("pointermove", e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x0;
+    if (!drag.moved && Math.abs(dx) < 3) return;
+    drag.moved = true;
+    const days = Math.round(dx / drag.perDay);
+    const shift = days * drag.pctDay;
+    const h = drag.handle;
+
+    if (drag.mode === "move" || drag.mode === "ms"){
+      h.style.left = (drag.left0 + shift) + "%";
+    } else if (drag.mode === "start"){
+      const w = Math.max(drag.pctDay, drag.width0 - shift);
+      h.style.left = (drag.left0 + drag.width0 - w) + "%";
+      h.style.width = w + "%";
+    } else {
+      h.style.width = Math.max(drag.pctDay, drag.width0 + shift) + "%";
+    }
+
+    const [ns, nd] = previewDates(drag, days);
+    tip.textContent = drag.kind === "ms" ? fmtDate(ns) : fmtDate(ns) + " → " + fmtDate(nd);
+    tip.style.left = e.clientX + "px";
+    tip.style.top = e.clientY + "px";
+    tip.classList.add("show");
+  });
+
+  const finish = e => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    d.handle.classList.remove("dragging");
+    tip.classList.remove("show");
+
+    if (!d.moved){
+      if (d.kind === "task") taskDrawer(d.rec.id);
+      else { d.rec.hit = !d.rec.hit; save(); render(); }
+      return;
+    }
+    const days = Math.round((e.clientX - d.x0) / d.perDay);
+    const [ns, nd] = previewDates(d, days);
+    if (d.kind === "ms") d.rec.date = ns;
+    else { d.rec.start = ns; d.rec.due = nd; }
+    save(); render();
+    toast(d.kind === "ms" ? "Milestone moved to " + fmtDate(ns) : fmtDate(ns) + " → " + fmtDate(nd));
+  };
+  g.addEventListener("pointerup", finish);
+  g.addEventListener("pointercancel", () => {
+    if (!drag) return;
+    drag.handle.classList.remove("dragging");
+    drag = null; tip.classList.remove("show"); render();
+  });
+}
+
+function previewDates(d, days){
+  if (d.kind === "ms") return [shiftDays(d.s0, days), ""];
+  if (d.mode === "move") return [shiftDays(d.s0, days), shiftDays(d.d0, days)];
+  if (d.mode === "start"){
+    const ns = shiftDays(d.s0, days);
+    return [ns > d.d0 ? d.d0 : ns, d.d0];
+  }
+  const nd = shiftDays(d.d0, days);
+  return [d.s0, nd < d.s0 ? d.s0 : nd];
+}
+
+/* ── List ─────────────────────────────────────────────────────────── */
+
+function planList(){
+  return DB.workstreams.map(ws => {
+    const ts = DB.tasks.filter(t => t.ws === ws.id);
+    const done = ts.filter(t => t.status === "done").length;
+    const pct = ts.length ? Math.round(done / ts.length * 100) : 0;
+    return `
+    <section class="card ws">
+      <header>
+        <code>${ws.id}</code>
+        <h2>${esc(ws.name)}</h2>
+        <span class="cat">${esc(ws.layer)}</span>
+        <span class="spacer"></span>
+        <span class="num" style="color:var(--ink-3); font-size:11.5px">${done}/${ts.length}</span>
+        <span class="progress"><i style="width:${pct}%"></i></span>
+      </header>
+      <div class="tablewrap"><table><tbody>
+        ${ts.length ? ts.map(t => {
+          const p = DB.partners.find(x => x.id === t.partner);
+          return `<tr class="clickable ${t.status === "done" ? "done" : ""}" data-task="${t.id}">
+            <td style="width:88px"><button class="status" data-cycle="${t.id}" data-s="${t.status}">${statusLabel[t.status]}</button></td>
+            <td>${esc(t.title)}${p ? `<span class="sub">${esc(p.name)}</span>` : ""}</td>
+            <td style="width:130px">${esc(t.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
+            <td style="width:82px" class="num ${isOverdue(t.due) && t.status !== "done" ? "overdue" : ""}">${fmtDate(t.due)}</td>
+          </tr>`;
+        }).join("") : '<tr><td class="empty">No tasks in this workstream yet.</td></tr>'}
+      </tbody></table></div>
+    </section>`;
+  }).join("");
+}
+
+/* ── Outreach ─────────────────────────────────────────────────────── */
+
+const TEMPLATES = [
+  {id:"cold",     name:"Cold intro email",        hint:"First contact, no warm route"},
+  {id:"warm",     name:"Warm intro request",      hint:"Asking a mutual contact to connect you"},
+  {id:"followup", name:"Post-meeting follow-up",  hint:"Sent within 24 hours, carries the MoU"},
+  {id:"mou",      name:"MoU outline",             hint:"Non-binding cooperation agreement"},
+  {id:"agenda",   name:"Meeting agenda & questions", hint:"What to actually ask them"},
+  {id:"onepager", name:"One-pager copy",          hint:"Tailored to the partner type"},
+  {id:"concept",  name:"Concept note",            hint:"For donors and DFIs"},
+  {id:"deck",     name:"Deck spine",              hint:"The 14-slide narrative order"}
+];
+let outState = {tpl:"cold", partner:""};
+
+const SENDER = "[your name]\n[title], Lionscraft\n[email] · [phone]";
+
+function buildOutreach(){
+  const p = DB.partners.find(x => x.id === outState.partner);
+  const c = p ? CATEGORIES[p.cat] : null;
+  const NAME = p ? p.name : "[Organisation]";
+  const WHO  = "[first name]";
+  const HOOK = c ? c.hook : "[why this partner specifically]";
+  const ASK  = p && p.ask ? p.ask : (c ? c.ask : "[what we are asking for]");
+  const GIVE = c ? c.give : "[what they get out of it]";
+  const F = DB.meta.facility, PROD = DB.meta.product, ORG = DB.meta.org;
+
+  switch (outState.tpl){
+
+  case "cold": return `Subject: ${p && p.cat === "operator" ? "Pre-funding emergency network restoration" : "Programmable risk transfer — " + F}
+
+Dear ${WHO},
+
+I am writing from ${ORG}. We are building a programmable risk-transfer operating system: infrastructure that creates and operates risk-transfer facilities in which the capital carries more of the purpose of the protection, not only the settlement of the loss.
+
+Our first product is ${PROD}, applied to catastrophe and critical-infrastructure risk. The first implementation is the ${F} — a bounded, well-instrumented facility covering emergency response, restoration and recovery for critical telecom infrastructure.
+
+I am contacting ${NAME} because ${HOOK}.
+
+What we would like from you: ${ASK}.
+
+What we think is in it for you: ${GIVE}.
+
+Would you have thirty minutes in the next two weeks? I am happy to send a short brief in advance so the time is spent on the substance rather than the introduction.
+
+With thanks,
+${SENDER}`;
+
+  case "warm": return `Subject: Introduction to ${NAME}?
+
+Hi [contact],
+
+A favour, if it is an easy one.
+
+We are building ${ORG} — a programmable risk-transfer operating system. The short version: risk transfer today mostly ends at a payout, and we are building the infrastructure for instruments where the capital also carries the rights, obligations and response that the protection was actually bought for. First implementation is the ${F}.
+
+I would like to reach ${NAME}. ${p ? "The reason is that " + HOOK + "." : ""}
+
+Specifically I am after: ${ASK}.
+
+If you know the right person and are comfortable making the introduction, I have drafted a forwardable paragraph below. If not, no obligation at all — a name would already help.
+
+— forwardable —
+
+${ORG} is building infrastructure for programmable risk transfer: risk-transfer facilities in which the capital carries more of the purpose of the protection, not only the settlement. Their first implementation is a resilience facility for critical telecom infrastructure in Sri Lanka, combining collateralised risk transfer with contracted emergency response and restoration commitments. They are looking for ${ASK.toLowerCase()}, and would value thirty minutes.
+
+— ends —
+
+Thank you either way,
+${SENDER}`;
+
+  case "followup": return `Subject: ${NAME} × ${ORG} — follow-up and next step
+
+Dear ${WHO},
+
+Thank you for the time today. Capturing what I took away so you can correct me where I have it wrong.
+
+What we heard from you
+  · [their situation in their words]
+  · [the constraint they named]
+  · [what they said would need to be true]
+
+What we said we would do
+  · [action] — by [date]
+  · [action] — by [date]
+
+What we would like from you
+  · ${ASK}
+  · [any data, introduction, or document they offered]
+
+Next step
+I have attached a short non-binding memorandum of understanding. It commits neither side to funding or capacity. It says that we intend to explore this together, how information passes between us, and who owns what we produce jointly. It is deliberately two pages.
+
+If the shape is right, I will send a version with your entity details filled in. If anything in it is uncomfortable, tell me which clause and I will change it rather than defend it.
+
+Proposed follow-up: [date].
+
+With thanks,
+${SENDER}`;
+
+  case "mou": return `MEMORANDUM OF UNDERSTANDING
+
+Between:   ${ORG} ("${ORG}")
+And:       ${NAME} ("the Partner")
+Subject:   ${F}
+Status:    Non-binding, save for clauses 6, 7 and 9
+
+1. PURPOSE
+   The parties intend to explore jointly the design and possible establishment of the ${F}: a risk-transfer facility applying ${PROD} to catastrophe and critical-infrastructure risk, combining collateralised risk transfer with contracted response, restoration and recovery commitments.
+
+2. BACKGROUND
+   ${ORG} is developing a programmable risk-transfer operating system through which risk-transfer facilities are configured, administered and executed, and in which rights, obligations, permitted uses and evidence requirements are expressed within the instrument itself.
+   ${p ? "The Partner " + HOOK.charAt(0).toUpperCase() + HOOK.slice(1) + "." : "[One sentence on the Partner's relevant role and capability.]"}
+
+3. INTENDED CONTRIBUTIONS
+   3.1  ${ORG} intends to contribute: facility design, structuring coordination, the administration and reporting platform, and coordination of the wider partner group.
+   3.2  The Partner intends to contribute: ${ASK}.
+   3.3  Neither party is obliged by this Memorandum to commit capital, capacity, personnel or funding.
+
+4. SCOPE OF COOPERATION
+   4.1  Joint technical work on risk definition, trigger design and the evidence standard.
+   4.2  Exchange of information reasonably required for that work, subject to clause 6.
+   4.3  Periodic review meetings, at least [monthly / quarterly].
+   4.4  Agreement of a written work plan within [30] days of signature.
+
+5. GOVERNANCE
+   5.1  Each party names a single point of contact.
+        For ${ORG}: [name, role]
+        For the Partner: [name, role]
+   5.2  Material decisions are taken jointly and recorded in writing.
+   5.3  Neither party may describe the other as committed to the facility without prior written consent.
+
+6. CONFIDENTIALITY (binding)
+   6.1  Each party shall keep confidential all non-public information disclosed by the other and use it solely for the purpose in clause 1.
+   6.2  This obligation survives for [three] years from the date of disclosure.
+   6.3  It does not apply to information that is or becomes public otherwise than by breach, was already lawfully held, or must be disclosed by law or regulator.
+
+7. INTELLECTUAL PROPERTY (binding)
+   7.1  Each party retains ownership of its pre-existing intellectual property.
+   7.2  Intellectual property created jointly under this Memorandum is owned [jointly / by the creating party], with the other granted a non-exclusive, royalty-free licence for the purpose in clause 1.
+   7.3  No licence is granted other than as expressly stated.
+
+8. COSTS
+   Each party bears its own costs unless separately agreed in writing.
+
+9. LEGAL EFFECT (binding)
+   9.1  Save for clauses 6, 7 and this clause 9, this Memorandum is not legally binding and creates no obligation to enter into any further agreement.
+   9.2  It is not exclusive. Either party may pursue similar arrangements with others.
+   9.3  It may be terminated by either party on [30] days' written notice.
+   9.4  It is governed by the laws of [jurisdiction], and the courts of [jurisdiction] have exclusive jurisdiction.
+
+10. TERM
+    From the date of last signature until [date], unless extended in writing or terminated under clause 9.3.
+
+
+Signed for ${ORG}                    Signed for ${NAME}
+
+_______________________              _______________________
+Name:                                Name:
+Title:                               Title:
+Date:                                Date:
+
+
+[Not legal advice. Have counsel in the governing-law jurisdiction review before you send this.]`;
+
+  case "agenda": return `MEETING — ${ORG} × ${NAME}
+Duration: 45 minutes
+Objective: ${ASK}
+
+00–03   Introductions. One sentence each. Do not spend the meeting here.
+
+03–08   What we are building
+        · Risk is transferred. Capital is the vehicle. Protection is the purpose.
+        · The dominant model runs risk → event → claim → payout. It works, and it stops at money.
+        · We are building the infrastructure for instruments that run
+          risk → capital → rights → obligations → action → outcome.
+        · The output is not an app. The output is a working risk-transfer facility.
+
+08–13   Where we are starting
+        · First application: disaster and resilience finance.
+        · First product: ${PROD}.
+        · First implementation: ${F}.
+        · Why telecom: measurable, instrumented, essential in an emergency, and fast restoration is worth paying for.
+
+13–30   Their world — listen, do not present
+${(c ? c.questions : ["[What is their situation?]"]).map(q => "        · " + q).join("\n")}
+
+30–40   The specific ask
+        · ${ASK}
+        · What we would give back: ${GIVE}
+        · What we would need from them to make it work: [data / capacity / introduction / time]
+
+40–45   Close
+        · Agree the single next step and its date.
+        · Ask who else internally needs to be in the room.
+        · Offer the MoU if the conversation earned it.
+
+AFTERWARDS — within 24 hours
+        · Follow-up email with what we heard, what we owe them, and the date.
+        · Update the partner record: stage, next move, next date.
+
+GUARDRAILS
+        · Do not lead with blockchain, tokenisation or AI. Lead with the financial function.
+        · Do not caricature insurance. It works. We are extending what it can express.
+        · Do not claim AI makes contractual decisions. Contracts and accountable parties decide; AI helps administer.
+        · Do not let them leave thinking we are a Sri Lanka disaster-finance startup.`;
+
+  case "onepager": return `${ORG.toUpperCase()}
+Programmable risk transfer
+
+FOR: ${NAME}${p ? "  ·  " + catLabel(p.cat) : ""}
+
+─────────────────────────────────────────────────────────────
+
+THE POSITION
+Risk is the possibility of future suffering. Humans invented capital-based
+risk transfer so those burdens would not have to stay with whoever was
+first exposed to them. Insurance, reinsurance, ILS and ART are all
+architectures for the same act.
+
+Most of them are built around one sequence: risk → event → claim → payout.
+That sequence is powerful. Money creates certainty and optionality. But
+what happens with the capital after settlement generally sits outside the
+instrument.
+
+WHAT IS CHANGING
+Capital is becoming programmable, divisible and stateful — able to carry
+machine-readable rights and obligations. At the same time, more human
+activity happens through computational systems, so the risks attached to
+that activity are becoming machine-legible too.
+
+As life becomes more machine-legible, risk becomes more machine-legible.
+
+WHAT WE ARE BUILDING
+A programmable risk-transfer operating system. It creates and operates
+risk-transfer facilities as connected financial objects: risks, capital
+pools, triggers, claims, obligations, evidence, settlement and outcomes.
+
+The output is not an app. The output is a working risk-transfer facility.
+
+EVERY FACILITY HAS SIX LAYERS
+  1  Risk       what exposure is being transferred
+  2  Capital    who backs it, how much, on what terms
+  3  Rights     who has claims on that capital
+  4  Purpose    what the protection is meant to achieve
+  5  Execution  what payments and obligations activate
+  6  Evidence   what proves what happened and what was delivered
+
+WHERE WE START
+  Application      Disaster and resilience finance
+  Product          ${PROD}
+  Sector           Critical infrastructure / telecommunications
+  Implementation   ${F}
+
+Sri Lanka telecom is the wedge. It is not the company.
+
+WHY YOU
+${p ? "Because " + HOOK + "." : "[Why this partner specifically.]"}
+
+THE ASK
+${ASK}
+
+WHAT YOU GET
+${GIVE}
+
+─────────────────────────────────────────────────────────────
+${SENDER}`;
+
+  case "concept": return `CONCEPT NOTE
+
+Title           ${F}
+Submitted by    ${ORG}
+Submitted to    ${NAME}
+Date            [date]
+Amount sought   [amount] over [period]
+
+1. PROBLEM
+When a catastrophe hits, telecommunications fail at exactly the moment
+every other emergency function depends on them. Emergency services,
+payments, health services, family contact and government coordination all
+degrade together. Restoration is slow because it is financed after the
+event, out of an operator's own stressed balance sheet, and because no
+party has been paid in advance to hold surge capacity ready.
+
+Existing disaster risk financing largely funds the state or the household.
+The infrastructure dependency behind both is generally unfunded.
+
+2. WHY A PAYOUT IS NOT ENOUGH
+A dollar before an event is not the same as a dollar three months after
+it. Connectivity now is not the same as reimbursement for connectivity
+later. Traditional instruments define the money well and the response
+hardly at all.
+
+3. PROPOSED SOLUTION
+A ${PROD} facility for critical telecom infrastructure in Sri Lanka,
+combining:
+   · fully collateralised risk transfer for the catastrophe layer;
+   · contracted operator response commitments — emergency connectivity,
+     temporary coverage, priority restoration of critical sites;
+   · a restoration tranche funding return to operation;
+   · flexible recovery liquidity for the longer tail;
+   · telemetry-based evidence of what was actually delivered;
+   · AI-assisted administration to make a structure of this granularity
+     economic to run.
+
+Protection is expressed in three phases: Respond, Restore, Recover.
+
+4. WHY SRI LANKA AND WHY TELECOM
+Telecom is measurable, operationally specific, essential during
+emergencies, connected to public outcomes, rich in telemetry, exposed to
+catastrophe risk, and dependent on rapid restoration. That makes it an
+unusually honest test: if the architecture does not work here, it does not
+work.
+
+5. USE OF FUNDS
+   [amount]   Risk modelling, trigger design and basis-risk assessment
+   [amount]   Legal, regulatory and structuring
+   [amount]   Evidence standard and telemetry integration
+   [amount]   Premium support for the first period
+   [amount]   Outcome measurement and independent verification
+
+6. OUTCOMES AND EVIDENCE
+   · Hours of emergency connectivity delivered, by district
+   · Time to restoration of critical sites versus counterfactual
+   · Population-hours of coverage protected
+   · Capital utilisation against each defined purpose
+   · Independent verification of delivery against commitments
+
+Because the obligations sit inside the instrument, outcome reporting is a
+by-product of settlement rather than a separate exercise.
+
+7. PARTNERS
+   Risk carriers, capital providers, the operator, digital-asset
+   infrastructure, hazard data providers, independent verifiers, and the
+   relevant Sri Lankan authorities. [Name those confirmed; do not imply
+   commitment where none exists.]
+
+8. RISKS AND MITIGATION
+   Basis risk               Hybrid trigger; validation against operator loss history
+   Regulatory uncertainty   Early informal engagement before the structure is fixed
+   Operator commitment      MoU before design freeze; commitments priced, not assumed
+   Verification             Evidence standard agreed with an independent assurer up front
+   Novelty                  Bounded first facility; conventional wrapper where possible
+
+9. WHY THIS MATTERS BEYOND THE PILOT
+Risk should tend to flow toward capacity, not vulnerability. The people
+most exposed to harm are usually the least able to pay to transfer their
+own risk. Sponsored protection, tied to delivered response, is one of the
+few mechanisms that changes that.
+
+10. REQUEST
+${ASK}
+
+Contact
+${SENDER}`;
+
+  case "deck": return `DECK SPINE — 14 slides
+Do not reorder. The hierarchy collapses if you start from the pilot.
+
+ 1  Risk is the possibility of future suffering
+    Without possible suffering, risk is just uncertainty.
+    → Establish the human reason risk exists. Risk is the protagonist.
+
+ 2  Risk transfer redistributes future burdens
+    Risk is transferred. Capital is the vehicle. Protection is the purpose.
+    → Introduce capital as the mechanism. Do not mention our product yet.
+
+ 3  The old architecture mostly turns risk into money
+    risk → event → claim → payout
+    → State the limitation without attacking insurance.
+
+ 4  The world is becoming code
+    As life becomes more machine-legible, risk becomes more machine-legible.
+    → The turning point. Not a feature slide.
+
+ 5  This changes what risk transfer can become
+    What happened? Who bears it? What capital is attached? What should now happen?
+    → Convert the technological change into a financial possibility.
+
+ 6  The new possibility
+    risk → capital → rights → obligations → action → outcome
+    → The memorable mental model.
+
+ 7  What we are building
+    A programmable risk-transfer operating system.
+    The output is not an app. The output is a working risk-transfer facility.
+    → Answers "what are you actually building". No philosophy here.
+
+ 8  What a facility contains
+    Risk · Capital · Rights · Purpose · Execution · Evidence
+    → Makes slide 7 concrete. Slides 7–8 are what you raise against.
+
+ 9  What this changes about protection
+    Not "you suffered, here is money" but "this risk has materialised, this
+    capital is attached, these obligations activate, this protection begins".
+    → Back from machinery to human purpose.
+
+10  First application — disaster and resilience finance
+    → Must feel like an application, not the company definition.
+
+11  First product — ${PROD}
+    The capital does not only transfer risk. It is structured to deliver
+    the purpose of the transfer.
+
+12  First implementation — ${F}
+    Real risk, real infrastructure, real capital, real counterparties.
+    This is the first wedge, not the whole company.
+
+13  Why this becomes bigger
+    Corporate ILS, infrastructure, climate, cyber, supply chain, operational
+    resilience. The category is programmable risk transfer.
+
+14  How partners can help
+    ${p ? "For " + NAME + ": " + ASK : "Risk carriers, capital providers, donors, infrastructure operators, digital-asset partners, AI and data partners, verifiers, DFIs."}
+    Not another insurance app. A new operating system for risk-bearing capital.`;
+  }
+  return "";
+}
+
+function viewOutreach(){
+  const live = DB.partners.slice().sort((a, b) => a.name.localeCompare(b.name));
+  return `
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">Material, fast</div>
+      <h1>Outreach</h1>
+      <p>Pick a partner and a format. The copy is assembled from the master narrative and tailored to that partner type — edit in place, then copy out.</p>
+    </div>
+  </div>
+
+  <div class="outgrid">
+    <div class="grid" style="gap:14px">
+      <section class="card">
+        <header><h2>Partner</h2></header>
+        <div style="padding:12px">
+          <select id="outPartner" style="width:100%">
+            <option value="">— generic, no partner —</option>
+            ${Object.entries(CATEGORIES).map(([k, c]) => `
+              <optgroup label="${c.label}">
+                ${live.filter(p => p.cat === k).map(p =>
+                  `<option value="${p.id}" ${outState.partner === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}
+              </optgroup>`).join("")}
+          </select>
+        </div>
+      </section>
+      <section class="card">
+        <header><h2>Format</h2></header>
+        <div class="tpl">
+          ${TEMPLATES.map(t => `
+            <button class="tplbtn" data-tpl="${t.id}" aria-current="${outState.tpl === t.id}">
+              ${t.name}<small>${t.hint}</small>
+            </button>`).join("")}
+        </div>
+      </section>
+    </div>
+
+    <section class="card out">
+      <header>
+        <h2>${TEMPLATES.find(t => t.id === outState.tpl).name}</h2>
+        <span class="spacer"></span>
+        <button class="btn" id="copyOut">Copy</button>
+        <button class="btn" id="dlOut">Download</button>
+      </header>
+      <textarea id="outText" spellcheck="false">${esc(buildOutreach())}</textarea>
+    </section>
+  </div>`;
+}
+
+function wireOutreach(){
+  document.getElementById("outPartner").onchange = e => { outState.partner = e.target.value; render(); };
+  document.querySelectorAll("[data-tpl]").forEach(b =>
+    b.onclick = () => { outState.tpl = b.dataset.tpl; render(); });
+
+  document.getElementById("copyOut").onclick = async () => {
+    const ta = document.getElementById("outText");
+    try { await navigator.clipboard.writeText(ta.value); toast("Copied"); }
+    catch (e) { ta.select(); toast("Press ⌘C to copy"); }
+  };
+
+  document.getElementById("dlOut").onclick = async () => {
+    const p = DB.partners.find(x => x.id === outState.partner);
+    const name = (p ? p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" : "") + outState.tpl + ".txt";
+    const data = document.getElementById("outText").value;
+    if (!window.claude || !window.claude.downloads){ toast("Downloads unavailable here — use Copy"); return; }
+    try { await window.claude.downloads.save({filename:name, data}); toast("Saved"); }
+    catch (err){
+      const code = err && err.code;
+      if (code === "declined") return;
+      if (code === "rate_limited") toast("Too many prompts — try again in a moment");
+      else if (code === "too_large") toast("Too large to save");
+      else toast("Could not save — use Copy instead");
+    }
+  };
+}
+
+/* ── Narrative ────────────────────────────────────────────────────── */
+
+function viewNarrative(){
+  return `
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">Source of truth</div>
+      <h1>Narrative</h1>
+      <p>What everyone writing anything for this project needs to hold in their head. If a slide, email or note contradicts this page, the page wins.</p>
+    </div>
+  </div>
+
+  <div class="grid" style="gap:16px">
+    <p class="pull">We are building a programmable risk-transfer operating system that uses increasingly computational forms of capital to make risk more transferable, protection more expressive, and the purpose of risk transfer more intrinsic to the financial instrument itself.</p>
+
+    <section class="card">
+      <header><h2>The hierarchy — never invert it</h2></header>
+      <div class="ladder">
+        <div class="rung"><b>Architecture</b><div><b>Programmable risk transfer</b><p>A new architecture for representing, transferring, distributing, administering and responding to risk through capital. This is the company.</p></div></div>
+        <div class="rung"><b>Application</b><div><b>Disaster and resilience finance</b><p>The first domain — chosen because a disaster creates many kinds of harm at once and timing matters enormously.</p></div></div>
+        <div class="rung"><b>Product</b><div><b>Response-Linked ART</b><p>The first product expression: collateralised risk transfer plus programmed response, restoration and recovery.</p></div></div>
+        <div class="rung"><b>Sector</b><div><b>Critical infrastructure / telecoms</b><p>Measurable, instrumented, essential in an emergency, dependent on rapid restoration.</p></div></div>
+        <div class="rung"><b>Implementation</b><div><b>Sri Lanka telecom resilience facility</b><p>The first bounded build. The wedge, not the company. Amazon started with books.</p></div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>The six layers of a facility</h2></header>
+      <div class="six">
+        <div class="layer"><div class="eyebrow">Layer 1</div><b>Risk</b><p>What exposure is being transferred.</p></div>
+        <div class="layer"><div class="eyebrow">Layer 2</div><b>Capital</b><p>Who backs the protection, how much, on what terms.</p></div>
+        <div class="layer"><div class="eyebrow">Layer 3</div><b>Rights</b><p>Who has claims on that capital.</p></div>
+        <div class="layer"><div class="eyebrow">Layer 4</div><b>Purpose</b><p>What the protection is intended to achieve.</p></div>
+        <div class="layer"><div class="eyebrow">Layer 5</div><b>Execution</b><p>What payments, services or obligations activate when states change.</p></div>
+        <div class="layer"><div class="eyebrow">Layer 6</div><b>Evidence</b><p>What proves what happened, what was delivered, what resulted.</p></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Guardrails</h2><span class="spacer"></span><span class="cat">Check every draft against these</span></header>
+      <div class="rules">
+        <div class="rule no"><span class="glyph">✕</span><div><b>Do not lead with blockchain, crypto, tokenisation or "on-chain"</b><p>Lead with the financial function: programmable financial rights, digital capital states, traceable claims, machine-readable obligations. The technology follows the economic need.</p></div></div>
+        <div class="rule no"><span class="glyph">✕</span><div><b>Do not caricature insurance</b><p>Never say insurance only gives money. Some products already provide services, replacement and managed repair. The defensible distinction is how much of the downstream purpose becomes intrinsic to the instrument.</p></div></div>
+        <div class="rule no"><span class="glyph">✕</span><div><b>Do not claim AI makes contractual decisions</b><p>Contracts and accountable parties determine rights and decisions. AI helps humans administer, interpret and evidence increasingly complex structures. Do not depend on speculative autonomy.</p></div></div>
+        <div class="rule no"><span class="glyph">✕</span><div><b>Do not claim the future already exists</b><p>Always separate what is buildable now from what the architecture may ultimately enable.</p></div></div>
+        <div class="rule no"><span class="glyph">✕</span><div><b>Do not imply that turning all vulnerability into tradable instruments is good</b><p>The same technology could push risk toward vulnerability instead of capacity. The ethical architecture is part of the product, not a disclaimer.</p></div></div>
+        <div class="rule yes"><span class="glyph">✓</span><div><b>Use "suffering" deliberately</b><p>Right for why risk matters, the moral architecture, the vision. In technical sections prefer harm, loss, consequence, disruption, vulnerability, burden, recovery need.</p></div></div>
+        <div class="rule yes"><span class="glyph">✓</span><div><b>Always be able to say what becomes programmable</b><p>Rights, obligations, capital states, settlement, permitted uses, activation conditions, claims, evidence requirements. Never let "programmable" float free.</p></div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Language that works</h2><span class="spacer"></span><span class="cat">Reuse verbatim</span></header>
+      <div class="bank">
+        <q>Risk is the possibility of future suffering.</q>
+        <q>Risk is transferred. Capital is the vehicle. Protection is the purpose.</q>
+        <q>The instrument itself can carry more of the purpose of protection.</q>
+        <q>The output is not an app. The output is a working risk-transfer facility.</q>
+        <q>Risk should tend to flow toward capacity.</q>
+        <q>Capital can become a richer computational object.</q>
+        <q>As life becomes more machine-legible, risk becomes more machine-legible too.</q>
+        <q>The minimum economically transferable unit of risk can fall.</q>
+        <q>Digital assets give intangible risk relationships financial form.</q>
+        <q>AI changes the economics of complexity.</q>
+        <q>Not another insurance app. A new operating system for risk-bearing capital.</q>
+        <q>risk → capital → rights → obligations → action → outcome</q>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>What we are not</h2></header>
+      <div style="padding:14px 16px; color:var(--ink-2); font-size:13px">
+        Not a disaster-response app · not an insurance dashboard · not a claims-management tool · not a blockchain settlement system · not a tokenisation vendor · not an AI reporting tool · not an ILS issuer · not an insurer · not a reinsurer · not a telco resilience product · not a Sri Lanka project.
+        <p style="margin:9px 0 0">Some of these capabilities exist inside particular implementations. None defines the architecture.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Storytelling failure modes</h2></header>
+      <div class="rules">
+        <div class="rule no"><span class="glyph">1</span><div><b>Starting with the pilot</b><p>Open with Sri Lanka and the reader assumes that is the company.</p></div></div>
+        <div class="rule no"><span class="glyph">2</span><div><b>Making technology the protagonist</b><p>"AI + blockchain + insurance" is not the story. Risk is the protagonist.</p></div></div>
+        <div class="rule no"><span class="glyph">3</span><div><b>Philosophy with no visible thing</b><p>Slides 7 and 8 must show the actual system.</p></div></div>
+        <div class="rule no"><span class="glyph">4</span><div><b>Too concrete too early</b><p>Opening on triggers, tranches and settlement loses why the architecture matters.</p></div></div>
+        <div class="rule no"><span class="glyph">5</span><div><b>Attacking traditional insurance</b><p>We extend the expressive capacity of risk transfer. We do not need centuries of it to be useless.</p></div></div>
+        <div class="rule no"><span class="glyph">6</span><div><b>Presenting AI only as administration</b><p>Makes it look bolted on. Administration is the current application of something with a longer trajectory.</p></div></div>
+        <div class="rule no"><span class="glyph">7</span><div><b>Presenting digital assets only as settlement</b><p>They matter because financial objects themselves can become stateful and granular.</p></div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Open questions — deliberately unresolved</h2><span class="spacer"></span><span class="cat">Do not let these destabilise the narrative</span></header>
+      <div style="padding:14px 16px; color:var(--ink-2); font-size:13px">
+        Legal form of facilities · when an SPV is required · notes vs insurance vs reinsurance vs deposits vs tokenised claims · jurisdiction · custody model · investor eligibility · tranche structures · trigger design · regulatory treatment · how much sits on-chain · governance of automated state changes · the boundary between automated administration and human decision · outcome-verification standards · pricing methodology · basis-risk management · which functions ${esc(DB.meta.org)} performs directly versus through regulated partners.
+      </div>
+    </section>
+  </div>`;
+}
+
+/* ══ Drawer ═══════════════════════════════════════════════════════════ */
+
+const drawer = document.getElementById("drawer");
+const scrim = document.getElementById("scrim");
+
+function closeDrawer(){
+  drawer.classList.remove("open"); scrim.classList.remove("open");
+  drawer.setAttribute("aria-hidden", "true"); drawer.innerHTML = "";
+}
+scrim.onclick = closeDrawer;
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
+
+function openDrawer(html){
+  drawer.innerHTML = html;
+  drawer.classList.add("open"); scrim.classList.add("open");
+  drawer.setAttribute("aria-hidden", "false");
+  const f = drawer.querySelector("input,select,textarea");
+  if (f) f.focus();
+  drawer.querySelectorAll("[data-close]").forEach(b => b.onclick = closeDrawer);
+}
+
+function field(label, name, value, type){
+  return `<label class="field"><span>${label}</span>
+    <input type="${type || "text"}" name="${name}" value="${esc(value)}"></label>`;
+}
+
+function partnerDrawer(id){
+  const isNew = !id;
+  const p = isNew
+    ? {id:uid("p"), name:"", cat:"carrier", country:"", why:"", ask:"", stage:"identified",
+       owner:"", contact:"", next:"", nextDate:"", notes:""}
+    : DB.partners.find(x => x.id === id);
+  if (!p) return;
+
+  openDrawer(`
+    <header>
+      <h3>${isNew ? "New partner" : esc(p.name)}</h3>
+      <button class="btn ghost" data-close>Close</button>
+    </header>
+    <div class="body">
+      ${field("Organisation", "name", p.name)}
+      <div style="display:grid; grid-template-columns:1fr 96px; gap:10px">
+        <label class="field"><span>Type</span><select name="cat">
+          ${Object.entries(CATEGORIES).map(([k, c]) => `<option value="${k}" ${p.cat === k ? "selected" : ""}>${c.label}</option>`).join("")}
+        </select></label>
+        ${field("Country", "country", p.country)}
+      </div>
+      <label class="field"><span>Stage</span><select name="stage">
+        ${ALL_STAGES.map(s => `<option value="${s.id}" ${p.stage === s.id ? "selected" : ""}>${s.label} — ${s.hint}</option>`).join("")}
+      </select></label>
+      <label class="field"><span>Why them</span><textarea name="why" rows="2">${esc(p.why)}</textarea></label>
+      <label class="field"><span>What we want from them</span><textarea name="ask" rows="2">${esc(p.ask)}</textarea></label>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        ${field("Owner (us)", "owner", p.owner)}
+        ${field("Contact (them)", "contact", p.contact)}
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 130px; gap:10px">
+        ${field("Next move", "next", p.next)}
+        ${field("Due", "nextDate", p.nextDate, "date")}
+      </div>
+      <label class="field"><span>Notes</span><textarea name="notes" rows="7">${esc(p.notes)}</textarea></label>
+      ${isNew ? "" : `<button class="btn" data-goout="${p.id}" style="align-self:flex-start">Write outreach for this partner ›</button>`}
+    </div>
+    <footer>
+      ${isNew ? "" : '<button class="btn danger" data-del>Delete</button>'}
+      <span class="spacer"></span>
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" data-save>Save</button>
+    </footer>`);
+
+  drawer.querySelector("[data-save]").onclick = () => {
+    drawer.querySelectorAll("[name]").forEach(el => p[el.name] = el.value.trim());
+    if (!p.name){ toast("Give it a name first"); return; }
+    delete p.seeded;
+    if (isNew) DB.partners.push(p);
+    save(); closeDrawer(); renderRail(); render(); toast(isNew ? "Partner added" : "Saved");
+  };
+  const del = drawer.querySelector("[data-del]");
+  if (del) del.onclick = () => {
+    if (!confirm("Delete " + p.name + "? This cannot be undone.")) return;
+    DB.partners = DB.partners.filter(x => x.id !== p.id);
+    save(); closeDrawer(); renderRail(); render(); toast("Deleted");
+  };
+  const out = drawer.querySelector("[data-goout]");
+  if (out) out.onclick = () => { outState.partner = p.id; closeDrawer(); go("outreach"); };
+}
+
+function taskDrawer(id){
+  const isNew = !id;
+  const t = isNew
+    ? {id:uid("t"), ws:DB.workstreams[0].id, title:"", owner:"", start:"", due:"", status:"todo", partner:""}
+    : DB.tasks.find(x => x.id === id);
+  if (!t) return;
+
+  openDrawer(`
+    <header><h3>${isNew ? "New task" : "Task"}</h3><button class="btn ghost" data-close>Close</button></header>
+    <div class="body">
+      <label class="field"><span>Task</span><textarea name="title" rows="2">${esc(t.title)}</textarea></label>
+      <label class="field"><span>Workstream</span><select name="ws">
+        ${DB.workstreams.map(w => `<option value="${w.id}" ${t.ws === w.id ? "selected" : ""}>${w.id} — ${esc(w.name)}</option>`).join("")}
+      </select></label>
+      <label class="field"><span>Status</span><select name="status">
+        ${STATUS_CYCLE.map(s => `<option value="${s}" ${t.status === s ? "selected" : ""}>${statusLabel[s]}</option>`).join("")}
+      </select></label>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        ${field("Start", "start", t.start || "", "date")}
+        ${field("Due", "due", t.due, "date")}
+      </div>
+      ${field("Owner", "owner", t.owner)}
+      <label class="field"><span>Linked partner</span><select name="partner">
+        <option value="">— none —</option>
+        ${DB.partners.slice().sort((a, b) => a.name.localeCompare(b.name))
+          .map(p => `<option value="${p.id}" ${t.partner === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}
+      </select></label>
+    </div>
+    <footer>
+      ${isNew ? "" : '<button class="btn danger" data-del>Delete</button>'}
+      <span class="spacer"></span>
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" data-save>Save</button>
+    </footer>`);
+
+  drawer.querySelector("[data-save]").onclick = () => {
+    drawer.querySelectorAll("[name]").forEach(el => t[el.name] = el.value.trim());
+    if (!t.title){ toast("Give it a title first"); return; }
+    if (isNew) DB.tasks.push(t);
+    save(); closeDrawer(); renderRail(); render(); toast(isNew ? "Task added" : "Saved");
+  };
+  const del = drawer.querySelector("[data-del]");
+  if (del) del.onclick = () => {
+    DB.tasks = DB.tasks.filter(x => x.id !== t.id);
+    save(); closeDrawer(); renderRail(); render(); toast("Deleted");
+  };
+}
+
+function dataDrawer(){
+  openDrawer(`
+    <header><h3>Data</h3><button class="btn ghost" data-close>Close</button></header>
+    <div class="body">
+      <div class="note">Your edits are saved in this browser only. To share them with the team, export and send the file back — the master copy lives in the project folder and the link is redeployed from it.</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn primary" data-export>Export JSON</button>
+        <button class="btn" data-copy>Copy JSON</button>
+        <button class="btn danger" data-reset>Reset to seed</button>
+      </div>
+      <label class="field"><span>Paste JSON to import</span>
+        <textarea id="importBox" rows="12" placeholder="Paste an exported file here, then press Import."></textarea></label>
+      <button class="btn" data-import style="align-self:flex-start">Import</button>
+      <p style="color:var(--ink-3); font-size:12px; margin:0">
+        ${DB.partners.length} partners · ${DB.tasks.length} tasks · ${DB.milestones.length} milestones
+      </p>
+    </div>
+    <footer><span class="spacer"></span><button class="btn" data-close>Done</button></footer>`);
+
+  const json = () => JSON.stringify(DB, null, 2);
+
+  drawer.querySelector("[data-export]").onclick = async () => {
+    if (!window.claude || !window.claude.downloads){ toast("Downloads unavailable here — use Copy JSON"); return; }
+    try {
+      await window.claude.downloads.save({filename:"lionscraft-desk.json", data:json()});
+      toast("Exported");
+    } catch (err){
+      const code = err && err.code;
+      if (code === "declined") return;
+      toast(code === "rate_limited" ? "Try again in a moment" : "Could not export — use Copy JSON");
+    }
+  };
+  drawer.querySelector("[data-copy]").onclick = async () => {
+    try { await navigator.clipboard.writeText(json()); toast("JSON copied"); }
+    catch (e) { toast("Clipboard blocked — export instead"); }
+  };
+  drawer.querySelector("[data-import]").onclick = () => {
+    const raw = document.getElementById("importBox").value.trim();
+    if (!raw){ toast("Paste some JSON first"); return; }
+    let next;
+    try { next = JSON.parse(raw); }
+    catch (e){ toast("That is not valid JSON"); return; }
+    if (!Array.isArray(next.partners) || !Array.isArray(next.tasks)){
+      toast("That file is missing partners or tasks"); return;
+    }
+    DB = next; save(); closeDrawer(); renderRail(); render(); toast("Imported");
+  };
+  drawer.querySelector("[data-reset]").onclick = () => {
+    if (!confirm("Reset everything to the seeded content? Your local edits will be lost.")) return;
+    DB = structuredClone(SEED); save(); closeDrawer(); renderRail(); render(); toast("Reset to seed");
+  };
+}
+
+/* ══ Global wiring ════════════════════════════════════════════════════ */
+
+document.getElementById("dataBtn").onclick = dataDrawer;
+
+document.getElementById("view").addEventListener("click", e => {
+  const nav = e.target.closest("[data-view]");
+  if (nav){ go(nav.dataset.view); return; }
+
+  const cyc = e.target.closest("[data-cycle]");
+  if (cyc){
+    e.stopPropagation();
+    const t = DB.tasks.find(x => x.id === cyc.dataset.cycle);
+    t.status = STATUS_CYCLE[(STATUS_CYCLE.indexOf(t.status) + 1) % STATUS_CYCLE.length];
+    save(); renderRail(); render(); return;
+  }
+
+  const mode = e.target.closest("[data-mode]");
+  if (mode){ planMode = mode.dataset.mode; render(); return; }
+
+  const col = e.target.closest("[data-collapse]");
+  if (col){
+    const id = col.dataset.collapse;
+    collapsed.has(id) ? collapsed.delete(id) : collapsed.add(id);
+    render(); return;
+  }
+
+  const ms = e.target.closest("[data-ms]");
+  if (ms && current === "plan"){
+    const m = DB.milestones.find(x => x.id === ms.dataset.ms);
+    m.hit = !m.hit; save(); render(); return;
+  }
+
+  /* Timeline bars and diamonds are driven by pointer events, not clicks. */
+  if (e.target.closest(".gbar, .gms")) return;
+
+  const kc = e.target.closest("[data-card]");
+  if (kc){ taskDrawer(kc.dataset.card); return; }
+
+  const pr = e.target.closest("[data-partner]");
+  if (pr){ partnerDrawer(pr.dataset.partner); return; }
+
+  const tr = e.target.closest("[data-task]");
+  if (tr){ taskDrawer(tr.dataset.task); return; }
+
+  if (e.target.id === "addPartner"){ partnerDrawer(null); return; }
+  if (e.target.id === "addTask"){ taskDrawer(null); return; }
+  if (e.target.id === "fClear"){ filters = {stage:"", cat:"", q:""}; render(); return; }
+});
+
+document.getElementById("view").addEventListener("change", e => {
+  if (e.target.id === "fStage"){ filters.stage = e.target.value; render(); }
+  if (e.target.id === "fCat"){ filters.cat = e.target.value; render(); }
+});
+document.getElementById("view").addEventListener("input", e => {
+  if (e.target.id === "fQ"){
+    filters.q = e.target.value;
+    const pos = e.target.selectionStart;
+    render();
+    const el = document.getElementById("fQ");
+    if (el){ el.focus(); el.setSelectionRange(pos, pos); }
+  }
+});
+
+document.getElementById("themeBtn").onclick = () => {
+  const root = document.documentElement;
+  const dark = root.getAttribute("data-theme") === "dark" ||
+    (!root.hasAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+  root.setAttribute("data-theme", dark ? "light" : "dark");
+};
+
+renderRail();
+render();
+</script>
