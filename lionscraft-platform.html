@@ -421,6 +421,51 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 .drawer > footer{padding:12px 18px; border-top:1px solid var(--line); display:flex; gap:8px}
 .drawer > footer .spacer{margin-left:auto}
 
+/* ─── Activity feed and threads ──────────────────────────────────────── */
+.feed{display:flex; flex-direction:column}
+.ev{
+  display:grid; grid-template-columns:24px minmax(0,1fr); gap:11px;
+  padding:12px 15px; border-bottom:1px solid var(--line);
+}
+.ev:last-child{border-bottom:0}
+.ev .av{
+  width:24px; height:24px; border-radius:5px; display:grid; place-items:center;
+  font-family:var(--data); font-size:10px; font-weight:600; letter-spacing:0;
+  background:var(--surface-2); color:var(--ink-2); border:1px solid var(--line); flex:none;
+}
+.ev.agent .av{background:var(--accent-soft); color:var(--accent-ink); border-color:transparent}
+:root[data-theme="dark"] .ev.agent .av{color:var(--accent)}
+@media (prefers-color-scheme: dark){.ev.agent .av{color:var(--accent)}}
+:root[data-theme="light"] .ev.agent .av{color:var(--accent-ink)}
+.ev .hd{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:2px}
+.ev .who{font-weight:600; font-size:12.5px}
+.ev .when, .ev .on{font-family:var(--data); font-size:10.5px; color:var(--ink-3)}
+.ev .on{cursor:pointer}
+.ev .on:hover{color:var(--accent)}
+.ev .body{font-size:13px; color:var(--ink-2); white-space:pre-wrap; overflow-wrap:anywhere}
+.ev .body b{color:var(--ink); font-weight:600}
+.kind{
+  font-family:var(--data); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
+  padding:1px 6px; border-radius:3px; background:var(--surface-2); color:var(--ink-3); border:1px solid var(--line);
+}
+.kind.finding{background:var(--accent-soft); color:var(--accent-ink); border-color:transparent}
+:root[data-theme="dark"] .kind.finding{color:var(--accent)}
+@media (prefers-color-scheme: dark){.kind.finding{color:var(--accent)}}
+:root[data-theme="light"] .kind.finding{color:var(--accent-ink)}
+.kind.question{background:var(--ochre-soft); color:var(--ochre); border-color:transparent}
+.kind.handoff{background:var(--ochre-soft); color:var(--ochre); border-color:transparent}
+.kind.change{background:transparent}
+.ev .to{font-family:var(--data); font-size:10.5px; color:var(--ochre)}
+
+.thread{display:flex; flex-direction:column; gap:9px; margin-top:2px}
+.thread .ev{padding:9px 0; border-bottom:1px solid var(--line); grid-template-columns:20px minmax(0,1fr); gap:9px}
+.thread .ev .av{width:20px; height:20px; font-size:9px}
+.thread .ev:last-child{border-bottom:0}
+.composer{display:flex; flex-direction:column; gap:7px}
+.composer textarea{min-height:62px; font-family:var(--body); font-size:13px}
+.composer .row{display:flex; gap:7px; align-items:center}
+.composer select{flex:none}
+
 /* ─── Sync chip and banner ───────────────────────────────────────────── */
 .syncchip{
   display:inline-flex; align-items:center; gap:7px; background:transparent; border:1px solid var(--line);
@@ -853,6 +898,10 @@ const SEED = {
     {id:"t904", ws:"WS9", title:"Website copy from the master narrative", owner:"", start:"2026-10-05", due:"2026-10-31", status:"todo", partner:""}
   ],
 
+  /* Append-only-by-convention log. Comments, agent notes, directed messages
+     between agents, and a record of state changes. See AGENTS.md. */
+  activity: [],
+
   milestones: [
     {id:"m1", name:"Operator MoU signed",            date:"2026-12-19", hit:false, note:"Lead operator committed to co-design, telemetry access and candidate response commitments."},
     {id:"m2", name:"Term sheet v1 issued",           date:"2027-01-16", hit:false, note:"Risk, layers, capital, triggers and obligations described well enough to quote against."},
@@ -957,6 +1006,15 @@ function markPublished(rev){
   renderRail(); renderBanner(); render();
 }
 
+/* Who this browser is, so comments and changes are attributable. Agents identify
+   themselves by their own name in the same field. */
+const ME_KEY = "lionscraft-desk-me";
+let me = "";
+try { me = localStorage.getItem(ME_KEY) || ""; } catch (e) {}
+const whoami = () => me || "unattributed";
+
+if (!Array.isArray(DB.activity)) DB.activity = [];
+
 /* Backfill start dates for data saved before the timeline existed. Only fills
    a missing field — never overwrites anything the team has edited. */
 (function backfillStarts(){
@@ -1019,6 +1077,50 @@ function monthsBetween(from, to){
 const monthStart = mo => mo.key + "-01";
 const monthEnd = mo => new Date(Date.UTC(mo.y, mo.m, 0)).toISOString().slice(0, 10);
 
+/* ══ Activity log ═════════════════════════════════════════════════════ */
+
+/* One entry per thing said or changed. Agents write these too — the log is how
+   they leave findings for each other and for you. Shape is documented in
+   AGENTS.md and must stay stable, because external agents write against it. */
+const EVENT_KINDS = {
+  comment:  {label:"Comment",  hint:"Something said about this"},
+  change:   {label:"Change",   hint:"A state change worth recording"},
+  finding:  {label:"Finding",  hint:"Research an agent turned up"},
+  question: {label:"Question", hint:"Needs an answer before work continues"},
+  handoff:  {label:"Handoff",  hint:"Passed to a named actor"}
+};
+
+function logEvent(e){
+  const entry = Object.assign({
+    id: uid("e"),
+    at: new Date().toISOString(),
+    actor: whoami(),
+    actorKind: "human",
+    kind: "comment"
+  }, e);
+  DB.activity.push(entry);
+  return entry;
+}
+
+const eventsFor = (refType, ref) =>
+  DB.activity.filter(e => e.refType === refType && e.ref === ref)
+             .sort((a, b) => (a.at || "").localeCompare(b.at || ""));
+
+/* Human-scale relative time; falls back to the date once it stops being useful. */
+function ago(iso){
+  if (!iso) return "";
+  const t = Date.parse(iso);
+  if (isNaN(t)) return iso;
+  const mins = Math.round((Date.now() - t) / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return mins + "m ago";
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return hrs + "h ago";
+  const days = Math.round(hrs / 24);
+  if (days < 8) return days + "d ago";
+  return fmtDate(iso.slice(0, 10));
+}
+
 let toastTimer;
 function toast(msg){
   const el = document.getElementById("toast");
@@ -1034,6 +1136,7 @@ const VIEWS = [
   {id:"partners",  label:"Partners",   count:() => DB.partners.length},
   {id:"plan",      label:"Plan",       count:() => DB.tasks.filter(t => t.status !== "done").length},
   {id:"board",     label:"Board",      count:() => DB.tasks.filter(t => t.status === "doing" || t.status === "blocked").length},
+  {id:"activity",  label:"Activity",   count:() => DB.activity.length || ""},
   {id:"outreach",  label:"Outreach",   count:() => ""},
   {id:"narrative", label:"Narrative",  count:() => ""}
 ];
@@ -1133,9 +1236,11 @@ function render(){
     partners:  viewPartners,
     plan:      viewPlan,
     board:     viewBoard,
+    activity:  viewActivity,
     outreach:  viewOutreach,
     narrative: viewNarrative
   })[current]();
+  if (current === "activity") wireActivity();
   if (current === "outreach") wireOutreach();
   if (current === "board") wireBoard();
   if (current === "plan" && planMode === "gantt") wireGantt();
@@ -1499,7 +1604,9 @@ function wireBoard(){
       const id = dragId || e.dataTransfer.getData("text/plain");
       const t = DB.tasks.find(x => x.id === id);
       if (!t || t.status === col.dataset.col) return;
+      const was = t.status;
       t.status = col.dataset.col;
+      logEvent({kind:"change", refType:"task", ref:t.id, body:statusLabel[was] + " → " + statusLabel[t.status]});
       save(); renderRail(); render();
       toast("Moved to " + statusLabel[t.status]);
     });
@@ -1754,6 +1861,153 @@ function planList(){
       </tbody></table></div>
     </section>`;
   }).join("");
+}
+
+/* ── Activity ─────────────────────────────────────────────────────── */
+
+let actFilter = {actor:"", kind:"", q:""};
+
+const refLabel = e => {
+  if (e.refType === "partner"){ const p = DB.partners.find(x => x.id === e.ref); return p ? p.name : e.ref; }
+  if (e.refType === "task"){ const t = DB.tasks.find(x => x.id === e.ref); return t ? t.title : e.ref; }
+  if (e.refType === "milestone"){ const m = DB.milestones.find(x => x.id === e.ref); return m ? m.name : e.ref; }
+  return e.ref || "the board";
+};
+
+const initials = name => (name || "?").split(/[\s\-_]+/).filter(Boolean).slice(0, 2)
+  .map(w => w[0]).join("").toUpperCase() || "?";
+
+function eventRow(e, showRef){
+  return `
+  <div class="ev ${e.actorKind === "agent" ? "agent" : ""}">
+    <span class="av" title="${e.actorKind === "agent" ? "Agent" : "Person"}">${initials(e.actor)}</span>
+    <div>
+      <div class="hd">
+        <span class="who">${esc(e.actor)}</span>
+        <span class="kind ${e.kind}">${(EVENT_KINDS[e.kind] || {label:e.kind}).label}</span>
+        ${e.to ? `<span class="to">→ ${esc(e.to)}</span>` : ""}
+        <span class="when">${ago(e.at)}</span>
+        ${showRef && e.ref ? `<span class="on" data-goref="${e.refType}:${e.ref}">on ${esc(refLabel(e))}</span>` : ""}
+      </div>
+      <div class="body">${esc(e.body || e.summary || "")}</div>
+    </div>
+  </div>`;
+}
+
+function viewActivity(){
+  let list = DB.activity.slice().sort((a, b) => (b.at || "").localeCompare(a.at || ""));
+  if (actFilter.actor) list = list.filter(e => e.actor === actFilter.actor);
+  if (actFilter.kind) list = list.filter(e => e.kind === actFilter.kind);
+  if (actFilter.q){
+    const q = actFilter.q.toLowerCase();
+    list = list.filter(e => ((e.body || "") + (e.summary || "") + refLabel(e)).toLowerCase().includes(q));
+  }
+
+  const actors = [...new Set(DB.activity.map(e => e.actor))].sort();
+  const agents = [...new Set(DB.activity.filter(e => e.actorKind === "agent").map(e => e.actor))];
+  const open = DB.activity.filter(e => e.kind === "question").length;
+
+  return `
+  <div class="pagehead">
+    <div>
+      <div class="eyebrow">Shared log</div>
+      <h1>Activity</h1>
+      <p>Everything said and changed, by people and by agents. This is also how agents leave findings for each other — they read this log on their next run.</p>
+    </div>
+    <div class="tools"><button class="btn primary" id="newNote">Add a note</button></div>
+  </div>
+
+  <div class="grid" style="gap:14px">
+    <div class="stats">
+      <div class="stat"><b>${DB.activity.length}</b><small>Entries</small></div>
+      <div class="stat"><b>${agents.length}</b><small>Agents active</small></div>
+      <div class="stat ${open ? "alert" : ""}"><b>${open}</b><small>Open questions</small></div>
+      <div class="stat"><b>${DB.activity.filter(e => e.kind === "finding").length}</b><small>Findings</small></div>
+    </div>
+
+    <section class="card">
+      <header>
+        <div class="filters">
+          <select id="actActor">
+            <option value="">Everyone</option>
+            ${actors.map(a => `<option value="${esc(a)}" ${actFilter.actor === a ? "selected" : ""}>${esc(a)}</option>`).join("")}
+          </select>
+          <select id="actKind">
+            <option value="">All kinds</option>
+            ${Object.entries(EVENT_KINDS).map(([k, v]) => `<option value="${k}" ${actFilter.kind === k ? "selected" : ""}>${v.label}</option>`).join("")}
+          </select>
+          <input type="text" id="actQ" placeholder="Search…" value="${esc(actFilter.q)}" style="width:170px">
+          ${(actFilter.actor || actFilter.kind || actFilter.q) ? '<button class="btn ghost" id="actClear">Clear</button>' : ""}
+        </div>
+        <span class="spacer"></span>
+        <span class="cat">${list.length} shown</span>
+      </header>
+      <div class="feed">
+        ${list.length ? list.map(e => eventRow(e, true)).join("")
+          : `<div class="empty">Nothing logged yet.<br><span style="font-size:12px">Comments you leave on a partner or task appear here, and so does anything an agent writes.</span></div>`}
+      </div>
+    </section>
+
+    <div class="note">Agents write to this log through the repo — see <code style="font-family:var(--data)">AGENTS.md</code>. Entries are attributed and timestamped, and nothing here is deleted by the app.</div>
+  </div>`;
+}
+
+function wireActivity(){
+  const a = document.getElementById("actActor");
+  if (a) a.onchange = e => { actFilter.actor = e.target.value; render(); };
+  const k = document.getElementById("actKind");
+  if (k) k.onchange = e => { actFilter.kind = e.target.value; render(); };
+  const q = document.getElementById("actQ");
+  if (q) q.oninput = e => {
+    actFilter.q = e.target.value;
+    const pos = e.target.selectionStart;
+    render();
+    const el = document.getElementById("actQ");
+    if (el){ el.focus(); el.setSelectionRange(pos, pos); }
+  };
+  const c = document.getElementById("actClear");
+  if (c) c.onclick = () => { actFilter = {actor:"", kind:"", q:""}; render(); };
+}
+
+/* A thread plus composer, embedded in the partner and task drawers. */
+function threadBlock(refType, ref){
+  const list = eventsFor(refType, ref);
+  return `
+  <div>
+    <span class="eyebrow">Thread${list.length ? " · " + list.length : ""}</span>
+    <div class="thread" style="margin-bottom:9px">
+      ${list.length ? list.map(e => eventRow(e, false)).join("")
+        : '<p style="color:var(--ink-3); font-size:12.5px; margin:6px 0 0">Nothing yet. Notes you add here are visible to everyone, including agents.</p>'}
+    </div>
+    <div class="composer">
+      <textarea id="cmtBody" rows="2" placeholder="Add a note…"></textarea>
+      <div class="row">
+        <select id="cmtKind">
+          ${Object.entries(EVENT_KINDS).filter(([k]) => k !== "change")
+            .map(([k, v]) => `<option value="${k}">${v.label}</option>`).join("")}
+        </select>
+        <button class="btn" id="cmtAdd">Post</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function wireThread(refType, ref, after){
+  const btn = drawer.querySelector("#cmtAdd");
+  if (!btn) return;
+  btn.onclick = () => {
+    const body = drawer.querySelector("#cmtBody").value.trim();
+    if (!body){ toast("Write something first"); return; }
+    if (!me){
+      const name = prompt("Your name, so the note is attributable:", "");
+      if (!name) return;
+      me = name.trim(); try { localStorage.setItem(ME_KEY, me); } catch (e) {}
+    }
+    logEvent({kind:drawer.querySelector("#cmtKind").value, refType, ref, body});
+    save(); renderRail();
+    if (after) after();
+    toast("Posted");
+  };
 }
 
 /* ── Outreach ─────────────────────────────────────────────────────── */
@@ -2409,8 +2663,9 @@ function partnerDrawer(id){
         ${field("Next move", "next", p.next)}
         ${field("Due", "nextDate", p.nextDate, "date")}
       </div>
-      <label class="field"><span>Notes</span><textarea name="notes" rows="7">${esc(p.notes)}</textarea></label>
+      <label class="field"><span>Notes</span><textarea name="notes" rows="5">${esc(p.notes)}</textarea></label>
       ${isNew ? "" : `<button class="btn" data-goout="${p.id}" style="align-self:flex-start">Write outreach for this partner ›</button>`}
+      ${isNew ? "" : threadBlock("partner", p.id)}
     </div>
     <footer>
       ${isNew ? "" : '<button class="btn danger" data-del>Delete</button>'}
@@ -2419,11 +2674,18 @@ function partnerDrawer(id){
       <button class="btn primary" data-save>Save</button>
     </footer>`);
 
+  wireThread("partner", p.id, () => partnerDrawer(p.id));
+
   drawer.querySelector("[data-save]").onclick = () => {
+    const wasStage = p.stage;
     drawer.querySelectorAll("[name]").forEach(el => p[el.name] = el.value.trim());
     if (!p.name){ toast("Give it a name first"); return; }
     delete p.seeded;
     if (isNew) DB.partners.push(p);
+    else if (wasStage !== p.stage){
+      logEvent({kind:"change", refType:"partner", ref:p.id,
+        body:stageLabel(wasStage) + " → " + stageLabel(p.stage)});
+    }
     save(); closeDrawer(); renderRail(); render(); toast(isNew ? "Partner added" : "Saved");
   };
   const del = drawer.querySelector("[data-del]");
@@ -2463,6 +2725,7 @@ function taskDrawer(id){
         ${DB.partners.slice().sort((a, b) => a.name.localeCompare(b.name))
           .map(p => `<option value="${p.id}" ${t.partner === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}
       </select></label>
+      ${isNew ? "" : threadBlock("task", t.id)}
     </div>
     <footer>
       ${isNew ? "" : '<button class="btn danger" data-del>Delete</button>'}
@@ -2471,16 +2734,71 @@ function taskDrawer(id){
       <button class="btn primary" data-save>Save</button>
     </footer>`);
 
+  wireThread("task", t.id, () => taskDrawer(t.id));
+
   drawer.querySelector("[data-save]").onclick = () => {
+    const wasStatus = t.status;
     drawer.querySelectorAll("[name]").forEach(el => t[el.name] = el.value.trim());
     if (!t.title){ toast("Give it a title first"); return; }
     if (isNew) DB.tasks.push(t);
+    else if (wasStatus !== t.status){
+      logEvent({kind:"change", refType:"task", ref:t.id,
+        body:statusLabel[wasStatus] + " → " + statusLabel[t.status]});
+    }
     save(); closeDrawer(); renderRail(); render(); toast(isNew ? "Task added" : "Saved");
   };
   const del = drawer.querySelector("[data-del]");
   if (del) del.onclick = () => {
     DB.tasks = DB.tasks.filter(x => x.id !== t.id);
     save(); closeDrawer(); renderRail(); render(); toast("Deleted");
+  };
+}
+
+/* A note against the board as a whole, or aimed at a named actor — the way a
+   person answers an agent's question without opening the record it came from. */
+function noteDrawer(){
+  openDrawer(`
+    <header><h3>Add a note</h3><button class="btn ghost" data-close>Close</button></header>
+    <div class="body">
+      <label class="field"><span>Note</span><textarea id="nBody" rows="5" placeholder="What happened, what you found, or what someone should pick up."></textarea></label>
+      <label class="field"><span>Kind</span><select id="nKind">
+        ${Object.entries(EVENT_KINDS).filter(([k]) => k !== "change")
+          .map(([k, v]) => `<option value="${k}">${v.label} — ${v.hint}</option>`).join("")}
+      </select></label>
+      <label class="field"><span>About</span><select id="nRef">
+        <option value="board:">The board generally</option>
+        <optgroup label="Partners">
+          ${DB.partners.slice().sort((a, b) => a.name.localeCompare(b.name))
+            .map(p => `<option value="partner:${p.id}">${esc(p.name)}</option>`).join("")}
+        </optgroup>
+        <optgroup label="Tasks">
+          ${DB.tasks.map(t => `<option value="task:${t.id}">${esc(t.title)}</option>`).join("")}
+        </optgroup>
+      </select></label>
+      <label class="field"><span>Directed at (optional)</span>
+        <input type="text" id="nTo" placeholder="e.g. partner-researcher"></label>
+      <div class="note">Anything here is readable by every agent working on this board, and by anyone with the link. It is a shared log, not a private note.</div>
+    </div>
+    <footer><span class="spacer"></span>
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" id="nSave">Post</button></footer>`);
+
+  drawer.querySelector("#nSave").onclick = () => {
+    const body = drawer.querySelector("#nBody").value.trim();
+    if (!body){ toast("Write something first"); return; }
+    if (!me){
+      const name = prompt("Your name, so the note is attributable:", "");
+      if (!name) return;
+      me = name.trim(); try { localStorage.setItem(ME_KEY, me); } catch (e) {}
+    }
+    const [refType, ref] = drawer.querySelector("#nRef").value.split(":");
+    const to = drawer.querySelector("#nTo").value.trim();
+    logEvent({
+      kind: drawer.querySelector("#nKind").value,
+      refType, ref: ref || "", body,
+      to: to || undefined
+    });
+    save(); closeDrawer(); renderRail(); render(); toast("Posted");
   };
 }
 
@@ -2518,13 +2836,16 @@ function dataDrawer(){
         </div>
       </div>
 
+      <label class="field"><span>Your name — used to attribute notes and changes</span>
+        <input type="text" id="meName" value="${esc(me)}" placeholder="e.g. Toni"></label>
+
       <label class="field"><span>Paste JSON to import</span>
-        <textarea id="importBox" rows="9" placeholder="Paste an exported file here, then press Import."></textarea></label>
+        <textarea id="importBox" rows="7" placeholder="Paste an exported file here, then press Import."></textarea></label>
       <button class="btn" data-import style="align-self:flex-start">Import</button>
 
       <p style="color:var(--ink-3); font-size:12px; margin:0">
         ${DB.partners.length} partners · ${DB.tasks.length} tasks · ${DB.milestones.length} milestones
-        · last published ${fmtDate(DB.meta.updated)}
+        · ${DB.activity.length} log entries · last published ${fmtDate(DB.meta.updated)}
       </p>
     </div>
     <footer><span class="spacer"></span><button class="btn" data-close>Done</button></footer>`);
@@ -2552,6 +2873,13 @@ function dataDrawer(){
     }
   };
   drawer.querySelector("[data-copy]").onclick = () => copy(JSON.stringify(DB, null, 2), "JSON copied");
+
+  const nameBox = drawer.querySelector("#meName");
+  if (nameBox) nameBox.onchange = () => {
+    me = nameBox.value.trim();
+    try { localStorage.setItem(ME_KEY, me); } catch (e) {}
+    toast(me ? "Notes will be attributed to " + me : "Attribution cleared");
+  };
 
   drawer.querySelector("[data-import]").onclick = () => {
     const raw = document.getElementById("importBox").value.trim();
@@ -2589,7 +2917,9 @@ document.getElementById("view").addEventListener("click", e => {
   if (cyc){
     e.stopPropagation();
     const t = DB.tasks.find(x => x.id === cyc.dataset.cycle);
+    const was = t.status;
     t.status = STATUS_CYCLE[(STATUS_CYCLE.indexOf(t.status) + 1) % STATUS_CYCLE.length];
+    logEvent({kind:"change", refType:"task", ref:t.id, body:statusLabel[was] + " → " + statusLabel[t.status]});
     save(); renderRail(); render(); return;
   }
 
@@ -2603,10 +2933,20 @@ document.getElementById("view").addEventListener("click", e => {
     render(); return;
   }
 
+  const ref = e.target.closest("[data-goref]");
+  if (ref){
+    const [type, id] = ref.dataset.goref.split(":");
+    if (type === "partner") partnerDrawer(id);
+    else if (type === "task") taskDrawer(id);
+    return;
+  }
+
   const ms = e.target.closest("[data-ms]");
   if (ms && current === "plan"){
     const m = DB.milestones.find(x => x.id === ms.dataset.ms);
-    m.hit = !m.hit; save(); render(); return;
+    m.hit = !m.hit;
+    logEvent({kind:"change", refType:"milestone", ref:m.id, body:m.hit ? "Milestone reached" : "Milestone reopened"});
+    save(); render(); return;
   }
 
   /* Timeline bars and diamonds are driven by pointer events, not clicks. */
@@ -2623,6 +2963,7 @@ document.getElementById("view").addEventListener("click", e => {
 
   if (e.target.id === "addPartner"){ partnerDrawer(null); return; }
   if (e.target.id === "addTask"){ taskDrawer(null); return; }
+  if (e.target.id === "newNote"){ noteDrawer(); return; }
   if (e.target.id === "fClear"){ filters = {stage:"", cat:"", q:""}; render(); return; }
 });
 
