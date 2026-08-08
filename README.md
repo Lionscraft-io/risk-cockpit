@@ -4,18 +4,30 @@ Working infrastructure for the **programmable risk transfer** project: partner C
 facility project plan, kanban board, outreach material generator, and the narrative
 reference that keeps everything on-message.
 
-The application is a single self-contained HTML file. No build step, no
-dependencies, no server. The shared dataset lives beside it in this repo, so git
-is the database.
+The application is a single self-contained HTML file. The live data lives in a
+small API service; this repo is the code home, the agent contract, and the
+fallback data store.
 
 ```
 lionscraft-platform.html    the entire application
-data/desk.json              the shared dataset — the source of truth
+data/desk.json              backup snapshot of the dataset (the API is live truth)
+data/schema.json            formal shape of the dataset
+scripts/validate.mjs        zero-dependency validator (node scripts/validate.mjs)
+AGENTS.md                   the contract for agents working on the board
 index.html                  redirect so the Pages root serves the desk
 docs/master-narrative.md    source of truth for the story and the guardrails
 ```
 
-**Live:** https://lionscraft-io.github.io/risk-cockpit/
+| Where | What |
+| --- | --- |
+| https://lionscraft-io.github.io/risk-cockpit/ | The desk (GitHub Pages) |
+| https://risk-cockpit-api.replit.app | Live backend: same desk at `/`, REST at `/api/…`, MCP at `/mcp` |
+
+The desk connects to the backend automatically from either host. With the API
+up, saves push live and everyone sees each other's changes within seconds;
+with it down, the desk falls back to the git-file flow described below.
+Writing (from the UI or by an agent) needs the team write token — kept in the
+Replit Secrets pane, entered once under **Data** in the desk.
 
 ---
 
@@ -96,21 +108,35 @@ of it in outreach.
 
 ## How the data works
 
-`data/desk.json` in this repo is the shared truth. The app fetches it on load and
-uses it as the baseline. Your browser holds only your own unpublished edits on
-top, in `localStorage` under `lionscraft-desk-v1`.
+The API holds the live document and its `meta.revision` counter. The desk
+connects on load: saves push automatically (debounced, merged), and a 20-second
+poll picks up what other people and agents changed — adopted silently when you
+have nothing unpushed, offered via banner when you do. Conflicting pushes
+retry once against the fresh server state; the activity log always merges by id
+union, so nothing anyone said is ever lost, while data fields are
+last-write-wins.
 
-That means git is the database: every published change is a commit, with full
-history, blame and rollback.
+When the API is unreachable, the desk falls back to `data/desk.json` from the
+repo and the git publish flow below — nothing stops working, it just stops
+being live.
 
 ### What the chip in the top bar means
 
 | Chip | State |
 | --- | --- |
-| `rev N · in sync` | Your copy matches `data/desk.json`. |
-| `rev N · unpublished` | You have edits that are not in the repo yet. |
-| `update available` | The shared file moved on since your copy was taken. A banner offers **Load shared version** or **Keep mine** — it never overwrites your work silently. |
-| `local copy` | The shared file could not be fetched, so the embedded seed is standing in. |
+| `live · rev N` | Connected to the backend; saves push automatically. |
+| `token needed` | Backend reachable but this browser can't write — set the token under **Data**. |
+| `saving…` | Your edits are on their way to the backend. |
+| `rev N · in sync` | Git mode: your copy matches `data/desk.json`. |
+| `rev N · unpublished` | Git mode: you have edits not in the repo yet. |
+| `update available` | The shared version moved on since your copy was taken. A banner offers **Load shared version** or **Keep mine** — it never overwrites your work silently. |
+| `local copy` | No shared source reachable; the embedded seed is standing in. |
+
+### Agents
+
+Agents are first-class users of the same board — REST or MCP against the API,
+git as fallback, one shared write token, every action logged to the activity
+feed. The full contract is [AGENTS.md](AGENTS.md).
 
 The sync state is tracked separately from the data itself, in
 `localStorage['lionscraft-desk-sync']` as `{base, dirty}` — `base` is the shared

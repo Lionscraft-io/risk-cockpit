@@ -475,6 +475,11 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 .syncchip:hover{border-color:var(--line-strong); color:var(--ink-2)}
 .syncchip .dot{width:6px; height:6px; border-radius:50%; background:var(--ink-3); flex:none}
 .syncchip[data-s="synced"] .dot{background:var(--accent)}
+.syncchip[data-s="live"] .dot{background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+.syncchip[data-s="live"]{color:var(--accent-ink); border-color:var(--accent-soft)}
+:root[data-theme="dark"] .syncchip[data-s="live"]{color:var(--accent)}
+@media (prefers-color-scheme: dark){.syncchip[data-s="live"]{color:var(--accent)}}
+:root[data-theme="light"] .syncchip[data-s="live"]{color:var(--accent-ink)}
 .syncchip[data-s="ahead"] .dot{background:var(--ochre)}
 .syncchip[data-s="behind"] .dot{background:var(--danger)}
 .syncchip[data-s="ahead"]{color:var(--ochre); border-color:var(--ochre-soft)}
@@ -936,7 +941,103 @@ try {
 } catch (e) {}
 
 let shared = null;                 // the fetched shared dataset, if reachable
-let syncState = "local";           // local | synced | ahead | behind
+let syncState = "local";           // local | synced | ahead | behind | live
+
+/* ── Live backend ─────────────────────────────────────────────────────
+   When an API server is reachable, the desk works server-first: saves push
+   automatically, and a poll picks up what others (people or agents) changed.
+   Without it, everything falls back to the git flow above. */
+const DEFAULT_API = "https://risk-cockpit-api.replit.app";
+const API_KEY = "lionscraft-desk-api";
+const TOKEN_KEY = "lionscraft-desk-token";
+
+const apiBase = (() => {
+  try { const o = localStorage.getItem(API_KEY); if (o) return o.replace(/\/+$/, ""); } catch (e) {}
+  if (/\.(replit\.app|repl\.co|replit\.dev)$/.test(location.hostname)) return location.origin;
+  return DEFAULT_API;
+})();
+let apiToken = "";
+try { apiToken = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) {}
+
+let liveMode = false;
+let pushTimer = null, pollTimer = null, pushing = false;
+
+async function apiFetch(path, opts){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 6000);
+  try {
+    const res = await fetch(apiBase + path, Object.assign({signal:ctrl.signal, cache:"no-store"}, opts));
+    return res;
+  } finally { clearTimeout(t); }
+}
+
+/* Push local state to the server. Re-reads the server first and unions the
+   activity logs by id, so nothing anyone appended is ever lost — data fields
+   are last-write-wins, the log is merge-always. */
+async function pushLive(retried){
+  if (!liveMode || pushing) return;
+  if (!apiToken){ syncState = "ahead"; renderBanner(); return; }
+  pushing = true;
+  try {
+    const cur = await (await apiFetch("/api/desk")).json();
+    const seen = new Set(DB.activity.map(e => e.id));
+    for (const e of (cur.desk.activity || [])) if (!seen.has(e.id)) DB.activity.push(e);
+    DB.activity.sort((a, b) => (a.at || "").localeCompare(b.at || ""));
+    DB.meta.revision = cur.revision + 1;
+    DB.meta.updated = TODAY;
+    const res = await apiFetch("/api/desk", {
+      method:"PUT",
+      headers:{"content-type":"application/json", "authorization":"Bearer " + apiToken},
+      body:JSON.stringify(DB)
+    });
+    if (res.ok){
+      sync = {base:DB.meta.revision, dirty:false}; saveSync();
+      try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {}
+      syncState = "live"; renderBanner(); renderRail();
+    } else if (res.status === 409 && !retried){
+      pushing = false; return pushLive(true);
+    } else if (res.status === 401){
+      apiToken = ""; try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+      syncState = "ahead"; renderBanner();
+      toast("Write token rejected — set it under Data");
+    } else {
+      syncState = "ahead"; renderBanner();
+    }
+  } catch (e) {
+    syncState = "ahead"; renderBanner();   // offline; next save retries
+  } finally { pushing = false; }
+}
+
+const queuePush = () => {
+  if (!liveMode) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => pushLive(false), 900);
+};
+
+/* Poll for other people's and agents' changes. Adopt silently when this copy
+   has nothing unpushed; otherwise raise the banner and let the human choose. */
+function startPolling(){
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    if (document.hidden || pushing) return;
+    try {
+      const h = await (await apiFetch("/healthz")).json();
+      if (h.revision <= sync.base) return;
+      const cur = await (await apiFetch("/api/desk")).json();
+      shared = cur.desk;
+      if (!sync.dirty){
+        DB = structuredClone(shared);
+        sync = {base:cur.revision, dirty:false}; saveSync();
+        try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {}
+        syncState = "live";
+        renderRail(); renderBanner();
+        if (!drawer.classList.contains("open")) render();
+      } else {
+        syncState = "behind"; renderBanner();
+      }
+    } catch (e) { /* unreachable this tick; try again next tick */ }
+  }, 20000);
+}
 
 const saveSync = () => { try { localStorage.setItem(META_KEY, JSON.stringify(sync)); } catch (e) {} };
 const revOf = d => (d && d.meta && d.meta.revision) || 0;
@@ -946,6 +1047,30 @@ const revOf = d => (d && d.meta && d.meta.revision) || 0;
    is blocked by design, so the embedded seed stands in and we say so plainly
    rather than pretending to be in sync. */
 async function loadShared(){
+  /* Prefer the live API when one is configured and reachable. */
+  if (apiBase){
+    try {
+      const cur = await (await apiFetch("/api/desk")).json();
+      if (Array.isArray(cur.desk.partners)){
+        shared = cur.desk;
+        liveMode = true;
+        if (!hadLocal || !sync.dirty){
+          DB = structuredClone(shared);
+          sync = {base:cur.revision, dirty:false};
+          save(true); saveSync();
+          syncState = "live";
+        } else if (cur.revision > sync.base){
+          syncState = "behind";
+        } else {
+          syncState = "ahead";
+          queuePush();          // unpushed edits from last session — push them
+        }
+        startPolling();
+        return;
+      }
+    } catch (e) { /* API down or unreachable — fall through to the git file */ }
+  }
+
   try {
     const res = await fetch(SHARED_URL, {cache:"no-store"});
     if (!res.ok) throw new Error("HTTP " + res.status);
@@ -974,18 +1099,21 @@ function adoptShared(){
   DB = structuredClone(shared);
   sync = {base:revOf(shared), dirty:false};
   save(true); saveSync();
-  syncState = "synced";
+  syncState = liveMode ? "live" : "synced";
   renderRail(); renderBanner(); render();
   toast("Loaded shared revision " + revOf(shared));
 }
 
-/* Keep working locally, but stop being told about a revision already seen. */
+/* Keep working locally, but stop being told about a revision already seen.
+   In live mode "keep mine" means mine wins: push it (the activity log still
+   merges, so nothing anyone else said is lost). */
 function dismissShared(){
   sync.base = revOf(shared);
   sync.dirty = true;
   saveSync();
   syncState = "ahead";
   renderBanner(); render();
+  queuePush();
 }
 
 /* Stamp the current data as the next shared revision, ready to be committed. */
@@ -1033,9 +1161,12 @@ if (!Array.isArray(DB.activity)) DB.activity = [];
 const save = (quiet) => {
   try { localStorage.setItem(KEY, JSON.stringify(DB)); }
   catch (e) { toast("Could not save locally — this browser is blocking storage"); return; }
-  if (!quiet && !sync.dirty){
-    sync.dirty = true; saveSync();
-    if (syncState === "synced"){ syncState = "ahead"; renderBanner(); }
+  if (!quiet){
+    if (!sync.dirty){
+      sync.dirty = true; saveSync();
+      if (syncState === "synced" || syncState === "live"){ syncState = "ahead"; renderBanner(); }
+    }
+    queuePush();     // no-op unless live mode is on
   }
 };
 const uid = p => p + Math.random().toString(36).slice(2, 8);
@@ -1186,8 +1317,9 @@ window.addEventListener("popstate", () => {
 /* ══ Sync surface ═════════════════════════════════════════════════════ */
 
 const SYNC_LABEL = {
+  live:   () => "live · rev " + revOf(DB),
   synced: () => "rev " + revOf(DB) + " · in sync",
-  ahead:  () => "rev " + revOf(DB) + " · unpublished",
+  ahead:  () => liveMode ? (apiToken ? "saving…" : "token needed") : "rev " + revOf(DB) + " · unpublished",
   behind: () => "update available",
   local:  () => "local copy"
 };
@@ -1197,10 +1329,12 @@ function renderBanner(){
   chip.dataset.s = syncState;
   chip.querySelector(".txt").textContent = SYNC_LABEL[syncState]();
   chip.title = {
+    live:   "Connected to the live backend. Saves push automatically and others' changes arrive on their own.",
     synced: "This browser matches the shared version committed to the repo.",
-    ahead:  "You have edits that are not in the shared version yet. Open Data to publish them.",
+    ahead:  liveMode ? (apiToken ? "Pushing your edits to the live backend…" : "Edits are local only — set the write token under Data to push them.")
+                     : "You have edits that are not in the shared version yet. Open Data to publish them.",
     behind: "The shared version has moved on since your copy was taken.",
-    local:  "The shared file could not be loaded here, so this is a standalone local copy."
+    local:  "No shared source could be reached, so this is a standalone local copy."
   }[syncState];
 
   const el = document.getElementById("banner");
@@ -2804,10 +2938,14 @@ function noteDrawer(){
 
 function dataDrawer(){
   const state = {
+    live:   `Connected to the live backend at <code>${esc(apiBase)}</code>, revision <code>${revOf(DB)}</code>. Saves push automatically; the repo file is now a backup, not the live truth.`,
     synced: `This browser matches shared revision <code>${revOf(DB)}</code>. Nothing to publish.`,
-    ahead:  `You have edits on top of shared revision <code>${sync.base}</code>. Publish them to put them in the repo.`,
+    ahead:  liveMode
+      ? (apiToken ? `Pushing your edits to the live backend…`
+                  : `The live backend is reachable but this browser has no write token, so your edits stay local. Set the token below.`)
+      : `You have edits on top of shared revision <code>${sync.base}</code>. Publish them to put them in the repo.`,
     behind: `Shared revision <code>${revOf(shared)}</code> exists; your copy came from <code>${sync.base}</code>. Resolve that before publishing.`,
-    local:  `The shared file could not be loaded here, so this is a standalone copy. Open the desk on GitHub Pages to work against the shared version.`
+    local:  `No shared source could be reached, so this is a standalone copy. Open the desk on GitHub Pages to work against the shared version.`
   }[syncState];
 
   openDrawer(`
@@ -2838,6 +2976,17 @@ function dataDrawer(){
 
       <label class="field"><span>Your name — used to attribute notes and changes</span>
         <input type="text" id="meName" value="${esc(me)}" placeholder="e.g. Toni"></label>
+
+      <div>
+        <span class="eyebrow">Live backend</span>
+        <div style="display:grid; gap:9px; margin-top:7px">
+          <label class="field"><span>API URL — blank uses the built-in default</span>
+            <input type="text" id="apiUrl" value="${esc((() => { try { return localStorage.getItem(API_KEY) || ""; } catch (e) { return ""; } })())}" placeholder="${esc(DEFAULT_API) || "https://…"}"></label>
+          <label class="field"><span>Write token — needed to push changes</span>
+            <input type="text" id="apiTok" value="${esc(apiToken)}" placeholder="paste the team write token"></label>
+          <p style="margin:0; color:var(--ink-3); font-size:11.5px">Changes to either take effect after a reload. Without a token you can still read everything live; your edits just stay in this browser.</p>
+        </div>
+      </div>
 
       <label class="field"><span>Paste JSON to import</span>
         <textarea id="importBox" rows="7" placeholder="Paste an exported file here, then press Import."></textarea></label>
@@ -2879,6 +3028,18 @@ function dataDrawer(){
     me = nameBox.value.trim();
     try { localStorage.setItem(ME_KEY, me); } catch (e) {}
     toast(me ? "Notes will be attributed to " + me : "Attribution cleared");
+  };
+  const apiBox = drawer.querySelector("#apiUrl");
+  if (apiBox) apiBox.onchange = () => {
+    try { localStorage.setItem(API_KEY, apiBox.value.trim()); } catch (e) {}
+    toast("API URL saved — reload to connect");
+  };
+  const tokBox = drawer.querySelector("#apiTok");
+  if (tokBox) tokBox.onchange = () => {
+    apiToken = tokBox.value.trim();
+    try { localStorage.setItem(TOKEN_KEY, apiToken); } catch (e) {}
+    if (apiToken && liveMode && sync.dirty) queuePush();
+    toast(apiToken ? "Token saved" : "Token cleared");
   };
 
   drawer.querySelector("[data-import]").onclick = () => {
