@@ -40,7 +40,14 @@ let pool = null;
 async function initStore(){
   if (PG_URL){
     const { default: pg } = await import("pg");
-    pool = new pg.Pool({ connectionString: PG_URL });
+    /* Managed Postgres (Replit, Neon, …) often presents a certificate Node
+       will not verify. Accept it for the database connection only — never
+       process-wide via NODE_TLS_REJECT_UNAUTHORIZED. */
+    const local = /localhost|127\.0\.0\.1/.test(PG_URL);
+    pool = new pg.Pool({
+      connectionString: PG_URL,
+      ssl: local ? undefined : { rejectUnauthorized: false }
+    });
     await pool.query(
       "CREATE TABLE IF NOT EXISTS desk_store (id int PRIMARY KEY, doc jsonb NOT NULL)");
     console.log("storage: postgres");
@@ -221,7 +228,10 @@ async function handle(req, res){
 
 /* ── Boot ────────────────────────────────────────────────────────────── */
 
-await initStore();
+/* Listen first, initialize storage second: a deployment health check must get
+   its 200 even while the database is still coming up. Until storage is ready,
+   data endpoints answer 503 not_seeded and recover on their own — a failed
+   init retries rather than leaving a permanently dead process. */
 http.createServer((req, res) => {
   handle(req, res).catch(err => {
     console.error(err);
@@ -231,3 +241,13 @@ http.createServer((req, res) => {
   console.log("risk-cockpit api listening on 0.0.0.0:" + PORT +
     (TOKEN ? "" : "  — WARNING: WRITE_TOKEN not set, writes disabled"));
 });
+
+(async function bootStore(){
+  for (let attempt = 1; ; attempt++){
+    try { await initStore(); return; }
+    catch (err){
+      console.error("storage init failed (attempt " + attempt + "): " + (err.message || err));
+      await new Promise(r => setTimeout(r, Math.min(30000, attempt * 5000)));
+    }
+  }
+})();
