@@ -1,0 +1,26 @@
+# One-click deploy on Render: https://render.com/deploy
+#
+# Creates the API + desk service and a Postgres database, and wires the
+# connection string in automatically. WRITE_TOKEN is marked sync:false, so
+# Render prompts for it during setup rather than keeping a write credential
+# in a public repo.
+services:
+  - type: web
+    name: risk-cockpit
+    runtime: node
+    plan: free
+    # Dependencies are vendored in the repo — nothing to install.
+    buildCommand: "true"
+    startCommand: node server/index.mjs
+    healthCheckPath: /healthz
+    envVars:
+      - key: WRITE_TOKEN
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: risk-cockpit-db
+          property: connectionString
+
+databases:
+  - name: risk-cockpit-db
+    plan: free
