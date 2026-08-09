@@ -921,7 +921,6 @@ const SEED = {
 
 const KEY = "lionscraft-desk-v1";
 const META_KEY = "lionscraft-desk-sync";
-const SHARED_URL = "data/desk.json";
 
 let DB, hadLocal = false;
 try {
@@ -941,13 +940,13 @@ try {
 } catch (e) {}
 
 let shared = null;                 // the fetched shared dataset, if reachable
-let syncState = "local";           // local | synced | ahead | behind | live
+let syncState = "offline";         // live | ahead | behind | offline
 
 /* ── Live backend ─────────────────────────────────────────────────────
    When an API server is reachable, the desk works server-first: saves push
    automatically, and a poll picks up what others (people or agents) changed.
    Without it, everything falls back to the git flow above. */
-const DEFAULT_API = "https://risk-cockpit-api.replit.app";
+const DEFAULT_API = "https://desk-steward.replit.app";
 const API_KEY = "lionscraft-desk-api";
 const TOKEN_KEY = "lionscraft-desk-token";
 
@@ -1014,16 +1013,29 @@ const queuePush = () => {
   pushTimer = setTimeout(() => pushLive(false), 900);
 };
 
-/* Poll for other people's and agents' changes. Adopt silently when this copy
-   has nothing unpushed; otherwise raise the banner and let the human choose. */
+/* One poll, two jobs: reconnect while offline, and pick up other people's and
+   agents' changes while connected — adopted silently when this copy has nothing
+   unpushed, offered via banner when it does. */
 function startPolling(){
   clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
     if (document.hidden || pushing) return;
+
+    if (!liveMode){
+      try {
+        const h = await (await apiFetch("/healthz")).json();
+        if (h && h.ok){
+          await connectBackend();       // resets this interval itself
+          renderRail(); renderBanner(); render();
+          if (liveMode) toast("Back online");
+        }
+      } catch (e) { /* still offline */ }
+      return;
+    }
+
     try {
-      const h = await (await apiFetch("/healthz")).json();
-      if (h.revision <= sync.base) return;
       const cur = await (await apiFetch("/api/desk")).json();
+      if (cur.revision <= sync.base) return;
       shared = cur.desk;
       if (!sync.dirty){
         DB = structuredClone(shared);
@@ -1035,7 +1047,11 @@ function startPolling(){
       } else {
         syncState = "behind"; renderBanner();
       }
-    } catch (e) { /* unreachable this tick; try again next tick */ }
+    } catch (e) {
+      liveMode = false;
+      syncState = "offline";
+      renderBanner();
+    }
   }, 20000);
 }
 
@@ -1046,52 +1062,33 @@ const revOf = d => (d && d.meta && d.meta.revision) || 0;
    is how the team uses it. On file:// and inside the claude.ai artifact the fetch
    is blocked by design, so the embedded seed stands in and we say so plainly
    rather than pretending to be in sync. */
-async function loadShared(){
-  /* Prefer the live API when one is configured and reachable. */
-  if (apiBase){
-    try {
-      const cur = await (await apiFetch("/api/desk")).json();
-      if (Array.isArray(cur.desk.partners)){
-        shared = cur.desk;
-        liveMode = true;
-        if (!hadLocal || !sync.dirty){
-          DB = structuredClone(shared);
-          sync = {base:cur.revision, dirty:false};
-          save(true); saveSync();
-          syncState = "live";
-        } else if (cur.revision > sync.base){
-          syncState = "behind";
-        } else {
-          syncState = "ahead";
-          queuePush();          // unpushed edits from last session — push them
-        }
-        startPolling();
-        return;
-      }
-    } catch (e) { /* API down or unreachable — fall through to the git file */ }
-  }
-
+/* Connect to the backend — the Postgres behind the API is the only database.
+   Unreachable just means offline: keep working from the local cache, keep
+   trying, and push unpushed edits the moment it answers. */
+async function connectBackend(){
   try {
-    const res = await fetch(SHARED_URL, {cache:"no-store"});
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const json = await res.json();
-    if (!Array.isArray(json.partners) || !Array.isArray(json.tasks)) throw new Error("unexpected shape");
-    shared = json;
+    const cur = await (await apiFetch("/api/desk")).json();
+    if (!Array.isArray(cur.desk.partners)) throw new Error("unexpected shape");
+    shared = cur.desk;
+    liveMode = true;
+    /* Decide on the current dirty flag, not the boot-time state — this also
+       runs on reconnection, where unpushed offline edits must survive. */
+    if (!sync.dirty){
+      DB = structuredClone(shared);
+      sync = {base:cur.revision, dirty:false};
+      save(true); saveSync();
+      syncState = "live";
+    } else if (cur.revision > sync.base){
+      syncState = "behind";
+    } else {
+      syncState = "ahead";
+      queuePush();            // unpushed edits from last session — push them
+    }
   } catch (e) {
-    syncState = "local";
-    return;
+    liveMode = false;
+    syncState = "offline";
   }
-
-  if (!hadLocal){
-    DB = structuredClone(shared);
-    sync = {base:revOf(shared), dirty:false};
-    save(true); saveSync();
-    syncState = "synced";
-  } else if (revOf(shared) > sync.base){
-    syncState = "behind";
-  } else {
-    syncState = sync.dirty ? "ahead" : "synced";
-  }
+  startPolling();
 }
 
 /* Take the shared version, discarding local edits. */
@@ -1099,9 +1096,9 @@ function adoptShared(){
   DB = structuredClone(shared);
   sync = {base:revOf(shared), dirty:false};
   save(true); saveSync();
-  syncState = liveMode ? "live" : "synced";
+  syncState = "live";
   renderRail(); renderBanner(); render();
-  toast("Loaded shared revision " + revOf(shared));
+  toast("Loaded the board at revision " + revOf(shared));
 }
 
 /* Keep working locally, but stop being told about a revision already seen.
@@ -1116,23 +1113,6 @@ function dismissShared(){
   queuePush();
 }
 
-/* Stamp the current data as the next shared revision, ready to be committed. */
-function publishPayload(){
-  const out = structuredClone(DB);
-  out.meta = Object.assign({}, out.meta, {
-    revision: Math.max(revOf(DB), revOf(shared)) + 1,
-    updated: TODAY
-  });
-  return out;
-}
-function markPublished(rev){
-  DB.meta.revision = rev;
-  DB.meta.updated = TODAY;
-  sync = {base:rev, dirty:false};
-  save(true); saveSync();
-  syncState = "synced";
-  renderRail(); renderBanner(); render();
-}
 
 /* Who this browser is, so comments and changes are attributable. Agents identify
    themselves by their own name in the same field. */
@@ -1317,11 +1297,10 @@ window.addEventListener("popstate", () => {
 /* ══ Sync surface ═════════════════════════════════════════════════════ */
 
 const SYNC_LABEL = {
-  live:   () => "live · rev " + revOf(DB),
-  synced: () => "rev " + revOf(DB) + " · in sync",
-  ahead:  () => liveMode ? (apiToken ? "saving…" : "token needed") : "rev " + revOf(DB) + " · unpublished",
-  behind: () => "update available",
-  local:  () => "local copy"
+  live:    () => "live · rev " + revOf(DB),
+  ahead:   () => apiToken ? "saving…" : "token needed",
+  behind:  () => "update available",
+  offline: () => "offline"
 };
 
 function renderBanner(){
@@ -1329,28 +1308,26 @@ function renderBanner(){
   chip.dataset.s = syncState;
   chip.querySelector(".txt").textContent = SYNC_LABEL[syncState]();
   chip.title = {
-    live:   "Connected to the live backend. Saves push automatically and others' changes arrive on their own.",
-    synced: "This browser matches the shared version committed to the repo.",
-    ahead:  liveMode ? (apiToken ? "Pushing your edits to the live backend…" : "Edits are local only — set the write token under Data to push them.")
-                     : "You have edits that are not in the shared version yet. Open Data to publish them.",
-    behind: "The shared version has moved on since your copy was taken.",
-    local:  "No shared source could be reached, so this is a standalone local copy."
+    live:    "Connected to the backend. Saves push automatically and others' changes arrive on their own.",
+    ahead:   apiToken ? "Pushing your edits to the backend…" : "Edits are local only — set the write token under Data to push them.",
+    behind:  "The board has moved on since your copy was taken.",
+    offline: "Backend unreachable — working from this browser's copy and reconnecting automatically. Unpushed edits go up when it returns."
   }[syncState];
 
   const el = document.getElementById("banner");
   if (syncState !== "behind"){ el.innerHTML = ""; return; }
   el.innerHTML = `
     <div class="bnr">
-      <span><b>Shared data has moved on.</b>
-        Revision <code>${revOf(shared)}</code> was published on ${fmtDate(shared.meta.updated)};
-        your copy came from revision <code>${sync.base}</code>.</span>
+      <span><b>The board has moved on.</b>
+        It is at revision <code>${revOf(shared)}</code>; your unpushed edits started from
+        revision <code>${sync.base}</code>.</span>
       <span class="grow">
-        <button class="btn" id="keepMine">Keep mine</button>
-        <button class="btn primary" id="takeShared">Load shared version</button>
+        <button class="btn" id="keepMine">Push mine anyway</button>
+        <button class="btn primary" id="takeShared">Load the board</button>
       </span>
     </div>`;
   document.getElementById("takeShared").onclick = () => {
-    if (sync.dirty && !confirm("Loading the shared version replaces your local edits. Continue?")) return;
+    if (sync.dirty && !confirm("Loading the board replaces your local edits. Continue?")) return;
     adoptShared();
   };
   document.getElementById("keepMine").onclick = dismissShared;
@@ -2938,39 +2915,23 @@ function noteDrawer(){
 
 function dataDrawer(){
   const state = {
-    live:   `Connected to the live backend at <code>${esc(apiBase)}</code>, revision <code>${revOf(DB)}</code>. Saves push automatically; the repo file is now a backup, not the live truth.`,
-    synced: `This browser matches shared revision <code>${revOf(DB)}</code>. Nothing to publish.`,
-    ahead:  liveMode
-      ? (apiToken ? `Pushing your edits to the live backend…`
-                  : `The live backend is reachable but this browser has no write token, so your edits stay local. Set the token below.`)
-      : `You have edits on top of shared revision <code>${sync.base}</code>. Publish them to put them in the repo.`,
-    behind: `Shared revision <code>${revOf(shared)}</code> exists; your copy came from <code>${sync.base}</code>. Resolve that before publishing.`,
-    local:  `No shared source could be reached, so this is a standalone copy. Open the desk on GitHub Pages to work against the shared version.`
+    live:    `Connected to the board at <code>${esc(apiBase)}</code>, revision <code>${revOf(DB)}</code>. Saves push automatically — the database behind the API is the only store.`,
+    ahead:   apiToken ? `Pushing your edits to the board…`
+                      : `The board is reachable but this browser has no write token, so your edits stay local. Set the token below.`,
+    behind:  `The board is at revision <code>${revOf(shared)}</code>; your unpushed edits started from <code>${sync.base}</code>. Use the banner to resolve it.`,
+    offline: `The board's backend is unreachable right now. You are working from this browser's copy; it reconnects automatically and unpushed edits go up when it returns.`
   }[syncState];
 
   openDrawer(`
     <header><h3>Data</h3><button class="btn ghost" data-close>Close</button></header>
     <div class="body">
-      <div class="${syncState === "synced" ? "note" : "note"}" style="${syncState === "synced" ? "border-left-color:var(--accent); background:var(--accent-soft)" : ""}">${state}</div>
+      <div class="note" style="${syncState === "live" ? "border-left-color:var(--accent); background:var(--accent-soft)" : ""}">${state}</div>
 
       <div>
-        <span class="eyebrow">Publish to the team</span>
-        <p style="margin:6px 0 9px; color:var(--ink-2); font-size:12.5px">
-          Stamps this data as revision <b>${Math.max(revOf(DB), revOf(shared)) + 1}</b> and copies it.
-          Commit it to <code style="font-family:var(--data)">${SHARED_URL}</code> in the repo and everyone
-          picks it up on their next reload.
-        </p>
-        <div style="display:flex; gap:8px; flex-wrap:wrap">
-          <button class="btn primary" data-publish>Copy as revision ${Math.max(revOf(DB), revOf(shared)) + 1}</button>
-          <button class="btn" data-publishfile>Download it</button>
-        </div>
-      </div>
-
-      <div>
-        <span class="eyebrow">Working copy</span>
+        <span class="eyebrow">Backup</span>
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:7px">
-          <button class="btn" data-copy>Copy JSON as-is</button>
-          <button class="btn danger" data-reset>${shared ? "Discard my edits" : "Reset to seed"}</button>
+          <button class="btn" data-copy>Copy JSON backup</button>
+          <button class="btn danger" data-reset>${shared ? "Discard my edits, reload the board" : "Reset to seed"}</button>
         </div>
       </div>
 
@@ -3001,27 +2962,9 @@ function dataDrawer(){
 
   const copy = async (text, ok) => {
     try { await navigator.clipboard.writeText(text); toast(ok); return true; }
-    catch (e) { toast("Clipboard blocked — use Download instead"); return false; }
+    catch (e) { toast("Clipboard blocked"); return false; }
   };
-
-  drawer.querySelector("[data-publish]").onclick = async () => {
-    const payload = publishPayload();
-    if (await copy(JSON.stringify(payload, null, 2), "Copied revision " + payload.meta.revision + " — commit it to " + SHARED_URL))
-      markPublished(payload.meta.revision);
-  };
-  drawer.querySelector("[data-publishfile]").onclick = async () => {
-    const payload = publishPayload();
-    if (!window.claude || !window.claude.downloads){ toast("Downloads only work on the claude.ai copy — use Copy"); return; }
-    try {
-      await window.claude.downloads.save({filename:"desk.json", data:JSON.stringify(payload, null, 2)});
-      markPublished(payload.meta.revision);
-      toast("Saved revision " + payload.meta.revision);
-    } catch (err){
-      if (err && err.code === "declined") return;
-      toast("Could not save — use Copy instead");
-    }
-  };
-  drawer.querySelector("[data-copy]").onclick = () => copy(JSON.stringify(DB, null, 2), "JSON copied");
+  drawer.querySelector("[data-copy]").onclick = () => copy(JSON.stringify(DB, null, 2), "Backup copied");
 
   const nameBox = drawer.querySelector("#meName");
   if (nameBox) nameBox.onchange = () => {
@@ -3053,16 +2996,23 @@ function dataDrawer(){
     }
     DB = next; save(); closeDrawer(); renderRail(); renderBanner(); render(); toast("Imported");
   };
-  drawer.querySelector("[data-reset]").onclick = () => {
+  drawer.querySelector("[data-reset]").onclick = async () => {
+    if (!confirm(shared
+      ? "Discard everything in this browser and reload the board from the backend?"
+      : "Discard everything in this browser and go back to the built-in seed?")) return;
+    if (liveMode){
+      try {
+        const cur = await (await apiFetch("/api/desk")).json();
+        shared = cur.desk;
+      } catch (e) {}
+    }
     const target = shared || SEED;
-    const what = shared ? "the shared version, revision " + revOf(shared) : "the seeded content";
-    if (!confirm("Discard everything in this browser and go back to " + what + "?")) return;
     DB = structuredClone(target);
     sync = {base:revOf(target), dirty:false};
     save(true); saveSync();
-    syncState = shared ? "synced" : "local";
+    syncState = liveMode ? "live" : "offline";
     closeDrawer(); renderRail(); renderBanner(); render();
-    toast("Reset to " + what);
+    toast(shared ? "Reloaded the board" : "Reset to seed");
   };
 }
 
@@ -3160,7 +3110,7 @@ document.getElementById("syncChip").onclick = dataDrawer;
   renderRail();
   render();
   renderBanner();
-  await loadShared();
+  await connectBackend();
   renderRail();
   renderBanner();
   render();

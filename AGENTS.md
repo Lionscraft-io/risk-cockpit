@@ -10,31 +10,18 @@ in, strongest first:
 
 | Access | For | Auth |
 | --- | --- | --- |
-| **MCP** — `https://risk-cockpit-api.replit.app/mcp` | MCP-capable agents (Claude Code, Claude Desktop, claude.ai connectors, …) | Bearer token |
-| **REST** — `https://risk-cockpit-api.replit.app/api/…` | Everything else: scripts, LangChain, cron jobs | Bearer token for writes |
+| **REST** — `https://desk-steward.replit.app/api/…` | Any agent or script that can make an HTTP request | Bearer token for writes |
 | **Git** — this repo, `data/desk.json` | Fallback when the API is down; bulk/reviewed changes via PR | Repo access |
+
+The server behind the API is `server/index.mjs` in this repo — the deployed
+code is reviewable here, and its Postgres database on the host is the one
+durable store.
 
 The write token is issued by the board owner. Reads need no token.
 
 ---
 
-## 1. MCP access (preferred for MCP clients)
-
-Streamable-HTTP MCP server at `https://risk-cockpit-api.replit.app/mcp`, with
-`Authorization: Bearer <token>` on every request. For Claude Code:
-
-```bash
-claude mcp add risk-cockpit --transport http https://risk-cockpit-api.replit.app/mcp --header "Authorization: Bearer <token>"
-```
-
-Tools: `get_board` · `list_partners(stage?, cat?)` ·
-`update_partner(id, actor, …fields)` · `update_task(id, actor, …fields)` ·
-`post_activity(actor, kind, refType, ref, body, to?)` · `list_activity(since?)`.
-
-Write tools take your agent name as `actor` and log the change to the activity
-feed automatically — you cannot forget to log. Use the same actor name every run.
-
-## 2. REST access
+## 1. REST access
 
 ```
 GET  /api/desk              → {"revision": N, "desk": {…}}          public
@@ -45,7 +32,7 @@ POST /api/activity          → append one event, bump revision       token
 PUT  /api/desk              → replace the whole document            token
 ```
 
-Base URL `https://risk-cockpit-api.replit.app`, writes with
+Base URL `https://desk-steward.replit.app`, writes with
 `Authorization: Bearer <token>`.
 
 `POST /api/activity` is the normal way to say something (the server stamps `id`
@@ -56,7 +43,7 @@ retry); and the activity array may never shrink (else
 `400 activity_is_append_only`). Always merge the server's activity into yours by
 `id` union before a PUT.
 
-## 3. Git access (fallback and bulk changes)
+## 2. Git access (fallback and bulk changes)
 
 The public read URL always works, even with the API down:
 
@@ -73,11 +60,11 @@ live API is up, it is ahead of this file, and PRs against stale data will be
 reconciled by a human.
 
 Read `docs/master-narrative.md` before producing any outward-facing words. It is
-the source of truth for the story, and §7 below is not optional.
+the source of truth for the story, and §6 below is not optional.
 
 ---
 
-## 4. The data contract
+## 3. The data contract
 
 `data/desk.json`:
 
@@ -149,11 +136,11 @@ the source of truth for the story, and §7 below is not optional.
 
 ---
 
-## 5. How agents communicate
+## 4. How agents communicate
 
 Agents do not run at the same time and do not hold connections. **The activity
 log is the channel** — the API just makes reading and writing it immediate
-(`POST /api/activity`, `GET /api/activity?since=…`, or the MCP equivalents).
+(`POST /api/activity`, `GET /api/activity?since=…`).
 
 - To tell another agent something, append an event with `to` set to their name
 - To ask a person something, append a `question` — it surfaces in the Activity
@@ -176,7 +163,7 @@ mid-run.
 
 ---
 
-## 6. Rules for changing data
+## 5. Rules for changing data
 
 - **Preserve fields you do not understand.** Round-trip the JSON; do not rebuild
   objects from scratch. A field you drop is data someone loses
@@ -193,7 +180,7 @@ mid-run.
 
 ---
 
-## 7. Guardrails for anything you write
+## 6. Guardrails for anything you write
 
 These come from `docs/master-narrative.md` and they are not stylistic
 preferences — outreach that breaks them actively damages the pitch.
@@ -218,7 +205,7 @@ If you are unsure whether a draft breaches these, it probably does. Log a
 
 ---
 
-## 8. What is public
+## 7. What is public
 
 Everything you write — every log entry, every commit message — is world-readable
 and permanently in git history. Do not write anything into this repo that should
@@ -227,12 +214,12 @@ counterparty, no credentials, nothing said to you in confidence.
 
 ---
 
-## 9. A minimal write, end to end
+## 8. A minimal write, end to end
 
 The one-liner most agents need — say something on the board:
 
 ```bash
-curl -X POST https://risk-cockpit-api.replit.app/api/activity \
+curl -X POST https://desk-steward.replit.app/api/activity \
   -H "Authorization: Bearer $WRITE_TOKEN" -H "content-type: application/json" \
   -d '{"actor":"partner-researcher","kind":"finding","refType":"partner","ref":"p40",
        "body":"Disaster-response function reports into Network Operations, not CSR."}'

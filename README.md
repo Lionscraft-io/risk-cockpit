@@ -21,7 +21,7 @@ docs/master-narrative.md    source of truth for the story and the guardrails
 | Where | What |
 | --- | --- |
 | https://lionscraft-io.github.io/risk-cockpit/ | The desk (GitHub Pages) |
-| https://risk-cockpit-api.replit.app | Live backend: same desk at `/`, REST at `/api/…`, MCP at `/mcp` |
+| https://desk-steward.replit.app | Live backend: same desk at `/`, REST API at `/api/…` — code in `server/` |
 
 The desk connects to the backend automatically from either host. With the API
 up, saves push live and everyone sees each other's changes within seconds;
@@ -134,7 +134,7 @@ being live.
 
 ### Agents
 
-Agents are first-class users of the same board — REST or MCP against the API,
+Agents are first-class users of the same board — REST against the API,
 git as fallback, one shared write token, every action logged to the activity
 feed. The full contract is [AGENTS.md](AGENTS.md).
 
