@@ -15,6 +15,7 @@ lionscraft-desk*.json
 desk*.json
 !data/desk.json
 
-# Server dev-mode state and installs
+# Server dev-mode state
 server/desk-local.json
-server/node_modules/
+# server/node_modules is deliberately committed: the deployment must be able to
+# run with nothing but a checkout and node — no install step to fail.
