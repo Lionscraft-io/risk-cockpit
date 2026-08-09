@@ -1,66 +1,78 @@
 # Working on this board as an agent
 
-This repo is the code and backup home of the Lionscraft Partner & Facility Desk.
-The **live board** is served by an API; the desk UI and this repo's
-`data/desk.json` both follow it.
+The board is `data/desk.json` in this repository. **Git is the database** —
+every change is a commit, every commit is attributable, and the history is the
+audit trail. There is no server to be up or down.
 
 If you are an agent — Claude Code, another framework, a script, anything — this
-file is your contract. It is written to be tool-agnostic. There are three ways
-in, strongest first:
+file is your contract. Three ways in:
 
 | Access | For | Auth |
 | --- | --- | --- |
-| **REST** — `https://desk-steward.replit.app/api/…` | Any agent or script that can make an HTTP request | Bearer token for writes |
-| **Git** — this repo, `data/desk.json` | Fallback when the API is down; bulk/reviewed changes via PR | Repo access |
+| **MCP** — GitHub's hosted server at `https://api.githubcopilot.com/mcp/` | MCP-capable agents. Nothing to install or deploy | GitHub PAT or OAuth |
+| **REST** — GitHub Contents API | Any agent or script that can make an HTTP request | GitHub PAT |
+| **Git** — clone, edit, push or PR | Bulk or reviewed changes | Repo access |
 
-The server behind the API is `server/index.mjs` in this repo — the deployed
-code is reviewable here, and its Postgres database on the host is the one
-durable store.
-
-The write token is issued by the board owner. Reads need no token.
+All three touch the same file, so they interleave safely as long as you follow
+§2. Reading is public and needs no token.
 
 ---
 
-## 1. REST access
+## 1. Access
 
-```
-GET  /api/desk              → {"revision": N, "desk": {…}}          public
-GET  /api/activity?since=…  → {"revision": N, "events": […]}        public
-GET  /data/desk.json        → the desk document alone               public
-GET  /healthz               → {"ok": true, "revision": N}           public
-POST /api/activity          → append one event, bump revision       token
-PUT  /api/desk              → replace the whole document            token
-```
+### MCP — nothing to run
 
-Base URL `https://desk-steward.replit.app`, writes with
-`Authorization: Bearer <token>`.
+GitHub hosts the MCP server; point your client at it with a token and the repo
+becomes a set of typed tools. For Claude Code:
 
-`POST /api/activity` is the normal way to say something (the server stamps `id`
-and `at`). `PUT /api/desk` is for full updates and has three guards: the body
-must contain the five arrays; `meta.revision` must be exactly the current server
-revision + 1 (else `409 {"error":"revision_conflict","current":N}` — re-read and
-retry); and the activity array may never shrink (else
-`400 activity_is_append_only`). Always merge the server's activity into yours by
-`id` union before a PUT.
-
-## 2. Git access (fallback and bulk changes)
-
-The public read URL always works, even with the API down:
-
-```
-https://lionscraft-io.github.io/risk-cockpit/data/desk.json
+```bash
+claude mcp add github --transport http https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer <your-github-pat>"
 ```
 
-To write via git: clone, **re-read `data/desk.json` immediately before
-editing**, make the change, bump `meta.revision` by exactly 1, set
-`meta.updated` to today (`YYYY-MM-DD`), append an activity entry describing what
-you did, run `node scripts/validate.mjs`, and open a pull request — external
-agents do not push to `main`. Note that the git file is a **snapshot**: if the
-live API is up, it is ahead of this file, and PRs against stale data will be
-reconciled by a human.
+Then read and write `data/desk.json` on `Lionscraft-io/risk-cockpit` with the
+file tools it exposes. Use a **fine-grained** PAT scoped to this one repository
+with **Contents: read and write** — nothing else.
 
-Read `docs/master-narrative.md` before producing any outward-facing words. It is
-the source of truth for the story, and §6 below is not optional.
+### REST — GitHub Contents API
+
+```bash
+# read, public, no token
+curl https://raw.githubusercontent.com/Lionscraft-io/risk-cockpit/main/data/desk.json
+
+# read with the sha you need in order to write
+curl -H "Authorization: Bearer $GH_PAT" \
+  https://api.github.com/repos/Lionscraft-io/risk-cockpit/contents/data/desk.json
+
+# write: base64 content plus the sha you just read
+curl -X PUT -H "Authorization: Bearer $GH_PAT" \
+  https://api.github.com/repos/Lionscraft-io/risk-cockpit/contents/data/desk.json \
+  -d '{"message":"...","content":"<base64>","sha":"<sha from the read>","branch":"main"}'
+```
+
+### Git — clone and push
+
+Normal git. Run `node scripts/validate.mjs` before pushing; external agents open
+a pull request rather than pushing to `main`.
+
+---
+
+## 2. Writing safely
+
+Same rules whichever route you take:
+
+1. **Re-read immediately before writing.** Never write from a copy fetched
+   earlier in your run
+2. **Increment `meta.revision` by exactly 1** and set `meta.updated` to today
+   (`YYYY-MM-DD`). Open browsers use the revision to notice the board moved
+3. **Union the activity log by `id`** with what you just read, before writing.
+   Someone else's comment must never vanish because you held an older copy
+4. **Pass the `sha`** you read (REST/MCP). That makes the write
+   compare-and-swap: if anyone committed in between, GitHub rejects it with
+   `409`. Re-read, merge again, retry — never force
+5. **Append at least one activity entry** describing what you did (§4)
+
+The desk UI follows exactly these rules, so agents and people can work at the
+same time with no coordinator.
 
 ---
 
@@ -140,7 +152,7 @@ the source of truth for the story, and §6 below is not optional.
 
 Agents do not run at the same time and do not hold connections. **The activity
 log is the channel** — the API just makes reading and writing it immediate
-(`POST /api/activity`, `GET /api/activity?since=…`).
+(a commit, or the MCP file tools).
 
 - To tell another agent something, append an event with `to` set to their name
 - To ask a person something, append a `question` — it surfaces in the Activity
@@ -216,17 +228,6 @@ counterparty, no credentials, nothing said to you in confidence.
 
 ## 8. A minimal write, end to end
 
-The one-liner most agents need — say something on the board:
-
-```bash
-curl -X POST https://desk-steward.replit.app/api/activity \
-  -H "Authorization: Bearer $WRITE_TOKEN" -H "content-type: application/json" \
-  -d '{"actor":"partner-researcher","kind":"finding","refType":"partner","ref":"p40",
-       "body":"Disaster-response function reports into Network Operations, not CSR."}'
-```
-
-The git fallback, end to end:
-
 ```bash
 git clone git@github.com:Lionscraft-io/risk-cockpit.git && cd risk-cockpit
 ```
@@ -261,5 +262,6 @@ with open("data/desk.json", "w") as f:
     f.write("\n")
 ```
 
-Then commit and open a PR. `data/schema.json` will validate your output — run it
-before you push.
+Then `node scripts/validate.mjs`, commit, and push or open a PR.
+
+The same edit over REST or MCP is the read → modify → write-with-sha cycle in §2.

@@ -4,9 +4,10 @@ Working infrastructure for the **programmable risk transfer** project: partner C
 facility project plan, kanban board, outreach material generator, and the narrative
 reference that keeps everything on-message.
 
-The application is a single self-contained HTML file. The live data lives in a
-small API service; this repo is the code home, the agent contract, and the
-fallback data store.
+The application is a single self-contained HTML file and **this repository is
+the database**: the board lives in `data/desk.json`, every change is a commit,
+and git history is the audit trail. Nothing is deployed or hosted beyond GitHub
+Pages serving a static file.
 
 ```
 lionscraft-platform.html    the entire application
@@ -18,16 +19,15 @@ index.html                  redirect so the Pages root serves the desk
 docs/master-narrative.md    source of truth for the story and the guardrails
 ```
 
-| Where | What |
-| --- | --- |
-| https://lionscraft-io.github.io/risk-cockpit/ | The desk (GitHub Pages) |
-| https://desk-steward.replit.app | Live backend: same desk at `/`, REST API at `/api/…` — code in `server/` |
+**The desk:** https://lionscraft-io.github.io/risk-cockpit/
 
-The desk connects to the backend automatically from either host. With the API
-up, saves push live and everyone sees each other's changes within seconds;
-with it down, the desk falls back to the git-file flow described below.
-Writing (from the UI or by an agent) needs the team write token — kept in the
-Replit Secrets pane, entered once under **Data** in the desk.
+Reading needs nothing. To make changes, paste a GitHub token once under
+**Data** — a fine-grained PAT scoped to this repository with *Contents: read and
+write*. Saves then commit straight to `data/desk.json`, and everyone else's
+desk picks them up within half a minute.
+
+`server/` holds an optional self-hosted API with the same contract, kept for
+anyone who wants a real backend later. Nothing uses it by default.
 
 ---
 
@@ -108,35 +108,35 @@ of it in outreach.
 
 ## How the data works
 
-The API holds the live document and its `meta.revision` counter. The desk
-connects on load: saves push automatically (debounced, merged), and a 20-second
-poll picks up what other people and agents changed — adopted silently when you
-have nothing unpushed, offered via banner when you do. Conflicting pushes
-retry once against the fresh server state; the activity log always merges by id
-union, so nothing anyone said is ever lost, while data fields are
-last-write-wins.
+`data/desk.json` holds the board and a `meta.revision` counter. The desk reads
+it on load and commits back to it on save — batched, so a burst of edits
+becomes one commit rather than one per keystroke.
 
-When the API is unreachable, the desk falls back to `data/desk.json` from the
-repo and the git publish flow below — nothing stops working, it just stops
-being live.
+Writes are compare-and-swap: the desk passes the blob `sha` it read, so if
+anyone committed in between GitHub rejects the write and the desk re-reads,
+merges and retries. The activity log always merges by id union, so no comment
+or agent finding is ever lost; ordinary fields are last-write-wins.
+
+A 30-second poll picks up what other people and agents committed — adopted
+silently when you have nothing unpushed, offered via banner when you do. If
+GitHub is unreachable the desk says `offline`, keeps working from the browser's
+copy, reconnects on its own, and pushes what you did while away.
 
 ### What the chip in the top bar means
 
 | Chip | State |
 | --- | --- |
-| `live · rev N` | Connected to the backend; saves push automatically. |
-| `token needed` | Backend reachable but this browser can't write — set the token under **Data**. |
-| `saving…` | Your edits are on their way to the backend. |
-| `rev N · in sync` | Git mode: your copy matches `data/desk.json`. |
-| `rev N · unpublished` | Git mode: you have edits not in the repo yet. |
-| `update available` | The shared version moved on since your copy was taken. A banner offers **Load shared version** or **Keep mine** — it never overwrites your work silently. |
-| `local copy` | No shared source reachable; the embedded seed is standing in. |
+| `live · rev N` | Reading the board; saves commit automatically. |
+| `token needed` | You have edits but no GitHub token — set one under **Data**. |
+| `saving…` | Your edits are being committed. |
+| `update available` | The board moved on since your copy. A banner offers **Load the board** or **Push mine anyway** — it never overwrites your work silently. |
+| `offline` | GitHub unreachable; working from this browser's copy and reconnecting. |
 
 ### Agents
 
-Agents are first-class users of the same board — REST against the API,
-git as fallback, one shared write token, every action logged to the activity
-feed. The full contract is [AGENTS.md](AGENTS.md).
+Agents are first-class users of the same board, through GitHub's own hosted MCP
+server, the Contents API, or plain git — nothing to deploy. Every action lands
+in the activity feed. The full contract is [AGENTS.md](AGENTS.md).
 
 The sync state is tracked separately from the data itself, in
 `localStorage['lionscraft-desk-sync']` as `{base, dirty}` — `base` is the shared
@@ -144,26 +144,6 @@ revision your copy branched from, `dirty` is whether you have edited since.
 Comparing `base` against the revision in the fetched file is what detects a stale
 copy. `Keep mine` advances `base` without touching your data, so you are told
 about the *next* revision but not nagged about one you have already decided on.
-
-### Publishing a change
-
-1. **Data → Copy as revision N+1** — stamps the data with the next revision and
-   today's date, and copies it
-2. Paste over `data/desk.json`, commit, push
-3. Everyone else sees the update banner on their next reload
-
-The revision only ever moves forward, and the app refuses to consider itself in
-sync with a revision it has not actually seen.
-
-### Where the shared fetch does and doesn't work
-
-| Where | Shared data |
-| --- | --- |
-| **GitHub Pages** — the team link | ✅ works, this is the canonical home |
-| **Opening the file directly** (`file://`) | ⚠️ browser-dependent; Chrome blocks the fetch, and the app falls back to the embedded seed and says `local copy` |
-| **claude.ai artifact** | ❌ only the HTML file is published, so there is no `data/desk.json` to fetch — falls back to the seed |
-
-Work on the Pages link. The other two are convenience copies.
 
 ### The embedded seed
 

@@ -942,106 +942,153 @@ try {
 let shared = null;                 // the fetched shared dataset, if reachable
 let syncState = "offline";         // live | ahead | behind | offline
 
-/* ── Live backend ─────────────────────────────────────────────────────
-   When an API server is reachable, the desk works server-first: saves push
-   automatically, and a poll picks up what others (people or agents) changed.
-   Without it, everything falls back to the git flow above. */
-const DEFAULT_API = "https://desk-steward.replit.app";
-const API_KEY = "lionscraft-desk-api";
-const TOKEN_KEY = "lionscraft-desk-token";
+const saveSync = () => { try { localStorage.setItem(META_KEY, JSON.stringify(sync)); } catch (e) {} };
+const revOf = d => (d && d.meta && d.meta.revision) || 0;
 
-const apiBase = (() => {
-  try { const o = localStorage.getItem(API_KEY); if (o) return o.replace(/\/+$/, ""); } catch (e) {}
-  /* Served by the backend itself — locally or hosted — its own origin is the API. */
-  if (/\.(replit\.app|repl\.co|replit\.dev)$/.test(location.hostname)) return location.origin;
-  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return location.origin;
-  return DEFAULT_API;
+/* ── GitHub as the store ──────────────────────────────────────────────
+   The board lives in data/desk.json in the repo. There is no server: reads
+   come from GitHub, writes are commits, and git history is the audit trail.
+   Agents reach the same file through GitHub's own API or its hosted MCP
+   server — see AGENTS.md. */
+const GH_REPO   = "Lionscraft-io/risk-cockpit";
+const GH_PATH   = "data/desk.json";
+const GH_BRANCH = "main";
+const GH_API    = "https://api.github.com";
+const REPO_KEY  = "lionscraft-desk-repo";     // override, for forks
+const TOKEN_KEY = "lionscraft-desk-token";    // fine-grained PAT, contents:write
+
+const ghRepo = (() => {
+  try { return localStorage.getItem(REPO_KEY) || GH_REPO; } catch (e) { return GH_REPO; }
 })();
 let apiToken = "";
 try { apiToken = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) {}
 
-let liveMode = false;
+let liveMode = false;          // reached the store this session
+let fileSha = null;            // blob sha of the copy we last read — our CAS token
 let pushTimer = null, pollTimer = null, pushing = false;
 
-async function apiFetch(path, opts){
+/* Base64 <-> UTF-8. btoa/atob are byte-oriented, and the board is full of
+   em-dashes and other non-ASCII, so go through TextEncoder/TextDecoder. */
+const b64encode = str => {
+  const bytes = new TextEncoder().encode(str);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+};
+const b64decode = b64 => {
+  const bin = atob(b64.replace(/\s/g, ""));
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+};
+
+function ghHeaders(){
+  const h = {"accept": "application/vnd.github+json", "x-github-api-version": "2022-11-28"};
+  if (apiToken) h.authorization = "Bearer " + apiToken;
+  return h;
+}
+
+async function ghFetch(path, opts){
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 6000);
+  const t = setTimeout(() => ctrl.abort(), 12000);
   try {
-    const res = await fetch(apiBase + path, Object.assign({signal:ctrl.signal, cache:"no-store"}, opts));
-    return res;
+    return await fetch(GH_API + path, Object.assign({signal:ctrl.signal, cache:"no-store"}, opts, {
+      headers: Object.assign(ghHeaders(), (opts && opts.headers) || {})
+    }));
   } finally { clearTimeout(t); }
 }
 
-/* Push local state to the server. Re-reads the server first and unions the
-   activity logs by id, so nothing anyone appended is ever lost — data fields
-   are last-write-wins, the log is merge-always. */
+/* Read the board. With a token this goes through the API, which is immediate
+   after a commit and carries the sha we need to write safely. Without one it
+   falls back to the copy GitHub Pages serves beside this page — good enough to
+   read, and it costs no rate limit. */
+async function fetchBoard(){
+  if (apiToken){
+    const res = await ghFetch("/repos/" + ghRepo + "/contents/" + GH_PATH + "?ref=" + GH_BRANCH);
+    if (!res.ok) throw new Error("read failed: HTTP " + res.status);
+    const meta = await res.json();
+    return {doc: JSON.parse(b64decode(meta.content)), sha: meta.sha};
+  }
+  const res = await fetch(GH_PATH + "?t=" + Date.now(), {cache:"no-store"});
+  if (!res.ok) throw new Error("read failed: HTTP " + res.status);
+  return {doc: await res.json(), sha: null};
+}
+
+/* Commit the board. Re-reads first and unions the activity logs by id, so a
+   comment or agent finding written since our last read is never lost; data
+   fields are last-write-wins. The blob sha makes the write compare-and-swap:
+   if anyone committed in between, GitHub rejects it and we retry once against
+   the fresh state. */
 async function pushLive(retried){
   if (!liveMode || pushing) return;
   if (!apiToken){ syncState = "ahead"; renderBanner(); return; }
   pushing = true;
   try {
-    const cur = await (await apiFetch("/api/desk")).json();
+    const cur = await fetchBoard();
     const seen = new Set(DB.activity.map(e => e.id));
-    for (const e of (cur.desk.activity || [])) if (!seen.has(e.id)) DB.activity.push(e);
+    for (const e of (cur.doc.activity || [])) if (!seen.has(e.id)) DB.activity.push(e);
     DB.activity.sort((a, b) => (a.at || "").localeCompare(b.at || ""));
-    DB.meta.revision = cur.revision + 1;
+    DB.meta.revision = revOf(cur.doc) + 1;
     DB.meta.updated = TODAY;
-    const res = await apiFetch("/api/desk", {
-      method:"PUT",
-      headers:{"content-type":"application/json", "authorization":"Bearer " + apiToken},
-      body:JSON.stringify(DB)
+    fileSha = cur.sha;
+
+    const res = await ghFetch("/repos/" + ghRepo + "/contents/" + GH_PATH, {
+      method: "PUT",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({
+        message: "Desk: revision " + DB.meta.revision + " (" + whoami() + ")",
+        content: b64encode(JSON.stringify(DB, null, 2) + "\n"),
+        sha: fileSha,
+        branch: GH_BRANCH
+      })
     });
+
     if (res.ok){
+      const out = await res.json();
+      fileSha = out.content && out.content.sha;
       sync = {base:DB.meta.revision, dirty:false}; saveSync();
       try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {}
       syncState = "live"; renderBanner(); renderRail();
-    } else if (res.status === 409 && !retried){
-      pushing = false; return pushLive(true);
-    } else if (res.status === 401){
+    } else if ((res.status === 409 || res.status === 422) && !retried){
+      pushing = false; return pushLive(true);          // someone committed first
+    } else if (res.status === 401 || res.status === 403){
       apiToken = ""; try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
       syncState = "ahead"; renderBanner();
-      toast("Write token rejected — set it under Data");
+      toast(res.status === 403 ? "Token lacks write access to the repo" : "Token rejected — set it under Data");
     } else {
       syncState = "ahead"; renderBanner();
     }
   } catch (e) {
-    syncState = "ahead"; renderBanner();   // offline; next save retries
+    syncState = "ahead"; renderBanner();               // offline; next save retries
   } finally { pushing = false; }
 }
 
+/* Each push is a commit, so batch a burst of edits into one rather than
+   writing a commit per keystroke. */
 const queuePush = () => {
   if (!liveMode) return;
   clearTimeout(pushTimer);
-  pushTimer = setTimeout(() => pushLive(false), 900);
+  pushTimer = setTimeout(() => pushLive(false), 4000);
 };
 
-/* One poll, two jobs: reconnect while offline, and pick up other people's and
-   agents' changes while connected — adopted silently when this copy has nothing
-   unpushed, offered via banner when it does. */
+/* One poll, two jobs: reconnect while offline, and pick up what other people
+   and agents committed — adopted silently when this copy has nothing unpushed,
+   offered via banner when it does. */
 function startPolling(){
   clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
     if (document.hidden || pushing) return;
-
-    if (!liveMode){
-      try {
-        const h = await (await apiFetch("/healthz")).json();
-        if (h && h.ok){
-          await connectBackend();       // resets this interval itself
-          renderRail(); renderBanner(); render();
-          if (liveMode) toast("Back online");
-        }
-      } catch (e) { /* still offline */ }
-      return;
-    }
-
     try {
-      const cur = await (await apiFetch("/api/desk")).json();
-      if (cur.revision <= sync.base) return;
-      shared = cur.desk;
+      const cur = await fetchBoard();
+      if (!liveMode){
+        liveMode = true;
+        toast("Back online");
+      }
+      fileSha = cur.sha;
+      shared = cur.doc;
+      if (revOf(shared) <= sync.base) return;
       if (!sync.dirty){
         DB = structuredClone(shared);
-        sync = {base:cur.revision, dirty:false}; saveSync();
+        sync = {base:revOf(shared), dirty:false}; saveSync();
         try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {}
         syncState = "live";
         renderRail(); renderBanner();
@@ -1054,37 +1101,30 @@ function startPolling(){
       syncState = "offline";
       renderBanner();
     }
-  }, 20000);
+  }, 30000);
 }
 
-const saveSync = () => { try { localStorage.setItem(META_KEY, JSON.stringify(sync)); } catch (e) {} };
-const revOf = d => (d && d.meta && d.meta.revision) || 0;
-
-/* Load the shared dataset committed in the repo. Reachable over http(s) — which
-   is how the team uses it. On file:// and inside the claude.ai artifact the fetch
-   is blocked by design, so the embedded seed stands in and we say so plainly
-   rather than pretending to be in sync. */
-/* Connect to the backend — the Postgres behind the API is the only database.
-   Unreachable just means offline: keep working from the local cache, keep
-   trying, and push unpushed edits the moment it answers. */
+/* Connect to the store. Unreachable just means offline: keep working from the
+   local cache, keep trying, and push unpushed edits when it returns. */
 async function connectBackend(){
   try {
-    const cur = await (await apiFetch("/api/desk")).json();
-    if (!Array.isArray(cur.desk.partners)) throw new Error("unexpected shape");
-    shared = cur.desk;
+    const cur = await fetchBoard();
+    if (!Array.isArray(cur.doc.partners)) throw new Error("unexpected shape");
+    shared = cur.doc;
+    fileSha = cur.sha;
     liveMode = true;
     /* Decide on the current dirty flag, not the boot-time state — this also
        runs on reconnection, where unpushed offline edits must survive. */
     if (!sync.dirty){
       DB = structuredClone(shared);
-      sync = {base:cur.revision, dirty:false};
+      sync = {base:revOf(shared), dirty:false};
       save(true); saveSync();
       syncState = "live";
-    } else if (cur.revision > sync.base){
+    } else if (revOf(shared) > sync.base){
       syncState = "behind";
     } else {
       syncState = "ahead";
-      queuePush();            // unpushed edits from last session — push them
+      queuePush();
     }
   } catch (e) {
     liveMode = false;
@@ -2917,7 +2957,7 @@ function noteDrawer(){
 
 function dataDrawer(){
   const state = {
-    live:    `Connected to the board at <code>${esc(apiBase)}</code>, revision <code>${revOf(DB)}</code>. Saves push automatically — the database behind the API is the only store.`,
+    live:    `Connected to <code>${esc(ghRepo)}</code> at revision <code>${revOf(DB)}</code>. Every save is a commit to <code>${esc(GH_PATH)}</code> — git is the database and the audit trail.`,
     ahead:   apiToken ? `Pushing your edits to the board…`
                       : `The board is reachable but this browser has no write token, so your edits stay local. Set the token below.`,
     behind:  `The board is at revision <code>${revOf(shared)}</code>; your unpushed edits started from <code>${sync.base}</code>. Use the banner to resolve it.`,
@@ -2941,13 +2981,13 @@ function dataDrawer(){
         <input type="text" id="meName" value="${esc(me)}" placeholder="e.g. Toni"></label>
 
       <div>
-        <span class="eyebrow">Live backend</span>
+        <span class="eyebrow">GitHub</span>
         <div style="display:grid; gap:9px; margin-top:7px">
-          <label class="field"><span>API URL — blank uses the built-in default</span>
-            <input type="text" id="apiUrl" value="${esc((() => { try { return localStorage.getItem(API_KEY) || ""; } catch (e) { return ""; } })())}" placeholder="${esc(DEFAULT_API) || "https://…"}"></label>
-          <label class="field"><span>Write token — needed to push changes</span>
-            <input type="text" id="apiTok" value="${esc(apiToken)}" placeholder="paste the team write token"></label>
-          <p style="margin:0; color:var(--ink-3); font-size:11.5px">Changes to either take effect after a reload. Without a token you can still read everything live; your edits just stay in this browser.</p>
+          <label class="field"><span>Repository</span>
+            <input type="text" id="apiUrl" value="${esc(ghRepo === GH_REPO ? "" : ghRepo)}" placeholder="${esc(GH_REPO)}"></label>
+          <label class="field"><span>Access token — a fine-grained PAT with Contents: read and write</span>
+            <input type="password" id="apiTok" value="${esc(apiToken)}" placeholder="github_pat_…"></label>
+          <p style="margin:0; color:var(--ink-3); font-size:11.5px">Without a token you can read the board but not change it. The token stays in this browser and is never committed — scope it to this one repository, and revoke it on GitHub if it ever leaks.</p>
         </div>
       </div>
 
@@ -2976,8 +3016,8 @@ function dataDrawer(){
   };
   const apiBox = drawer.querySelector("#apiUrl");
   if (apiBox) apiBox.onchange = () => {
-    try { localStorage.setItem(API_KEY, apiBox.value.trim()); } catch (e) {}
-    toast("API URL saved — reload to connect");
+    try { localStorage.setItem(REPO_KEY, apiBox.value.trim()); } catch (e) {}
+    toast("Repository saved — reload to connect");
   };
   const tokBox = drawer.querySelector("#apiTok");
   if (tokBox) tokBox.onchange = () => {
@@ -3004,8 +3044,9 @@ function dataDrawer(){
       : "Discard everything in this browser and go back to the built-in seed?")) return;
     if (liveMode){
       try {
-        const cur = await (await apiFetch("/api/desk")).json();
-        shared = cur.desk;
+        const cur = await fetchBoard();
+        shared = cur.doc;
+        fileSha = cur.sha;
       } catch (e) {}
     }
     const target = shared || SEED;
