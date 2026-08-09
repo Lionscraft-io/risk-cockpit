@@ -952,7 +952,9 @@ const TOKEN_KEY = "lionscraft-desk-token";
 
 const apiBase = (() => {
   try { const o = localStorage.getItem(API_KEY); if (o) return o.replace(/\/+$/, ""); } catch (e) {}
+  /* Served by the backend itself — locally or hosted — its own origin is the API. */
   if (/\.(replit\.app|repl\.co|replit\.dev)$/.test(location.hostname)) return location.origin;
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return location.origin;
   return DEFAULT_API;
 })();
 let apiToken = "";
