@@ -1,0 +1,15 @@
+{
+  "name": "risk-cockpit-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Live backend for the Lionscraft Partner & Facility Desk — one JSON document over REST. Contract in ../AGENTS.md.",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "pg": "^8.13.0"
+  }
+}

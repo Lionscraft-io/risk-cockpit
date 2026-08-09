@@ -14,3 +14,7 @@
 lionscraft-desk*.json
 desk*.json
 !data/desk.json
+
+# Server dev-mode state and installs
+server/desk-local.json
+server/node_modules/
