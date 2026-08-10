@@ -194,7 +194,7 @@ mid-run.
 
 ## 6. Guardrails for anything you write
 
-These come from `docs/master-narrative.md` and they are not stylistic
+These come from `docs/narrative/` and they are not stylistic
 preferences — outreach that breaks them actively damages the pitch.
 
 - **Never lead with blockchain, crypto, tokenisation or "on-chain."** Lead with
