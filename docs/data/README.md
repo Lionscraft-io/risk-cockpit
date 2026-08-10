@@ -62,10 +62,28 @@ Reading is public. To commit from the desk you need a GitHub token:
 5. Generate, copy the value — GitHub shows it once
 6. Desk → **Data** → paste into **Access token**, reload
 
-**You enter it once.** It is kept in this browser's local storage and survives
-reloads and restarts, so it is prefilled next time you open **Data**. You only
-need it again in a different browser, on a different device, in a private
-window, or after clearing site data — each of those is a separate storage.
+**You enter it once per browser.** It is kept in that browser's local storage
+and survives reloads and restarts, so it is prefilled next time you open
+**Data**.
+
+### Setting up another browser or phone without retyping it
+
+Open **Data → Copy setup link**. That produces a link with the token in its
+fragment. Open it once on the other device — phone, laptop, another browser —
+and that browser is configured permanently. The desk absorbs the token and
+**wipes it out of the address bar immediately**, so it does not sit in the tab
+or show up in a screenshot.
+
+Two things to understand about that link:
+
+- **It is the credential.** Anyone who opens it can edit the board. Send it to
+  yourself, or to someone you would hand the token to — not into a group chat
+- The fragment (everything after `#`) is **never sent to any server**, so the
+  token does not appear in GitHub's logs. It does land in that browser's
+  history, which is why it gets wiped from the bar on arrival
+
+Storing the link, or the token itself, in a password manager is the tidiest
+way to keep it to hand.
 
 Choosing **No expiration** on GitHub makes it permanent; a dated expiry means
 re-entering it when it lapses. No expiration is reasonable here given the token

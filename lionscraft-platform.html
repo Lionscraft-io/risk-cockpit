@@ -1334,8 +1334,35 @@ function renderRail(){
 /* The open tab lives in the URL hash, so a refresh keeps you where you were,
    back and forward work, and a tab can be linked to directly. Plan carries its
    sub-view too: #plan/gantt. */
+/* A setup link carries the access token in the URL fragment — `#board&k=…` —
+   so a new browser or phone is configured by opening one link instead of
+   pasting a token. The fragment is never sent to any server. It is consumed
+   and wiped from the address bar immediately, so it does not linger in the
+   tab, in a screenshot, or in what gets copied out of the address bar.
+
+   The link is the credential. Treat it like one. */
+function takeTokenFromHash(){
+  const raw = (location.hash || "").replace(/^#/, "");
+  if (!raw.includes("k=")) return false;
+  const [route, ...rest] = raw.split("&");
+  const params = new URLSearchParams(rest.join("&"));
+  const k = (params.get("k") || "").trim();
+  params.delete("k");
+  const tail = params.toString();
+  history.replaceState(null, "",
+    location.pathname + (route ? "#" + route + (tail ? "&" + tail : "") : ""));
+  if (!k) return false;
+  apiToken = k;
+  try { localStorage.setItem(TOKEN_KEY, apiToken); } catch (e) {}
+  return true;
+}
+
+function setupLink(){
+  return location.origin + location.pathname + "#overview&k=" + encodeURIComponent(apiToken);
+}
+
 function routeFromHash(){
-  const [view, mode] = (location.hash || "").replace(/^#\/?/, "").split("/");
+  const [view, mode] = (location.hash || "").replace(/^#\/?/, "").split("&")[0].split("/");
   return {
     view: VIEWS.some(v => v.id === view) ? view : "overview",
     mode: ["list", "gantt"].includes(mode) ? mode : null
@@ -3013,7 +3040,14 @@ function dataDrawer(){
             <input type="text" id="apiUrl" value="${esc(ghRepo === GH_REPO ? "" : ghRepo)}" placeholder="${esc(GH_REPO)}"></label>
           <label class="field"><span>Access token — a fine-grained PAT with Contents: read and write</span>
             <input type="password" id="apiTok" value="${esc(apiToken)}" placeholder="github_pat_…"></label>
-          <p style="margin:0; color:var(--ink-3); font-size:11.5px">Without a token you can read the board but not change it. The token stays in this browser and is never committed — scope it to this one repository, and revoke it on GitHub if it ever leaks.</p>
+          <p style="margin:0; color:var(--ink-3); font-size:11.5px">Without a token you can read the board but not change it. It is saved as you type and stays in this browser — never committed. Scope it to this one repository, and revoke it on GitHub if it leaks.</p>
+          ${apiToken ? `
+          <div style="border-top:1px solid var(--line); padding-top:10px; display:grid; gap:7px">
+            <span class="eyebrow">Set up another browser or phone</span>
+            <p style="margin:0; color:var(--ink-2); font-size:12.5px">Copy a link that configures whichever browser opens it — no pasting the token again. Open it once on your phone and that device is set up for good.</p>
+            <button class="btn" data-setuplink style="justify-self:start">Copy setup link</button>
+            <p style="margin:0; color:var(--ochre); font-size:11.5px">That link contains your token. Anyone who opens it can edit the board — send it only to yourself or someone you would give the token to.</p>
+          </div>` : ""}
         </div>
       </div>
 
@@ -3033,6 +3067,9 @@ function dataDrawer(){
     catch (e) { toast("Clipboard blocked"); return false; }
   };
   drawer.querySelector("[data-copy]").onclick = () => copy(JSON.stringify(DB, null, 2), "Backup copied");
+
+  const linkBtn = drawer.querySelector("[data-setuplink]");
+  if (linkBtn) linkBtn.onclick = () => copy(setupLink(), "Setup link copied — open it on the other device");
 
   const nameBox = drawer.querySelector("#meName");
   if (nameBox) nameBox.oninput = () => {
@@ -3185,10 +3222,14 @@ document.getElementById("themeBtn").onclick = () => {
 document.getElementById("syncChip").onclick = dataDrawer;
 
 (async function init(){
+  const arrivedWithToken = takeTokenFromHash();
+
   const r = routeFromHash();
   current = r.view;
   if (r.mode) planMode = r.mode;
   applyRoute(true);
+
+  if (arrivedWithToken) setTimeout(() => toast("This browser can now edit the board"), 400);
 
   renderRail();
   render();
