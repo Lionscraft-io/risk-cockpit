@@ -11,6 +11,7 @@
   --accent:#0E5F50; --accent-ink:#0B473C; --accent-soft:#D8EAE4;
   --ochre:#8E6410; --ochre-soft:#F2E8D3;
   --danger:#9C3627; --danger-soft:#F6E1DC;
+  --bridge:#4C5B8C; --bridge-soft:#E4E7F3;
   --shadow:0 1px 2px rgba(17,25,23,.05), 0 8px 24px -12px rgba(17,25,23,.18);
   --radius:6px;
   --display:ui-serif, Georgia, "Iowan Old Style", "Times New Roman", serif;
@@ -25,6 +26,7 @@
     --accent:#4FC2A4; --accent-ink:#7FD6BF; --accent-soft:#12302A;
     --ochre:#D3A24C; --ochre-soft:#31270F;
     --danger:#E08170; --danger-soft:#3A1C17;
+    --bridge:#9AA8DC; --bridge-soft:#1E2340;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
   }
 }
@@ -35,6 +37,7 @@
   --accent:#0E5F50; --accent-ink:#0B473C; --accent-soft:#D8EAE4;
   --ochre:#8E6410; --ochre-soft:#F2E8D3;
   --danger:#9C3627; --danger-soft:#F6E1DC;
+  --bridge:#4C5B8C; --bridge-soft:#E4E7F3;
   --shadow:0 1px 2px rgba(17,25,23,.05), 0 8px 24px -12px rgba(17,25,23,.18);
 }
 :root[data-theme="dark"]{
@@ -44,6 +47,7 @@
   --accent:#4FC2A4; --accent-ink:#7FD6BF; --accent-soft:#12302A;
   --ochre:#D3A24C; --ochre-soft:#31270F;
   --danger:#E08170; --danger-soft:#3A1C17;
+  --bridge:#9AA8DC; --bridge-soft:#1E2340;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
 }
 
@@ -351,6 +355,21 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 :root[data-theme="light"] .kcard .kws{color:var(--accent-ink)}
 .kcard .kpartner{color:var(--ink-3); font-size:11px}
 .colempty{padding:16px 4px; text-align:center; color:var(--ink-3); font-size:11.5px}
+
+/* Tasks that live on the other board — shown here, owned there. */
+.kcard.bridged{
+  border-left-color:var(--bridge); border-style:dashed; border-left-style:solid;
+  background:linear-gradient(var(--bridge-soft), var(--bridge-soft)) left/3px 100% no-repeat, var(--surface);
+  cursor:alias;
+}
+.kcard.bridged .kt{color:var(--ink-2)}
+.kbridge{
+  font-family:var(--data); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--bridge); background:var(--bridge-soft); padding:1px 5px; border-radius:3px;
+}
+.kcard.bridged .kmeta .num{color:var(--ink-3)}
+.bridgenote{display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--ink-3); padding:2px 1px 0}
+.bridgenote i{width:9px; height:9px; border-radius:2px; background:var(--bridge); flex:none; font-style:normal}
 
 /* ─── Milestones ─────────────────────────────────────────────────────── */
 .ms{display:flex; flex-direction:column}
@@ -1689,6 +1708,75 @@ function viewPlan(){
   </section>`;
 }
 
+/* ── The bridge to the workforce board ────────────────────────────────
+   That board keeps one markdown file per task with YAML frontmatter. Tasks
+   labelled `risk` there are shown here, in the column matching their status —
+   read-only, because they belong to that board. Nothing is copied, so the two
+   cannot drift.
+
+   Listing the directory costs one API call; the files themselves come from the
+   raw CDN, which is not rate-limited. The whole thing is cached, so the desk
+   does not spend its unauthenticated API budget on a poll loop. */
+const BRIDGE = {
+  repo:  "toniilein/workforce",
+  dir:   "tasks",
+  label: "risk",
+  board: "https://toniilein.github.io/workforce/",
+  every: 10 * 60 * 1000
+};
+const BRIDGE_KEY = "lionscraft-desk-bridge";
+let bridged = [];
+
+function parseFrontmatter(text){
+  const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!m) return null;
+  const out = {};
+  for (const line of m[1].split(/\r?\n/)){
+    const i = line.indexOf(":");
+    if (i > 0) out[line.slice(0, i).trim()] = line.slice(i + 1).trim();
+  }
+  return out;
+}
+const parseLabels = v => String(v || "")
+  .replace(/^\[|\]$/g, "").split(",")
+  .map(x => x.trim().replace(/^["']|["']$/g, "").toLowerCase())
+  .filter(Boolean);
+
+async function loadBridge(){
+  let cache = null;
+  try { cache = JSON.parse(localStorage.getItem(BRIDGE_KEY) || "null"); } catch (e) {}
+  if (cache && Array.isArray(cache.tasks)){
+    bridged = cache.tasks;
+    if (Date.now() - (cache.at || 0) < BRIDGE.every) return;
+  }
+  try {
+    const res = await fetch("https://api.github.com/repos/" + BRIDGE.repo + "/contents/" + BRIDGE.dir, {cache:"no-store"});
+    if (!res.ok) throw new Error("listing: HTTP " + res.status);
+    const files = (await res.json()).filter(f => f.name.endsWith(".md") && f.download_url);
+    const texts = await Promise.all(files.map(f => fetch(f.download_url).then(r => r.text()).catch(() => "")));
+
+    const out = [];
+    texts.forEach((text, i) => {
+      const fm = parseFrontmatter(text);
+      if (!fm || !parseLabels(fm.labels).includes(BRIDGE.label)) return;
+      out.push({
+        id: "wf:" + (fm.id || files[i].name.replace(/\.md$/, "")),
+        sourceId: fm.id || files[i].name.replace(/\.md$/, ""),
+        title: fm.title || files[i].name,
+        /* The other board has statuses this one does not (admin). Park those
+           in Backlog but keep the original visible, so nothing is misreported. */
+        status: STATUS_CYCLE.includes(fm.status) ? fm.status : "backlog",
+        sourceStatus: fm.status || "",
+        owner: fm.assignee || "",
+        due: /^\d{4}-\d{2}-\d{2}$/.test(fm.due || "") ? fm.due : "",
+        bridged: true
+      });
+    });
+    bridged = out;
+    try { localStorage.setItem(BRIDGE_KEY, JSON.stringify({at: Date.now(), tasks: out})); } catch (e) {}
+  } catch (e) { /* keep whatever the cache had; the bridge is never load-bearing */ }
+}
+
 /* ── Board ────────────────────────────────────────────────────────── */
 
 let boardWs = "", boardOwner = "", boardQ = "";
@@ -1702,6 +1790,14 @@ function viewBoard(){
     list = list.filter(t => (t.title + " " + t.owner + " " + t.ws).toLowerCase().includes(q));
   }
   list.sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
+
+  /* Bridged tasks have no workstream, so a workstream filter hides them. */
+  let bridge = boardWs ? [] : bridged.slice();
+  if (boardOwner) bridge = bridge.filter(t => (t.owner || "") === (boardOwner === "—" ? "" : boardOwner));
+  if (boardQ){
+    const q = boardQ.toLowerCase();
+    bridge = bridge.filter(t => (t.title + " " + t.owner).toLowerCase().includes(q));
+  }
 
   const owners = [...new Set(DB.tasks.map(t => t.owner).filter(Boolean))].sort();
   const inFocus = list.filter(t => t.status === "focus").length;
@@ -1749,12 +1845,26 @@ function viewBoard(){
       <div style="padding:12px">
         <div class="board">
           ${STATUS_CYCLE.map(s => {
-            const cards = list.filter(t => t.status === s);
+            const mine = list.filter(t => t.status === s);
+            const theirs = bridge.filter(t => t.status === s);
+            const cards = mine.concat(theirs);
             return `
             <div class="col" data-col="${s}">
               <header><span class="rail-dot"></span>${statusLabel[s]}<b>${cards.length}</b></header>
               <div class="stack">
                 ${cards.length ? cards.map(t => {
+                  if (t.bridged) return `
+                  <article class="kcard bridged" data-bridged="${esc(t.id)}"
+                           title="Lives on the workforce board — open it there to change it">
+                    <span class="kt">${esc(t.title)}</span>
+                    <span class="kmeta">
+                      <span class="kbridge">workforce</span>
+                      <span>${esc(t.sourceId)}</span>
+                      ${t.sourceStatus && t.sourceStatus !== t.status ? `<span>${esc(t.sourceStatus)}</span>` : ""}
+                      ${t.owner ? `<span>${esc(t.owner)}</span>` : ""}
+                      <span class="num ${isOverdue(t.due) ? "overdue" : ""}" style="margin-left:auto">${fmtDate(t.due)}</span>
+                    </span>
+                  </article>`;
                   const p = DB.partners.find(x => x.id === t.partner);
                   const isLate = isOverdue(t.due) && t.status !== "done";
                   return `
@@ -1772,6 +1882,11 @@ function viewBoard(){
             </div>`;
           }).join("")}
         </div>
+        ${bridged.length ? `<div class="bridgenote"><i></i>
+          ${bridge.length} task${bridge.length === 1 ? "" : "s"} labelled
+          <b style="font-weight:600">${esc(BRIDGE.label)}</b> from the
+          <a href="${BRIDGE.board}" target="_blank" rel="noopener">workforce board</a>
+          — shown here, changed there.</div>` : ""}
       </div>
     </div>
   </div>`;
@@ -3195,6 +3310,9 @@ document.getElementById("view").addEventListener("click", e => {
   /* Timeline bars and diamonds are driven by pointer events, not clicks. */
   if (e.target.closest(".gbar, .gms")) return;
 
+  const bc = e.target.closest("[data-bridged]");
+  if (bc){ window.open(BRIDGE.board, "_blank", "noopener"); return; }
+
   const kc = e.target.closest("[data-card]");
   if (kc){ taskDrawer(kc.dataset.card); return; }
 
@@ -3250,5 +3368,8 @@ document.getElementById("syncChip").onclick = dataDrawer;
   renderRail();
   renderBanner();
   render();
+
+  /* Non-blocking: the board is useful without it. */
+  loadBridge().then(() => { if (current === "board") render(); });
 })();
 </script>

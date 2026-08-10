@@ -60,6 +60,40 @@ One column fills the screen and you swipe between them, with the next column
 peeking at the edge. Cards stay fully readable rather than being squeezed into
 four narrow columns.
 
+## Tasks bridged from the workforce board
+
+The [workforce board](https://github.com/toniilein/workforce) is the other
+kanban — personal and company work, one markdown file per task. Any task there
+labelled **`risk`** appears in this board's columns, in a distinct blue-violet,
+carrying a `workforce` chip and its source id.
+
+They are **shown here and changed there.** Bridged cards cannot be dragged or
+edited in this desk — clicking one opens the workforce board. Nothing is copied
+between the two repositories, so they cannot drift out of step: the bridge reads
+the other board's files directly.
+
+To bridge a task, add the label in its frontmatter over there:
+
+```yaml
+---
+id: LC-013
+title: Create slides for Scott Petty VF CTO for Sri Lanka pilot
+status: focus
+assignee: Adi
+due: 2026-08-27
+labels: risk
+---
+```
+
+Both boards share the same status vocabulary, so a bridged task lands in the
+matching column. Workforce also has an **`admin`** status this board does not —
+those tasks appear in Backlog with their real status shown on the card, rather
+than being silently relabelled.
+
+The bridge is cached and refreshed at most every ten minutes; it is never
+load-bearing, so if the other repository is unreachable the board simply shows
+your own tasks.
+
 ---
 
 **Data:** [`data/plan/tasks.json`](../../data/plan/tasks.json) — the same file the Plan uses ·
