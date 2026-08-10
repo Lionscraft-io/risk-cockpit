@@ -529,6 +529,8 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 .syncchip[data-s="synced"] .dot{background:var(--accent)}
 .syncchip[data-s="live"] .dot{background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
 .syncchip[data-s="live"]{color:var(--accent-ink); border-color:var(--accent-soft)}
+.syncchip[data-s="live"].localonly{color:var(--ochre); border-color:var(--ochre-soft)}
+.syncchip[data-s="live"].localonly .dot{background:var(--ochre); box-shadow:0 0 0 3px var(--ochre-soft)}
 :root[data-theme="dark"] .syncchip[data-s="live"]{color:var(--accent)}
 @media (prefers-color-scheme: dark){.syncchip[data-s="live"]{color:var(--accent)}}
 :root[data-theme="light"] .syncchip[data-s="live"]{color:var(--accent-ink)}
@@ -963,6 +965,7 @@ try { apiToken = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) {}
 
 let liveMode = false;          // reached the store this session
 let authRequired = true;       // false when the backend accepts open writes
+let localBackend = false;      // backend writes to a working tree, not GitHub
 let headSha = null;            // commit the working copy came from — our CAS token
 let pushTimer = null, pollTimer = null, pushing = false;
 
@@ -1217,7 +1220,8 @@ async function connectBackend(){
       try {
         const h = await (await fetch(proxyBase + "/healthz", {cache:"no-store"})).json();
         authRequired = h.auth !== "open";
-      } catch (e) { authRequired = true; }
+        localBackend = !!h.local;
+      } catch (e) { authRequired = true; localBackend = false; }
     }
     const cur = await fetchBoard();
     if (!Array.isArray(cur.partners)) throw new Error("unexpected shape");
@@ -1477,7 +1481,9 @@ window.addEventListener("popstate", () => {
 /* ══ Sync surface ═════════════════════════════════════════════════════ */
 
 const SYNC_LABEL = {
-  live:    () => "live · rev " + revOf(DB),
+  /* "live" must mean the shared board. A development backend writes to somebody's
+     working tree and reaches nobody else, so it says so. */
+  live:    () => (localBackend ? "working copy · rev " : "live · rev ") + revOf(DB),
   ahead:   () => (apiToken || !authRequired) ? "saving…" : "token needed",
   behind:  () => "update available",
   offline: () => "offline"
@@ -1486,9 +1492,12 @@ const SYNC_LABEL = {
 function renderBanner(){
   const chip = document.getElementById("syncChip");
   chip.dataset.s = syncState;
+  chip.classList.toggle("localonly", localBackend);
   chip.querySelector(".txt").textContent = SYNC_LABEL[syncState]();
   chip.title = {
-    live:    "Connected to the backend. Saves push automatically and others' changes arrive on their own.",
+    live:    localBackend
+      ? "This backend is in development mode: saves are written to its working tree, not committed to GitHub. Nobody else sees them until someone commits."
+      : "Connected to the backend. Saves push automatically and others' changes arrive on their own.",
     ahead:   apiToken ? "Pushing your edits to the backend…" : "Edits are local only — set the write token under Data to push them.",
     behind:  "The board has moved on since your copy was taken.",
     offline: "Backend unreachable — working from this browser's copy and reconnecting automatically. Unpushed edits go up when it returns."
@@ -3423,7 +3432,9 @@ function noteDrawer(){
 
 function dataDrawer(){
   const state = {
-    live:    `Connected to <code>${esc(ghRepo)}</code> at revision <code>${revOf(DB)}</code>. Every save is one commit under <code>data/</code> — git is the database and the audit trail.`,
+    live:    localBackend
+      ? `This backend is in <b>development mode</b>: it writes to its own working tree at revision <code>${revOf(DB)}</code> and does not commit. Your changes are saved to disk but reach nobody else until someone commits them. Give the server a <code style="font-family:var(--data)">GITHUB_TOKEN</code> to have it commit to <code>${esc(ghRepo)}</code> instead.`
+      : `Connected to <code>${esc(ghRepo)}</code> at revision <code>${revOf(DB)}</code>. Every save is one commit under <code>data/</code> — git is the database and the audit trail.`,
     ahead:   apiToken ? `Pushing your edits to the board…`
                       : `The board is reachable but this browser has no write token, so your edits stay local. Set the token below.`,
     behind:  `The board is at revision <code>${revOf(shared)}</code>; your unpushed edits started from <code>${sync.base}</code>. Use the banner to resolve it.`,

@@ -72,7 +72,16 @@ WRITE_TOKEN=<any-string> node server/index.mjs
 ```
 
 It serves the desk at `/` and the API under `/api/…`, and the desk auto-detects
-that it is being served by its own backend. Dependencies are vendored, so a bare
+that it is being served by its own backend.
+
+**Without `GITHUB_TOKEN` it is a development server**: saves are written to the
+`data/` files in your checkout and nothing reaches GitHub. That is deliberate —
+you can edit the board freely and read the diff — but it does mean changes stay
+on your machine until you commit them. The desk says so: the chip reads
+`working copy`, in amber rather than green.
+
+Give it a `GITHUB_TOKEN` and the same server commits to the real repository
+instead. Dependencies are vendored, so a bare
 checkout plus `node` is a running server — no install step.
 
 `Dockerfile` and `render.yaml` deploy it to any container host or to Render with
