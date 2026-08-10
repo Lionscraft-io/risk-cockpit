@@ -19,9 +19,10 @@
  * No dependencies.
  */
 import http from "node:http";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { createHash } from "node:crypto";
 
 const PORT      = Number(process.env.PORT) || 8788;
 const GH_TOKEN  = process.env.GITHUB_TOKEN || "";
@@ -30,9 +31,17 @@ const REPO      = process.env.REPO || "Lionscraft-io/risk-cockpit";
 const BRANCH    = process.env.BRANCH || "main";
 const GH_API    = process.env.GH_API || "https://api.github.com";
 
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+
 /* The desk itself, from this checkout — so the deployed URL shows the board
    rather than an API error, and that copy talks to its own origin. */
-const HTML = join(dirname(fileURLToPath(import.meta.url)), "..", "lionscraft-platform.html");
+const HTML = join(ROOT, "lionscraft-platform.html");
+
+/* With no GitHub token this reads and writes the checkout's own data/ files
+   instead of committing. That is development mode: run it, open it, edit the
+   board, and inspect what changed with `git diff` — no credentials, and no way
+   to touch the real repository by accident. */
+const LOCAL = !GH_TOKEN;
 
 const FILES = [
   {key:"meta",        path:"data/meta.json",              wrap:true},
@@ -74,10 +83,24 @@ async function ghJson(path, opts, what){
   return res.json();
 }
 
-const headCommit = () =>
-  ghJson("/repos/" + REPO + "/commits/" + BRANCH + "?per_page=1", {}, "head").then(c => c.sha);
+/* Local equivalents of the three GitHub operations. The "head" is a content
+   hash, which gives the same compare-and-swap behaviour as a commit sha. */
+const localRead = f => JSON.parse(readFileSync(join(ROOT, f.path), "utf8"));
+const localHead = () =>
+  createHash("sha1").update(FILES.map(f => readFileSync(join(ROOT, f.path), "utf8")).join("\0"))
+    .digest("hex");
+
+const headCommit = () => LOCAL
+  ? Promise.resolve(localHead())
+  : ghJson("/repos/" + REPO + "/commits/" + BRANCH + "?per_page=1", {}, "head").then(c => c.sha);
 
 async function readBoard(){
+  if (LOCAL){
+    const doc = {};
+    FILES.forEach(f => { const v = localRead(f); if (f.wrap) Object.assign(doc, v); else doc[f.key] = v; });
+    if (!Array.isArray(doc.activity)) doc.activity = [];
+    return doc;
+  }
   const parts = await Promise.all(FILES.map(f =>
     ghJson("/repos/" + REPO + "/contents/" + f.path + "?ref=" + BRANCH, {}, f.path)
       .then(m => JSON.parse(Buffer.from(m.content, "base64").toString("utf8")))));
@@ -99,6 +122,17 @@ async function commitBoard(doc, parent, who){
     return JSON.stringify(before) !== JSON.stringify(after);
   });
   if (!changed.length) return {revision: doc.meta.revision, head: parent, unchanged: true};
+
+  if (LOCAL){
+    for (const f of changed){
+      const content = JSON.stringify(f.wrap ? {version:doc.version || 1, meta:doc.meta} : doc[f.key], null, 2) + "\n";
+      mkdirSync(dirname(join(ROOT, f.path)), {recursive: true});
+      writeFileSync(join(ROOT, f.path), content);
+    }
+    console.log("wrote revision " + doc.meta.revision + " (" + (who || "unattributed") +
+      ") to the working tree — " + changed.map(f => f.path).join(", "));
+    return {revision: doc.meta.revision, head: localHead(), files: changed.length, local: true};
+  }
 
   const tree = await Promise.all(changed.map(async f => {
     const content = JSON.stringify(f.wrap ? {version:doc.version || 1, meta:doc.meta} : doc[f.key], null, 2) + "\n";
@@ -155,7 +189,9 @@ function sameSecret(a, b){
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
 }
-const authed = req =>
+/* In development mode with no password configured, writes are open — there is
+   nothing to protect, since it can only touch this working tree. */
+const authed = req => (LOCAL && !PASSWORD) ||
   sameSecret((req.headers.authorization || "").replace(/^Bearer\s+/i, ""), PASSWORD);
 
 let writing = Promise.resolve();
@@ -184,14 +220,13 @@ http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && path === "/api/board"){
-      if (!GH_TOKEN) return send(res, 500, {error: "server_misconfiguration", detail: "GITHUB_TOKEN not set"});
       const [head, desk] = await Promise.all([headCommit(), readBoard()]);
       return send(res, 200, {revision: desk.meta.revision, head, desk});
     }
 
     if (req.method === "PUT" && path === "/api/board"){
-      if (!GH_TOKEN || !PASSWORD)
-        return send(res, 500, {error: "server_misconfiguration", detail: "GITHUB_TOKEN or APP_PASSWORD not set"});
+      if (!LOCAL && !PASSWORD)
+        return send(res, 500, {error: "server_misconfiguration", detail: "APP_PASSWORD not set"});
       if (!authed(req)) return send(res, 401, {error: "unauthorized"});
 
       let body;
@@ -229,7 +264,12 @@ http.createServer(async (req, res) => {
     send(res, 500, {error: "internal", detail: String(e.message || e)});
   }
 }).listen(PORT, "0.0.0.0", () => {
-  console.log("risk-cockpit proxy on 0.0.0.0:" + PORT + " → " + REPO + "@" + BRANCH);
-  if (!GH_TOKEN)  console.log("  WARNING: GITHUB_TOKEN not set — reads and writes will fail");
-  if (!PASSWORD)  console.log("  WARNING: APP_PASSWORD not set — writes are disabled");
+  if (LOCAL){
+    console.log("risk-cockpit — development mode on http://127.0.0.1:" + PORT);
+    console.log("  the board reads and writes " + join(ROOT, "data") + " — nothing reaches GitHub");
+    console.log("  changes show up in `git diff`" + (PASSWORD ? "" : "; writes need no password here"));
+  } else {
+    console.log("risk-cockpit proxy on 0.0.0.0:" + PORT + " → " + REPO + "@" + BRANCH);
+    if (!PASSWORD) console.log("  WARNING: APP_PASSWORD not set — writes are disabled");
+  }
 });
