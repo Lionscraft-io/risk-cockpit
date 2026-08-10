@@ -347,11 +347,7 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 }
 .coladd:hover{border-color:var(--ink-3); color:var(--ink-2); background:var(--surface)}
 .coladd input{width:100%; border:0; background:none; padding:0; font-size:12.5px}
-.addcol{
-  align-self:start; min-width:52px; height:44px; border:1px dashed var(--line-strong);
-  border-radius:var(--radius); background:none; color:var(--ink-3); font-size:18px; cursor:pointer;
-}
-.addcol:hover{border-color:var(--accent); color:var(--accent)}
+
 .col{max-height:min(68vh,660px)}
 .col .stack{padding:9px; display:flex; flex-direction:column; gap:8px; flex:1; overflow-y:auto; overscroll-behavior:contain}
 .col.over{border-color:var(--accent); background:var(--accent-soft)}
@@ -1804,6 +1800,21 @@ async function loadBridge(){
     bridged = cache.tasks;
     if (Date.now() - (cache.at || 0) < BRIDGE.every) return;
   }
+
+  /* Through the backend when there is one: it has no CORS problem, no
+     per-viewer rate limit, and it caches for everybody at once. */
+  if (useProxy){
+    try {
+      const out = await (await fetch(proxyBase + "/api/bridge", {cache:"no-store"})).json();
+      bridged = (out.tasks || []).map(t => Object.assign({}, t, {
+        sourceStatus: t.status,
+        status: STATUS_CYCLE.includes(t.status) ? t.status : STATUS_CYCLE[0]
+      }));
+      try { localStorage.setItem(BRIDGE_KEY, JSON.stringify({at: Date.now(), tasks: bridged})); } catch (e) {}
+      return;
+    } catch (e) { /* fall through to reading GitHub directly */ }
+  }
+
   try {
     const res = await fetch("https://api.github.com/repos/" + BRIDGE.repo + "/contents/" + BRIDGE.dir, {cache:"no-store"});
     if (!res.ok) throw new Error("listing: HTTP " + res.status);
@@ -1899,6 +1910,7 @@ function viewBoard(){
         </div>
         <span class="spacer"></span>
         <span class="cat">Drag to reorder</span>
+        <button class="btn ghost" id="addColumn" title="Add a column">+ Column</button>
       </header>
       <div style="padding:12px">
         <div class="board">
@@ -1946,7 +1958,6 @@ function viewBoard(){
               <button class="coladd" data-addto="${esc(s)}">+ Add a task</button>
             </div>`;
           }).join("")}
-          <button class="addcol" id="addColumn" title="Add a column">+</button>
         </div>
         ${bridged.length ? `<div class="bridgenote"><i></i>
           ${bridge.length} task${bridge.length === 1 ? "" : "s"} labelled

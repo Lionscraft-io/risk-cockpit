@@ -31,6 +31,13 @@ const REPO      = process.env.REPO || "Lionscraft-io/risk-cockpit";
 const BRANCH    = process.env.BRANCH || "main";
 const GH_API    = process.env.GH_API || "https://api.github.com";
 
+/* The other kanban. Tasks there labelled BRIDGE_LABEL are surfaced on this
+   board. Fetched here rather than in the browser: no CORS, no per-viewer rate
+   limit, and one request instead of one per task file. */
+const BRIDGE_REPO  = process.env.BRIDGE_REPO  || "toniilein/workforce";
+const BRIDGE_DIR   = process.env.BRIDGE_DIR   || "tasks";
+const BRIDGE_LABEL = process.env.BRIDGE_LABEL || "risk";
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 /* The desk itself, from this checkout — so the deployed URL shows the board
@@ -171,6 +178,49 @@ async function commitBoard(doc, parent, who){
   return {revision: doc.meta.revision, head: commit.sha, files: changed.length};
 }
 
+/* YAML frontmatter, only as much as the other board actually uses. */
+function frontmatter(text){
+  const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!m) return null;
+  const out = {};
+  for (const line of m[1].split(/\r?\n/)){
+    const i = line.indexOf(":");
+    if (i > 0) out[line.slice(0, i).trim()] = line.slice(i + 1).trim();
+  }
+  return out;
+}
+const labelsOf = v => String(v || "").replace(/^\[|\]$/g, "").split(",")
+  .map(x => x.trim().replace(/^["']|["']$/g, "").toLowerCase()).filter(Boolean);
+
+let bridgeCache = {at: 0, tasks: []};
+async function readBridge(){
+  if (Date.now() - bridgeCache.at < 5 * 60 * 1000) return bridgeCache.tasks;
+  const headers = {"accept": "application/vnd.github+json", "user-agent": "risk-cockpit-proxy"};
+  if (GH_TOKEN) headers.authorization = "Bearer " + GH_TOKEN;
+  const res = await fetch(GH_API + "/repos/" + BRIDGE_REPO + "/contents/" + BRIDGE_DIR, {headers});
+  if (!res.ok) throw new Error("bridge listing: HTTP " + res.status);
+  const files = (await res.json()).filter(f => f.name.endsWith(".md") && f.download_url);
+  const texts = await Promise.all(files.map(f =>
+    fetch(f.download_url).then(r => r.text()).catch(() => "")));
+
+  const tasks = [];
+  texts.forEach((text, i) => {
+    const fm = frontmatter(text);
+    if (!fm || !labelsOf(fm.labels).includes(BRIDGE_LABEL)) return;
+    const sourceId = fm.id || files[i].name.replace(/\.md$/, "");
+    tasks.push({
+      id: "wf:" + sourceId, sourceId,
+      title: fm.title || files[i].name,
+      status: fm.status || "",
+      owner: fm.assignee || "",
+      due: /^\d{4}-\d{2}-\d{2}$/.test(fm.due || "") ? fm.due : "",
+      bridged: true
+    });
+  });
+  bridgeCache = {at: Date.now(), tasks};
+  return tasks;
+}
+
 const readBody = req => new Promise((resolve, reject) => {
   let size = 0; const chunks = [];
   req.on("data", d => {
@@ -225,6 +275,15 @@ http.createServer(async (req, res) => {
       catch { return send(res, 503, {error: "desk_unavailable", detail: "lionscraft-platform.html not found beside the server"}); }
       res.writeHead(200, Object.assign({"content-type": "text/html; charset=utf-8"}, CORS));
       return res.end(html);
+    }
+
+    if (req.method === "GET" && path === "/api/bridge"){
+      try {
+        return send(res, 200, {repo: BRIDGE_REPO, label: BRIDGE_LABEL, tasks: await readBridge()});
+      } catch (e) {
+        /* Never fatal: the board is useful without the other one. */
+        return send(res, 200, {repo: BRIDGE_REPO, label: BRIDGE_LABEL, tasks: [], error: String(e.message || e)});
+      }
     }
 
     if (req.method === "GET" && path === "/api/board"){
