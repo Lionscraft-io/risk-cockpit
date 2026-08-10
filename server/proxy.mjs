@@ -19,6 +19,9 @@
  * No dependencies.
  */
 import http from "node:http";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 
 const PORT      = Number(process.env.PORT) || 8788;
 const GH_TOKEN  = process.env.GITHUB_TOKEN || "";
@@ -26,6 +29,10 @@ const PASSWORD  = process.env.APP_PASSWORD || "";
 const REPO      = process.env.REPO || "Lionscraft-io/risk-cockpit";
 const BRANCH    = process.env.BRANCH || "main";
 const GH_API    = process.env.GH_API || "https://api.github.com";
+
+/* The desk itself, from this checkout — so the deployed URL shows the board
+   rather than an API error, and that copy talks to its own origin. */
+const HTML = join(dirname(fileURLToPath(import.meta.url)), "..", "lionscraft-platform.html");
 
 const FILES = [
   {key:"meta",        path:"data/meta.json",              wrap:true},
@@ -167,6 +174,14 @@ http.createServer(async (req, res) => {
        was hit or a token expired. */
     if (req.method === "GET" && path === "/healthz")
       return send(res, 200, {ok: true, repo: REPO, configured: !!GH_TOKEN && !!PASSWORD});
+
+    if (req.method === "GET" && (path === "/" || path === "/lionscraft-platform.html")){
+      let html;
+      try { html = readFileSync(HTML, "utf8"); }
+      catch { return send(res, 503, {error: "desk_unavailable", detail: "lionscraft-platform.html not found beside the server"}); }
+      res.writeHead(200, Object.assign({"content-type": "text/html; charset=utf-8"}, CORS));
+      return res.end(html);
+    }
 
     if (req.method === "GET" && path === "/api/board"){
       if (!GH_TOKEN) return send(res, 500, {error: "server_misconfiguration", detail: "GITHUB_TOKEN not set"});

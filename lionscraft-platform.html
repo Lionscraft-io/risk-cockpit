@@ -927,6 +927,8 @@ const PROXY_KEY = "lionscraft-desk-proxy";
 const DEFAULT_PROXY = "";
 const proxyBase = (() => {
   try { const o = localStorage.getItem(PROXY_KEY); if (o !== null) return o.replace(/\/+$/, ""); } catch (e) {}
+  /* Served by the proxy itself — its own origin is the backend, no setup. */
+  if (/\.(replit\.app|repl\.co|replit\.dev)$/.test(location.hostname)) return location.origin;
   return DEFAULT_PROXY;
 })();
 const useProxy = !!proxyBase;
