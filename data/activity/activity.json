@@ -53,5 +53,15 @@
     "ref": "p04",
     "summary": "\"Sri Lanka\" — which body is the counterparty?",
     "body": "Held as a single public-sector record for the host country. The alignment question is which body actually signs: the Insurance Regulatory Commission, the Telecommunications Regulatory Commission, the Central Bank, the Disaster Management Centre, or a ministry above them. Tasks t303 and t305 are attached here until that is settled — split the record once it is."
+  },
+  {
+    "id": "e_r442cn18",
+    "at": "2026-08-10T08:11:42.426Z",
+    "actor": "setup",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Write proxy is live. The desk now commits through it, so browsers hold a team password instead of a GitHub token; the token stays on the server."
   }
 ]
