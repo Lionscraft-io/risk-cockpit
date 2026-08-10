@@ -37,6 +37,9 @@ const GH_API    = process.env.GH_API || "https://api.github.com";
 const BRIDGE_REPO  = process.env.BRIDGE_REPO  || "toniilein/workforce";
 const BRIDGE_DIR   = process.env.BRIDGE_DIR   || "tasks";
 const BRIDGE_LABEL = process.env.BRIDGE_LABEL || "risk";
+/* Writing back needs a token that can write to the OTHER repo. Usually the
+   same one, scoped to both; BRIDGE_TOKEN lets it be a separate one. */
+const BRIDGE_TOKEN = process.env.BRIDGE_TOKEN || process.env.GITHUB_TOKEN || "";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -195,13 +198,20 @@ const labelsOf = v => String(v || "").replace(/^\[|\]$/g, "").split(",")
 let bridgeCache = {at: 0, tasks: []};
 async function readBridge(){
   if (Date.now() - bridgeCache.at < 5 * 60 * 1000) return bridgeCache.tasks;
+  /* The bridge repo's own token — reading it is not the board's business, and
+     a separate or more-scoped token must work for both directions. */
   const headers = {"accept": "application/vnd.github+json", "user-agent": "risk-cockpit-proxy"};
-  if (GH_TOKEN) headers.authorization = "Bearer " + GH_TOKEN;
+  if (BRIDGE_TOKEN) headers.authorization = "Bearer " + BRIDGE_TOKEN;
   const res = await fetch(GH_API + "/repos/" + BRIDGE_REPO + "/contents/" + BRIDGE_DIR, {headers});
   if (!res.ok) throw new Error("bridge listing: HTTP " + res.status);
-  const files = (await res.json()).filter(f => f.name.endsWith(".md") && f.download_url);
+  const files = (await res.json()).filter(f => f.name.endsWith(".md"));
+  /* Through the contents API rather than the raw CDN: the same call works
+     whether the other repository is public or private, and it carries the
+     token. Raw would silently return nothing for a private repo. */
+  const rawHeaders = Object.assign({}, headers, {accept: "application/vnd.github.raw"});
   const texts = await Promise.all(files.map(f =>
-    fetch(f.download_url).then(r => r.text()).catch(() => "")));
+    fetch(GH_API + "/repos/" + BRIDGE_REPO + "/contents/" + f.path, {headers: rawHeaders})
+      .then(r => r.ok ? r.text() : "").catch(() => "")));
 
   const tasks = [];
   texts.forEach((text, i) => {
@@ -219,6 +229,25 @@ async function readBridge(){
   });
   bridgeCache = {at: Date.now(), tasks};
   return tasks;
+}
+
+/* Rewrite one key in the frontmatter, touching nothing else — not the body,
+   not the other keys, not the line endings. If the key is absent it is added
+   at the end of the block rather than the file being restructured. */
+function setFrontmatterKey(text, key, value){
+  const m = text.match(/^(---\r?\n)([\s\S]*?)(\r?\n---)/);
+  if (!m) return null;
+  const [, open, block, close] = m;
+  const eol = block.includes("\r\n") ? "\r\n" : "\n";
+  const lines = block.split(/\r?\n/);
+  let found = false;
+  const next = lines.map(line => {
+    const i = line.indexOf(":");
+    if (i > 0 && line.slice(0, i).trim() === key){ found = true; return key + ": " + value; }
+    return line;
+  });
+  if (!found) next.push(key + ": " + value);
+  return open + next.join(eol) + close + text.slice(m[0].length);
 }
 
 const readBody = req => new Promise((resolve, reject) => {
@@ -284,6 +313,62 @@ http.createServer(async (req, res) => {
         /* Never fatal: the board is useful without the other one. */
         return send(res, 200, {repo: BRIDGE_REPO, label: BRIDGE_LABEL, tasks: [], error: String(e.message || e)});
       }
+    }
+
+    if (req.method === "PUT" && path === "/api/bridge"){
+      if (!LOCAL && !PASSWORD)
+        return send(res, 500, {error: "server_misconfiguration", detail: "APP_PASSWORD not set"});
+      if (!authed(req)) return send(res, 401, {error: "unauthorized"});
+      if (!BRIDGE_TOKEN)
+        return send(res, 501, {error: "bridge_read_only",
+          detail: "No token that can write to " + BRIDGE_REPO + ". Set BRIDGE_TOKEN, or scope GITHUB_TOKEN to both repositories."});
+
+      let body;
+      try { body = JSON.parse(await readBody(req)); }
+      catch (e) { return send(res, 400, {error: "bad_json"}); }
+      const sourceId = String(body.id || "").replace(/^wf:/, "");
+      const status = String(body.status || "").trim();
+      if (!/^[A-Za-z0-9._-]+$/.test(sourceId)) return send(res, 400, {error: "bad_id"});
+      if (!status) return send(res, 400, {error: "status_required"});
+
+      return serialized(async () => {
+        const file = BRIDGE_DIR + "/" + sourceId + ".md";
+        const h = {
+          "accept": "application/vnd.github+json",
+          "authorization": "Bearer " + BRIDGE_TOKEN,
+          "user-agent": "risk-cockpit-proxy",
+          "x-github-api-version": "2022-11-28"
+        };
+        try {
+          const cur = await fetch(GH_API + "/repos/" + BRIDGE_REPO + "/contents/" + file, {headers: h});
+          if (!cur.ok) return send(res, cur.status === 404 ? 404 : 502,
+            {error: "bridge_read_failed", detail: "HTTP " + cur.status + " on " + file});
+          const meta = await cur.json();
+          const text = Buffer.from(meta.content, "base64").toString("utf8");
+          const next = setFrontmatterKey(text, "status", status);
+          if (next === null) return send(res, 422, {error: "no_frontmatter", detail: file});
+          if (next === text) return send(res, 200, {id: sourceId, status, unchanged: true});
+
+          const put = await fetch(GH_API + "/repos/" + BRIDGE_REPO + "/contents/" + file, {
+            method: "PUT", headers: Object.assign({"content-type": "application/json"}, h),
+            body: JSON.stringify({
+              message: sourceId + ": status → " + status + " (from the risk board)",
+              content: Buffer.from(next, "utf8").toString("base64"),
+              sha: meta.sha, branch: "main"
+            })
+          });
+          if (!put.ok){
+            const detail = await put.text().catch(() => "");
+            return send(res, put.status === 403 ? 403 : 502,
+              {error: "bridge_write_failed", detail: "HTTP " + put.status + " " + detail.slice(0, 160)});
+          }
+          bridgeCache = {at: 0, tasks: []};   // force a re-read
+          console.log("bridge: " + sourceId + " → " + status);
+          return send(res, 200, {id: sourceId, status});
+        } catch (e) {
+          return send(res, 502, {error: "bridge_write_failed", detail: String(e.message || e)});
+        }
+      });
     }
 
     if (req.method === "GET" && path === "/api/board"){

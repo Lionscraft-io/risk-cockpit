@@ -88,10 +88,18 @@ kanban — personal and company work, one markdown file per task. Any task there
 labelled **`risk`** appears in this board's columns, in a distinct blue-violet,
 carrying a `workforce` chip and its source id.
 
-They are **shown here and changed there.** Bridged cards cannot be dragged or
-edited in this desk — clicking one opens the workforce board. Nothing is copied
-between the two repositories, so they cannot drift out of step: the bridge reads
-the other board's files directly.
+**Drag one and its status changes over there.** The backend rewrites the
+`status:` line in that task's markdown file and commits it to the workforce
+repository — nothing else in the file is touched, not the other keys, not the
+body. Clicking a bridged card opens the workforce board.
+
+Nothing is copied between the repositories, so they cannot drift: this board
+reads and writes the other one's files directly.
+
+Writing back needs a token that can write to **both** repositories — either
+`GITHUB_TOKEN` scoped to each, or a separate `BRIDGE_TOKEN`. Without one the
+bridge stays readable and a drag is refused with a message saying so, rather
+than appearing to work.
 
 To bridge a task, add the label in its frontmatter over there:
 

@@ -374,8 +374,8 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 .kcard.bridged{
   border-left-color:var(--bridge); border-style:dashed; border-left-style:solid;
   background:linear-gradient(var(--bridge-soft), var(--bridge-soft)) left/3px 100% no-repeat, var(--surface);
-  cursor:alias;
 }
+.kcard.bridged.saving{opacity:.55}
 .kcard.bridged .kt{color:var(--ink-2)}
 .kbridge{
   font-family:var(--data); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;
@@ -1930,8 +1930,8 @@ function viewBoard(){
               <div class="stack">
                 ${cards.length ? cards.map(t => {
                   if (t.bridged) return `
-                  <article class="kcard bridged" data-bridged="${esc(t.id)}"
-                           title="Lives on the workforce board — open it there to change it">
+                  <article class="kcard bridged" draggable="true" data-bridged="${esc(t.id)}"
+                           title="Lives on the workforce board — drag to change its status there, click to open it">
                     <span class="kt">${esc(t.title)}</span>
                     <span class="kmeta">
                       <span class="kbridge">workforce</span>
@@ -2036,6 +2036,45 @@ function addTaskTo(status){
   save(); renderRail(); render();
 }
 
+/* Push a status change back to the other board. Optimistic, because the round
+   trip is a commit — but it puts the card back if the write is refused. */
+async function moveBridged(id, status){
+  const t = bridged.find(x => x.id === id);
+  if (!t || t.status === status) return;
+  const was = t.status, wasSource = t.sourceStatus;
+  t.status = status; t.sourceStatus = status;
+  render();
+  document.querySelector('[data-bridged="' + CSS.escape(id) + '"]')?.classList.add("saving");
+
+  if (!useProxy){
+    t.status = was; t.sourceStatus = wasSource; render();
+    toast("Changing the other board needs the backend running");
+    return;
+  }
+  try {
+    const res = await fetch(proxyBase + "/api/bridge", {
+      method:"PUT",
+      headers:{"content-type":"application/json", "authorization":"Bearer " + (apiToken || "")},
+      body: JSON.stringify({id: t.sourceId, status})
+    });
+    if (res.ok){
+      try { localStorage.setItem(BRIDGE_KEY, JSON.stringify({at: Date.now(), tasks: bridged})); } catch (e) {}
+      render();
+      toast(t.sourceId + " → " + statusLabel[status] + " on the workforce board");
+      return;
+    }
+    const out = await res.json().catch(() => ({}));
+    t.status = was; t.sourceStatus = wasSource; render();
+    toast(out.error === "bridge_read_only"
+      ? "The backend has no token that can write to the workforce board"
+      : out.error === "unauthorized" ? "Set the password under Data to change the other board"
+      : "Could not update the workforce board" + (out.detail ? " — " + out.detail.slice(0, 60) : ""));
+  } catch (e) {
+    t.status = was; t.sourceStatus = wasSource; render();
+    toast("Could not reach the backend");
+  }
+}
+
 function wireBoard(){
   const addCol = document.getElementById("addColumn");
   if (addCol) addCol.onclick = addColumn;
@@ -2088,7 +2127,7 @@ function wireBoard(){
   let dragId = null;
   document.querySelectorAll(".kcard").forEach(card => {
     card.addEventListener("dragstart", e => {
-      dragId = card.dataset.card;
+      dragId = card.dataset.card || card.dataset.bridged;
       card.classList.add("dragging");
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", dragId);
@@ -2132,10 +2171,14 @@ function wireBoard(){
       col.classList.remove("over");
       clearMarks();
       const id = dragId || e.dataTransfer.getData("text/plain");
+      const status = col.dataset.col;
+
+      /* A task from the other board: its status lives in that repository, so
+         the move has to go back there. */
+      if (String(id).startsWith("wf:")) return moveBridged(id, status);
+
       const t = DB.tasks.find(x => x.id === id);
       if (!t) return;
-
-      const status = col.dataset.col;
       const moved = t.status !== status;
       const was = t.status;
       const {index} = insertionPoint(col, e.clientY, id);
