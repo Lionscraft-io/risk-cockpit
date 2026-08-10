@@ -119,9 +119,28 @@ matching column. Workforce also has an **`admin`** status this board does not �
 those tasks appear in Backlog with their real status shown on the card, rather
 than being silently relabelled.
 
-The bridge is cached and refreshed at most every ten minutes; it is never
-load-bearing, so if the other repository is unreachable the board simply shows
-your own tasks.
+### Keeping it current
+
+The backend watches the other repository's head commit — one cheap call — and
+only re-reads task files when something there actually changed, then only the
+files whose contents differ. A card moved on workforce shows here within about
+half a minute.
+
+**Reading it needs a GitHub token in practice.** Unauthenticated, GitHub allows
+60 API calls an hour, and a first read costs one per task file — enough to
+exhaust the budget and leave the bridge stale. With a token the limit is 5000.
+
+Running locally, set `BRIDGE_TOKEN` rather than `GITHUB_TOKEN`: the bridge gets
+its token while the board keeps writing to your working tree instead of
+committing to the real repository.
+
+```bash
+BRIDGE_TOKEN=github_pat_… node server/proxy.mjs
+```
+
+If a read fails the board keeps showing the last good list and says so, rather
+than showing a shorter one — fewer cards would read as "those were removed"
+when it means "we could not look".
 
 ---
 

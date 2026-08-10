@@ -195,23 +195,59 @@ function frontmatter(text){
 const labelsOf = v => String(v || "").replace(/^\[|\]$/g, "").split(",")
   .map(x => x.trim().replace(/^["']|["']$/g, "").toLowerCase()).filter(Boolean);
 
-let bridgeCache = {at: 0, tasks: []};
+/* Keyed on the other repository's head commit rather than a timer: check the
+   head often (one cheap call), but only re-read the task files when something
+   there actually changed. */
+let bridgeCache = {head: null, at: 0, tasks: []};
+/* Per-file, keyed on the blob sha the listing gives us, so a change to one task
+   costs one read rather than re-reading the whole directory. */
+const bridgeFiles = new Map();
 async function readBridge(){
-  if (Date.now() - bridgeCache.at < 5 * 60 * 1000) return bridgeCache.tasks;
-  /* The bridge repo's own token — reading it is not the board's business, and
-     a separate or more-scoped token must work for both directions. */
   const headers = {"accept": "application/vnd.github+json", "user-agent": "risk-cockpit-proxy"};
   if (BRIDGE_TOKEN) headers.authorization = "Bearer " + BRIDGE_TOKEN;
+
+  if (bridgeCache.head && Date.now() - bridgeCache.at < 10000) return bridgeCache.tasks;
+  try {
+    const h = await fetch(GH_API + "/repos/" + BRIDGE_REPO + "/commits/" + "main?per_page=1", {headers});
+    if (h.ok){
+      const head = (await h.json()).sha;
+      if (head && head === bridgeCache.head){
+        bridgeCache.at = Date.now();
+        return bridgeCache.tasks;
+      }
+      bridgeCache.head = head;
+    }
+  } catch (e) { if (bridgeCache.head) return bridgeCache.tasks; }
   const res = await fetch(GH_API + "/repos/" + BRIDGE_REPO + "/contents/" + BRIDGE_DIR, {headers});
   if (!res.ok) throw new Error("bridge listing: HTTP " + res.status);
-  const files = (await res.json()).filter(f => f.name.endsWith(".md"));
+  const listing = await res.json();
+  if (!Array.isArray(listing)) throw new Error("bridge listing: " + (listing.message || "unexpected"));
+  const files = listing.filter(f => f.name.endsWith(".md"));
   /* Through the contents API rather than the raw CDN: the same call works
      whether the other repository is public or private, and it carries the
      token. Raw would silently return nothing for a private repo. */
+  /* A failed file read must not quietly shrink the list — that reads as "the
+     task was removed" when it means "we could not look". Rate limiting makes
+     this likely without a token: one call per file against 60 an hour. */
   const rawHeaders = Object.assign({}, headers, {accept: "application/vnd.github.raw"});
-  const texts = await Promise.all(files.map(f =>
-    fetch(GH_API + "/repos/" + BRIDGE_REPO + "/contents/" + f.path, {headers: rawHeaders})
-      .then(r => r.ok ? r.text() : "").catch(() => "")));
+  let fetched = 0;
+  const texts = await Promise.all(files.map(async f => {
+    const hit = bridgeFiles.get(f.path);
+    if (hit && hit.sha === f.sha) return hit.text;
+    const r = await fetch(GH_API + "/repos/" + BRIDGE_REPO + "/contents/" + f.path, {headers: rawHeaders});
+    if (!r.ok){
+      const limited = r.status === 403 && r.headers.get("x-ratelimit-remaining") === "0";
+      throw new Error(limited
+        ? "GitHub rate limit reached reading " + BRIDGE_REPO +
+          (BRIDGE_TOKEN ? "" : " — without a token GitHub allows 60 calls an hour")
+        : "could not read " + f.path + ": HTTP " + r.status);
+    }
+    const text = await r.text();
+    bridgeFiles.set(f.path, {sha: f.sha, text});
+    fetched++;
+    return text;
+  }));
+  if (fetched) console.log("bridge: re-read " + fetched + " of " + files.length + " task files");
 
   const tasks = [];
   texts.forEach((text, i) => {
@@ -227,7 +263,7 @@ async function readBridge(){
       bridged: true
     });
   });
-  bridgeCache = {at: Date.now(), tasks};
+  bridgeCache = {head: bridgeCache.head, at: Date.now(), tasks};
   return tasks;
 }
 
@@ -310,8 +346,12 @@ http.createServer(async (req, res) => {
       try {
         return send(res, 200, {repo: BRIDGE_REPO, label: BRIDGE_LABEL, tasks: await readBridge()});
       } catch (e) {
-        /* Never fatal: the board is useful without the other one. */
-        return send(res, 200, {repo: BRIDGE_REPO, label: BRIDGE_LABEL, tasks: [], error: String(e.message || e)});
+        /* Never fatal, and never a shorter list than we last knew to be true:
+           showing fewer cards would read as "those were removed". */
+        return send(res, 200, {
+          repo: BRIDGE_REPO, label: BRIDGE_LABEL,
+          tasks: bridgeCache.tasks || [], stale: true, error: String(e.message || e)
+        });
       }
     }
 
@@ -362,7 +402,7 @@ http.createServer(async (req, res) => {
             return send(res, put.status === 403 ? 403 : 502,
               {error: "bridge_write_failed", detail: "HTTP " + put.status + " " + detail.slice(0, 160)});
           }
-          bridgeCache = {at: 0, tasks: []};   // force a re-read
+          bridgeCache = {head: null, at: 0, tasks: []};   // force a re-read
           console.log("bridge: " + sourceId + " → " + status);
           return send(res, 200, {id: sourceId, status});
         } catch (e) {

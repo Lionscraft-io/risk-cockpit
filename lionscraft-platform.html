@@ -1773,10 +1773,10 @@ const BRIDGE = {
   dir:   "tasks",
   label: "risk",
   board: "https://toniilein.github.io/workforce/",
-  every: 10 * 60 * 1000
+  every: 15000
 };
 const BRIDGE_KEY = "lionscraft-desk-bridge";
-let bridged = [];
+let bridged = [], bridgeStale = false, bridgeError = "";
 
 function parseFrontmatter(text){
   const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
@@ -1806,6 +1806,8 @@ async function loadBridge(){
   if (useProxy){
     try {
       const out = await (await fetch(proxyBase + "/api/bridge", {cache:"no-store"})).json();
+      bridgeStale = !!out.stale;
+      bridgeError = out.error || "";
       bridged = (out.tasks || []).map(t => Object.assign({}, t, {
         sourceStatus: t.status,
         status: STATUS_CYCLE.includes(t.status) ? t.status : STATUS_CYCLE[0]
@@ -1959,11 +1961,12 @@ function viewBoard(){
             </div>`;
           }).join("")}
         </div>
-        ${bridged.length ? `<div class="bridgenote"><i></i>
+        ${bridged.length || bridgeStale ? `<div class="bridgenote"><i></i>
           ${bridge.length} task${bridge.length === 1 ? "" : "s"} labelled
           <b style="font-weight:600">${esc(BRIDGE.label)}</b> from the
           <a href="${BRIDGE.board}" target="_blank" rel="noopener">workforce board</a>
-          — shown here, changed there.</div>` : ""}
+          — drag one and it moves there too.
+          ${bridgeStale ? `<span style="color:var(--ochre)">Not current: ${esc(bridgeError)}</span>` : ""}</div>` : ""}
       </div>
     </div>
   </div>`;
