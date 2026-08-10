@@ -139,3 +139,31 @@ the board moved.
 Agents read and write the same file, with the same discipline — through
 GitHub's hosted MCP server, the Contents API, or plain git. The contract is
 [AGENTS.md](../AGENTS.md).
+
+---
+
+## Optional: the write proxy
+
+`server/proxy.mjs` removes GitHub tokens from browsers entirely. It holds the
+GitHub token itself and makes commits on people's behalf; the browser sends only
+a short app password.
+
+| | Without the proxy | With the proxy |
+| --- | --- | --- |
+| What the browser holds | A GitHub PAT | A short app password |
+| If that leaks | Repo write access until revoked | Someone can edit the board; the repo is untouched |
+| Setup per person | Create a PAT, or use a setup link | Type the team password, or use a setup link |
+| If it goes down | — | Reads keep working from Pages; writes wait |
+
+Run it with three environment variables:
+
+```bash
+GITHUB_TOKEN=github_pat_…  APP_PASSWORD=some-phrase  node server/proxy.mjs
+```
+
+Then point the desk at it once — **Data → Repository** field's sibling setting,
+or `localStorage['lionscraft-desk-proxy'] = "https://your-proxy-url"`. From then
+on that browser reads and writes through the proxy.
+
+The proxy is stateless: it stores nothing, and the repo remains the only
+database. It is genuinely optional — the desk works without it.

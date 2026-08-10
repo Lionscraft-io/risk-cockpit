@@ -918,7 +918,18 @@ const GH_REPO   = "Lionscraft-io/risk-cockpit";
 const GH_BRANCH = "main";
 const GH_API    = "https://api.github.com";
 const REPO_KEY  = "lionscraft-desk-repo";     // override, for forks
-const TOKEN_KEY = "lionscraft-desk-token";    // fine-grained PAT, contents:write
+const TOKEN_KEY = "lionscraft-desk-token";    // app password, or a GitHub PAT
+const PROXY_KEY = "lionscraft-desk-proxy";
+
+/* With a proxy configured, it holds the GitHub token and the browser only ever
+   sends a short app password. Without one, the browser talks to GitHub itself
+   and needs a PAT. Either way the board is the same files in the same repo. */
+const DEFAULT_PROXY = "";
+const proxyBase = (() => {
+  try { const o = localStorage.getItem(PROXY_KEY); if (o !== null) return o.replace(/\/+$/, ""); } catch (e) {}
+  return DEFAULT_PROXY;
+})();
+const useProxy = !!proxyBase;
 
 /* Each part of the board is its own file. `key` is where it lives on the
    in-memory document; `wrap` means the file holds an object rather than the
@@ -976,6 +987,11 @@ async function ghFetch(path, opts){
 /* The commit the branch currently points at. One cheap call, so polling can
    ask "has anything changed?" without downloading the board. */
 async function headCommit(){
+  if (useProxy){
+    const res = await fetch(proxyBase + "/api/board", {cache:"no-store"});
+    if (!res.ok) throw new Error("head failed: HTTP " + res.status);
+    return (await res.json()).head;
+  }
   const res = await ghFetch("/repos/" + ghRepo + "/commits/" + GH_BRANCH + "?per_page=1");
   if (!res.ok) throw new Error("head failed: HTTP " + res.status);
   return (await res.json()).sha;
@@ -985,6 +1001,18 @@ async function headCommit(){
    the API, which is immediate after a commit; without one it reads the copies
    GitHub Pages serves beside this page, which costs no rate limit. */
 async function fetchBoard(){
+  if (useProxy){
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const res = await fetch(proxyBase + "/api/board", {signal:ctrl.signal, cache:"no-store"});
+      if (!res.ok) throw new Error("proxy read: HTTP " + res.status);
+      const out = await res.json();
+      headSha = out.head;
+      if (!Array.isArray(out.desk.activity)) out.desk.activity = [];
+      return out.desk;
+    } finally { clearTimeout(t); }
+  }
   const parts = await Promise.all(FILES.map(async f => {
     if (apiToken){
       const res = await ghFetch("/repos/" + ghRepo + "/contents/" + f.path + "?ref=" + GH_BRANCH);
@@ -1018,6 +1046,42 @@ async function pushLive(retried){
   if (!liveMode || pushing) return;
   if (!apiToken){ syncState = "ahead"; renderBanner(); return; }
   pushing = true;
+
+  if (useProxy){
+    try {
+      const cur = await fetchBoard();
+      const seen = new Set(DB.activity.map(e => e.id));
+      for (const e of (cur.activity || [])) if (!seen.has(e.id)) DB.activity.push(e);
+      DB.activity.sort((a, b) => (a.at || "").localeCompare(b.at || ""));
+      DB.meta.revision = revOf(cur) + 1;
+      DB.meta.updated = TODAY;
+
+      const res = await fetch(proxyBase + "/api/board", {
+        method:"PUT",
+        headers:{"content-type":"application/json", "authorization":"Bearer " + apiToken},
+        body: JSON.stringify({desk: DB, head: headSha, actor: whoami()})
+      });
+      if (res.ok){
+        headSha = (await res.json()).head;
+        sync = {base:DB.meta.revision, dirty:false}; saveSync();
+        try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {}
+        syncState = "live"; renderBanner(); renderRail();
+      } else if (res.status === 409 && !retried){
+        headSha = (await res.json()).head;
+        pushing = false; return pushLive(true);
+      } else if (res.status === 401){
+        apiToken = ""; try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+        syncState = "ahead"; renderBanner();
+        toast("Password rejected — set it under Data");
+      } else {
+        syncState = "ahead"; renderBanner();
+      }
+    } catch (e) {
+      syncState = "ahead"; renderBanner();
+    } finally { pushing = false; }
+    return;
+  }
+
   try {
     const parent = await headCommit();
     const cur = await fetchBoard();
@@ -3038,15 +3102,19 @@ function dataDrawer(){
         <div style="display:grid; gap:9px; margin-top:7px">
           <label class="field"><span>Repository</span>
             <input type="text" id="apiUrl" value="${esc(ghRepo === GH_REPO ? "" : ghRepo)}" placeholder="${esc(GH_REPO)}"></label>
-          <label class="field"><span>Access token — a fine-grained PAT with Contents: read and write</span>
-            <input type="password" id="apiTok" value="${esc(apiToken)}" placeholder="github_pat_…"></label>
-          <p style="margin:0; color:var(--ink-3); font-size:11.5px">Without a token you can read the board but not change it. It is saved as you type and stays in this browser — never committed. Scope it to this one repository, and revoke it on GitHub if it leaks.</p>
+          <label class="field"><span>${useProxy ? "Password — the one your team was given" : "Access token — a fine-grained PAT with Contents: read and write"}</span>
+            <input type="password" id="apiTok" value="${esc(apiToken)}" placeholder="${useProxy ? "team password" : "github_pat_…"}"></label>
+          <p style="margin:0; color:var(--ink-3); font-size:11.5px">${useProxy
+            ? `Without it you can read the board but not change it. Saved as you type, kept in this browser. Your GitHub token is not here — it stays on the server at <code style="font-family:var(--data)">${esc(proxyBase)}</code>, so this password cannot touch the repository directly.`
+            : "Without a token you can read the board but not change it. It is saved as you type and stays in this browser — never committed. Scope it to this one repository, and revoke it on GitHub if it leaks."}</p>
           ${apiToken ? `
           <div style="border-top:1px solid var(--line); padding-top:10px; display:grid; gap:7px">
             <span class="eyebrow">Set up another browser or phone</span>
             <p style="margin:0; color:var(--ink-2); font-size:12.5px">Copy a link that configures whichever browser opens it — no pasting the token again. Open it once on your phone and that device is set up for good.</p>
             <button class="btn" data-setuplink style="justify-self:start">Copy setup link</button>
-            <p style="margin:0; color:var(--ochre); font-size:11.5px">That link contains your token. Anyone who opens it can edit the board — send it only to yourself or someone you would give the token to.</p>
+            <p style="margin:0; color:var(--ochre); font-size:11.5px">${useProxy
+              ? "That link contains the team password. Anyone who opens it can edit the board."
+              : "That link contains your token. Anyone who opens it can edit the board — send it only to yourself or someone you would give the token to."}</p>
           </div>` : ""}
         </div>
       </div>
