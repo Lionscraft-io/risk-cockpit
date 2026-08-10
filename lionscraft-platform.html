@@ -3035,23 +3035,39 @@ function dataDrawer(){
   drawer.querySelector("[data-copy]").onclick = () => copy(JSON.stringify(DB, null, 2), "Backup copied");
 
   const nameBox = drawer.querySelector("#meName");
-  if (nameBox) nameBox.onchange = () => {
+  if (nameBox) nameBox.oninput = () => {
     me = nameBox.value.trim();
     try { localStorage.setItem(ME_KEY, me); } catch (e) {}
-    toast(me ? "Notes will be attributed to " + me : "Attribution cleared");
   };
   const apiBox = drawer.querySelector("#apiUrl");
-  if (apiBox) apiBox.onchange = () => {
+  if (apiBox) apiBox.oninput = () => {
     try { localStorage.setItem(REPO_KEY, apiBox.value.trim()); } catch (e) {}
-    toast("Repository saved — reload to connect");
   };
+  /* Save as it is typed, not on blur: pasting a token and closing the drawer
+     with Escape would otherwise lose it silently. */
   const tokBox = drawer.querySelector("#apiTok");
-  if (tokBox) tokBox.onchange = () => {
-    apiToken = tokBox.value.trim();
-    try { localStorage.setItem(TOKEN_KEY, apiToken); } catch (e) {}
-    if (apiToken && liveMode && sync.dirty) queuePush();
-    toast(apiToken ? "Token saved" : "Token cleared");
-  };
+  if (tokBox){
+    let settle;
+    tokBox.oninput = () => {
+      apiToken = tokBox.value.trim();
+      try {
+        if (apiToken) localStorage.setItem(TOKEN_KEY, apiToken);
+        else localStorage.removeItem(TOKEN_KEY);
+      } catch (e) {}
+      clearTimeout(settle);
+      settle = setTimeout(async () => {
+        if (apiToken){
+          /* Pick up the head commit so the first save can write straight away,
+             with no reload needed. */
+          try { headSha = await headCommit(); liveMode = true; } catch (e) {}
+          if (sync.dirty) queuePush();
+          syncState = sync.dirty ? "ahead" : "live";
+          renderBanner();
+        }
+        toast(apiToken ? "Token saved — it stays in this browser" : "Token cleared");
+      }, 700);
+    };
+  }
 
   drawer.querySelector("[data-import]").onclick = () => {
     const raw = document.getElementById("importBox").value.trim();

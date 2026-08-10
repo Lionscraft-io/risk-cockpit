@@ -62,9 +62,19 @@ Reading is public. To commit from the desk you need a GitHub token:
 5. Generate, copy the value — GitHub shows it once
 6. Desk → **Data** → paste into **Access token**, reload
 
-The token stays in your browser and is never committed. Scope it exactly as
-above so its blast radius is one repository's files, and revoke it on GitHub if
-it leaks — git history means any damage is recoverable.
+**You enter it once.** It is kept in this browser's local storage and survives
+reloads and restarts, so it is prefilled next time you open **Data**. You only
+need it again in a different browser, on a different device, in a private
+window, or after clearing site data — each of those is a separate storage.
+
+Choosing **No expiration** on GitHub makes it permanent; a dated expiry means
+re-entering it when it lapses. No expiration is reasonable here given the token
+is scoped to one repository's contents, but it is a real trade-off: a leaked
+token stays valid until you revoke it.
+
+The token is never committed. Scope it exactly as above so its blast radius is
+one repository's files, and revoke it on GitHub if it leaks — git history means
+any damage is recoverable.
 
 Fine-grained tokens on an org repo may show as `Pending` until an org owner
 approves them.
