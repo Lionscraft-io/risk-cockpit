@@ -7,15 +7,21 @@ from each, and where the conversation has got to.
 
 ---
 
-## The 36 seeded partners are targets, not relationships
+## The list is 8 real partners
 
-Every seeded record carries `"seeded": true` and sits at stage **Identified**.
-Swiss Re, ADB, Dialog Axiata and the rest are there because they are the obvious
-organisations to approach — **not because anyone has spoken to them**.
+The 36 seeded research targets that used to sit here were removed on
+2026-08-10 — none had been contacted. They remain in git history.
 
-Verify the right legal entity and the right entry point before using any of it
-in outreach. The flag disappears from a record as soon as it holds real
-information.
+| Partner | Stage |
+| --- | --- |
+| Hakuhodo Key3 | MoU signed |
+| Sumitomo Insurance · Sumitomo Web3 · Mobily | MoU sent |
+| Sri Lanka · Asian Development Bank · Aon · Vodafone | Researched — need to be aligned |
+
+**Confirm the legal entity before using a record in outreach.** Several hold a
+group name rather than the signing entity: *Sumitomo Insurance* could be Mitsui
+Sumitomo or Sumitomo Life; *Sri Lanka* is a placeholder until it is clear which
+body signs. Those questions are open in each partner's thread.
 
 ## The nine partner types
 

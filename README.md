@@ -47,10 +47,11 @@ server/                     optional self-hosted API — nothing uses it by defa
 
 ## Two things to know before using it
 
-**The 36 partners are research targets, not relationships.** Every seeded record
-sits at *Identified* and carries a `seeded` flag. Swiss Re, ADB, Dialog Axiata
-and the rest are there because they are the obvious organisations to approach —
-not because anyone has spoken to them.
+**The 8 partners are real, but the entities are not all confirmed.** Several
+records hold a group name — *Sumitomo Insurance*, *Sri Lanka* — rather than the
+entity that actually signs. Those open questions sit in each partner's thread on
+the [Activity](docs/activity/) tab. Confirm the entity before using a record in
+outreach.
 
 **The repository is public.** The board, the narrative and every activity entry
 are world-readable and permanently in git history.

@@ -1,1 +1,57 @@
-[]
+[
+  {
+    "id": "a01",
+    "at": "2026-08-10T06:20:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "summary": "Replaced the 36 seeded research targets with the 8 real partners",
+    "body": "The seeded list (Swiss Re, Munich Re, Fermat, Dialog Axiata and the rest) was never contacted — every record sat at Identified with `seeded: true`. All 36 removed; git history keeps them. In their place: the real partner list, with stages taken from the status column — signed → MoU signed, send → MoU sent, need to be aligned → Researched.\n\nSeventeen plan tasks pointed at deleted partners. Two Sri Lanka regulatory tasks (t303, t305) were repointed to the new Sri Lanka record; the other fifteen had their partner link cleared and need reattaching."
+  },
+  {
+    "id": "a02",
+    "at": "2026-08-10T06:20:01Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "question",
+    "refType": "partner",
+    "ref": "p01",
+    "summary": "Confirm the spelling and the signing entity",
+    "body": "Entered as \"Hakuhodo Key3\" — the source list read \"Hakahudo Key3\", which looks like a typo for the Hakuhodo × Key3 joint venture. Confirm the spelling and the exact legal entity on the signed MoU."
+  },
+  {
+    "id": "a03",
+    "at": "2026-08-10T06:20:02Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "question",
+    "refType": "partner",
+    "ref": "p02",
+    "summary": "Which Sumitomo insurance entity?",
+    "body": "\"Sumitomo Insurance\" is ambiguous — Mitsui Sumitomo Insurance (MS&AD) and Sumitomo Life are different houses with different appetites. Confirm which one holds the MoU before any follow-up goes out."
+  },
+  {
+    "id": "a04",
+    "at": "2026-08-10T06:20:03Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "question",
+    "refType": "partner",
+    "ref": "p03",
+    "summary": "Which Sumitomo entity runs the web3 activity?",
+    "body": "Recorded as the digital-asset arm of the Sumitomo group. Confirm the entity name and whether it is the same counterparty as the insurance MoU or a separate one."
+  },
+  {
+    "id": "a05",
+    "at": "2026-08-10T06:20:04Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "question",
+    "refType": "partner",
+    "ref": "p04",
+    "summary": "\"Sri Lanka\" — which body is the counterparty?",
+    "body": "Held as a single public-sector record for the host country. The alignment question is which body actually signs: the Insurance Regulatory Commission, the Telecommunications Regulatory Commission, the Central Bank, the Disaster Management Centre, or a ministry above them. Tasks t303 and t305 are attached here until that is settled — split the record once it is."
+  }
+]

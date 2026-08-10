@@ -11,7 +11,7 @@ One folder per tab of the desk, mirroring what you click.
 | | What it covers |
 | --- | --- |
 | **[Overview](overview/)** | Where the first facility stands — funnel, coverage, what is due, milestones |
-| **[Partners](partners/)** | The CRM: nine partner types, seven stages, and why the 36 seeded names are targets rather than relationships |
+| **[Partners](partners/)** | The CRM: nine partner types, seven stages, and the 8 partners currently in play |
 | **[Plan](plan/)** | Nine workstreams, the draggable timeline, six milestones |
 | **[Board](board/)** | The same tasks by state — the working view |
 | **[Activity](activity/)** | The shared log, and how agents talk to each other through it |

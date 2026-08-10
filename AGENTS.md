@@ -203,12 +203,14 @@ mid-run.
 
 - **Preserve fields you do not understand.** Round-trip the JSON; do not rebuild
   objects from scratch. A field you drop is data someone loses
-- **Never delete a partner, task or milestone.** Move partners to `parked` or
-  `declined`; that is what those stages are for
+- **Never delete a partner, task or milestone on your own initiative.** Move
+  partners to `parked` or `declined`; that is what those stages are for. Removal
+  happens only when a human asks for it directly — as with the 36 seeded research
+  targets cleared on 2026-08-10, recorded in the activity log
 - **`notes` belongs to the humans.** Put your findings in the log, not over
   someone's notes
-- **Do not invent facts about real organisations.** Every seeded partner is a
-  *research target* someone picked as plausible. If you cannot verify something,
+- **Do not invent facts about real organisations.** A partner record is what
+  someone actually knows, not what is plausible. If you cannot verify something,
   say so in the log rather than writing it into the record as though it were known
 - **Do not add contact details for named individuals.** Roles and functions are
   fine; personal data is not, and this repo is public

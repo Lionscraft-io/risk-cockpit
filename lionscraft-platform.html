@@ -781,9 +781,9 @@ const catLabel = id => (CATEGORIES[id] || {label:id}).label;
 
 /* ══ Seed content ═════════════════════════════════════════════════════ */
 
-const P = (id,name,cat,country,why,ask) =>
-  ({id, name, cat, country, why, ask, stage:"identified", owner:"", contact:"",
-    next:"Research the right entry point and warm intro path", nextDate:"", notes:"", seeded:true});
+const P = (id,name,cat,country,why,ask,stage,next) =>
+  ({id, name, cat, country, why, ask, stage, owner:"", contact:"",
+    next, nextDate:"", notes:""});
 
 const SEED = {
   version: 1,
@@ -791,54 +791,18 @@ const SEED = {
     org:"Lionscraft",
     facility:"Sri Lanka Telecom Resilience Facility",
     product:"Response-Linked ART",
-    revision:1,
-    updated:"2026-08-08"
+    revision:2,
+    updated:"2026-08-10"
   },
   partners: [
-    P("p01","Swiss Re — Public Sector Solutions","carrier","CH","Most active reinsurer in sovereign and public-sector parametric structures.","Technical review of trigger design; appetite for a collateralised layer."),
-    P("p02","Munich Re","carrier","DE","Deep catastrophe and infrastructure book; existing parametric capability.","Underwriting view and indicative pricing range."),
-    P("p03","Hannover Re","carrier","DE","Active in structured and non-traditional reinsurance solutions.","Appetite for a structured, response-linked layer."),
-    P("p04","AXA Climate","carrier","FR","Purpose-built for parametric and climate-linked covers.","Co-design of the parametric component."),
-    P("p05","Guy Carpenter","carrier","UK","Broker and structurer with public-sector risk practice.","Placement advice and access to carrier appetite."),
-    P("p06","Aon — Reinsurance Solutions","carrier","UK","Broker with strong DRF and public-sector team.","Structuring support and market sounding."),
-
-    P("p10","Fermat Capital Management","capital","US","One of the largest dedicated ILS managers.","Investability read and indicative appetite."),
-    P("p11","Twelve Capital","capital","CH","ILS manager active in private and structured transactions.","View on wrapper and minimum size."),
-    P("p12","Schroders Capital — ILS","capital","CH","Institutional ILS platform with impact-oriented mandates.","Mandate fit for a purpose-linked instrument."),
-    P("p13","Blue Marble","capital","CH","Consortium focused on protection for underserved risks.","Partnership on sponsored-protection design."),
-
-    P("p20","Rockefeller Foundation","donor","US","Funds resilience and climate-adaptation infrastructure.","Grant funding for facility design and first premium."),
-    P("p21","Z Zurich Foundation","donor","CH","Long-standing flood and climate resilience programme.","Premium support and technical partnership."),
-    P("p22","UK FCDO","donor","UK","Funds disaster risk financing across South Asia.","Programme fit and concept-note route."),
-    P("p23","Start Network","donor","UK","Pioneer of anticipatory action and crisis financing.","Design input on anticipatory triggers; possible co-funding."),
-
-    P("p30","Asian Development Bank","dfi","PH","Principal DFI in Sri Lanka; active DRF portfolio.","Technical partnership and route into the country DRF programme."),
-    P("p31","World Bank / GFDRR","dfi","US","Global DRF standard-setter; Sri Lanka country programme.","Technical review and possible co-financing path."),
-    P("p32","IFC","dfi","US","Private-sector arm; infrastructure and digital investment.","View on operator-side counterparty structure."),
-    P("p33","Global Shield against Climate Risks","dfi","DE","Financing vehicle for pre-arranged climate risk finance.","Eligibility of the facility for Global Shield support."),
-    P("p34","InsuResilience Global Partnership","dfi","DE","Convening body for climate risk insurance.","Visibility, endorsement and partner introductions."),
-
-    P("p40","Dialog Axiata","operator","LK","Largest mobile operator in Sri Lanka; extensive network telemetry.","Restoration cost data, telemetry access under NDA, MoU on response commitments."),
-    P("p41","SLT-Mobitel","operator","LK","State-linked incumbent; fixed and mobile critical infrastructure.","Restoration cost experience and emergency obligations discussion."),
-    P("p42","Airtel Lanka","operator","LK","Third operator; useful for cross-network coverage design.","Interest in shared emergency capacity arrangements."),
-    P("p43","GSMA","operator","UK","Industry body running disaster resilience programmes for operators.","Introductions, standards input, and validation of the operator proposition."),
-
-    P("p50","Taurus","digital","CH","Regulated digital-asset infrastructure and tokenisation.","Architecture review and regulated issuance path."),
-    P("p51","Obligate","digital","CH","On-chain issuance of regulated debt instruments.","Feasibility of a note-form facility instrument."),
-    P("p52","Sygnum","digital","CH","Regulated bank with digital-asset issuance and custody.","Custody and issuance options under a recognised regime."),
-
-    P("p60","Verisk — Extreme Event Solutions","data","US","Catastrophe models covering South Asian perils.","Licensing for use inside a financial trigger."),
-    P("p61","JBA Risk Management","data","UK","Flood modelling with strong Asian coverage.","Flood hazard layer for trigger design."),
-    P("p62","Fathom","data","UK","Global high-resolution flood hazard data.","Hazard data for the Sri Lanka peril set."),
-    P("p63","Ookla","data","US","Independent network performance measurement.","Independent connectivity measurement as evidence source."),
-
-    P("p70","DNV","verifier","NO","Independent assurance across infrastructure and energy.","Definition of an assurable response-evidence standard."),
-    P("p71","Bureau Veritas","verifier","FR","Global testing, inspection and certification.","View on field verification under emergency conditions."),
-
-    P("p80","Insurance Regulatory Commission of Sri Lanka","public","LK","Regulator for any admitted insurance element.","Informal view on regulatory pathway and admitted requirements."),
-    P("p81","Telecommunications Regulatory Commission of Sri Lanka","public","LK","Sets operator emergency and licence obligations.","Alignment of contracted commitments with licence conditions."),
-    P("p82","Central Bank of Sri Lanka","public","LK","Oversees cross-border capital and payment arrangements.","Treatment of collateral and offshore settlement."),
-    P("p83","Disaster Management Centre, Sri Lanka","public","LK","National coordination body for emergency response.","Alignment of response commitments with national plans.")
+    P("p01","Hakuhodo Key3","digital","JP","Japanese web3 venture between Hakuhodo and Key3; route into the Japanese digital-asset and tokenisation market.","Agree the first concrete workstream under the signed MoU.","mou_signed","Define scope and first deliverable under the MoU"),
+    P("p02","Sumitomo Insurance","carrier","JP","Japanese insurance group with the balance sheet to carry a catastrophe layer.","Countersignature on the MoU, then a technical read on trigger design.","mou_sent","Chase countersignature"),
+    P("p03","Sumitomo Web3","digital","JP","Digital-asset arm of the Sumitomo group; issuance and settlement side of the facility.","Countersignature on the MoU, then a view on the issuance path.","mou_sent","Chase countersignature"),
+    P("p04","Sri Lanka","public","LK","Host country of the first facility; public-sector cooperation is a precondition.","Align on scope and the counterparty on the government side.","researched","Needs to be aligned — confirm the counterparty and the ask"),
+    P("p05","Mobily","operator","SA","Saudi mobile operator; network is the protected asset in a Gulf facility.","Countersignature on the MoU, then restoration cost data.","mou_sent","Chase countersignature"),
+    P("p06","Asian Development Bank","dfi","PH","Principal DFI in Sri Lanka; active disaster risk financing portfolio.","Align on where the facility fits the country DRF programme.","researched","Needs to be aligned — agree the ask before approaching"),
+    P("p07","Aon","carrier","UK","Broker and structurer with a public-sector and DRF practice; access to carrier appetite.","Align on the placement route and what we want them to take to market.","researched","Needs to be aligned — agree the ask before approaching"),
+    P("p08","Vodafone","operator","UK","Multinational operator; multi-market network exposure and group-level resilience programmes.","Align on which market and which entity the conversation runs through.","researched","Needs to be aligned — confirm market and entity")
   ],
 
   workstreams: [
@@ -855,46 +819,46 @@ const SEED = {
 
   tasks: [
     {id:"t101", ws:"WS1", title:"Fix covered perils and geographic scope", owner:"", start:"2026-08-11", due:"2026-09-05", status:"todo", partner:""},
-    {id:"t102", ws:"WS1", title:"Assemble historical outage and hazard dataset for Sri Lanka", owner:"", start:"2026-08-25", due:"2026-09-26", status:"todo", partner:"p40"},
+    {id:"t102", ws:"WS1", title:"Assemble historical outage and hazard dataset for Sri Lanka", owner:"", start:"2026-08-25", due:"2026-09-26", status:"todo", partner:""},
     {id:"t103", ws:"WS1", title:"Draft three trigger design options: parametric, modelled, hybrid", owner:"", start:"2026-09-14", due:"2026-10-17", status:"todo", partner:""},
     {id:"t104", ws:"WS1", title:"Basis-risk assessment against operator loss experience", owner:"", start:"2026-10-19", due:"2026-11-14", status:"todo", partner:""},
-    {id:"t105", ws:"WS1", title:"Indicative pricing range for the respond / restore layers", owner:"", start:"2026-11-09", due:"2026-12-05", status:"todo", partner:"p01"},
+    {id:"t105", ws:"WS1", title:"Indicative pricing range for the respond / restore layers", owner:"", start:"2026-11-09", due:"2026-12-05", status:"todo", partner:""},
 
     {id:"t201", ws:"WS2", title:"Facility sizing and layer structure (respond / restore / recover)", owner:"", start:"2026-08-24", due:"2026-09-19", status:"todo", partner:""},
     {id:"t202", ws:"WS2", title:"Decide who pays premium: sponsor, operator, or blended", owner:"", start:"2026-09-14", due:"2026-10-03", status:"todo", partner:""},
-    {id:"t203", ws:"WS2", title:"Collateral and custody model options paper", owner:"", start:"2026-09-28", due:"2026-10-31", status:"todo", partner:"p52"},
+    {id:"t203", ws:"WS2", title:"Collateral and custody model options paper", owner:"", start:"2026-09-28", due:"2026-10-31", status:"todo", partner:""},
     {id:"t204", ws:"WS2", title:"Term sheet v0.1", owner:"", start:"2026-10-26", due:"2026-11-21", status:"todo", partner:""},
-    {id:"t205", ws:"WS2", title:"Sound five capital providers on indicative appetite", owner:"", start:"2026-11-23", due:"2027-01-16", status:"todo", partner:"p10"},
+    {id:"t205", ws:"WS2", title:"Sound five capital providers on indicative appetite", owner:"", start:"2026-11-23", due:"2027-01-16", status:"todo", partner:""},
 
     {id:"t301", ws:"WS3", title:"Jurisdiction options paper for the facility vehicle", owner:"", start:"2026-09-07", due:"2026-10-10", status:"todo", partner:""},
     {id:"t302", ws:"WS3", title:"Wrapper decision: insurance, note, or collateralised contract", owner:"", start:"2026-10-05", due:"2026-11-07", status:"todo", partner:""},
-    {id:"t303", ws:"WS3", title:"Sri Lanka admitted vs non-admitted analysis", owner:"", start:"2026-10-05", due:"2026-11-07", status:"todo", partner:"p80"},
+    {id:"t303", ws:"WS3", title:"Sri Lanka admitted vs non-admitted analysis", owner:"", start:"2026-10-05", due:"2026-11-07", status:"todo", partner:"p04"},
     {id:"t304", ws:"WS3", title:"Appoint counsel in structuring jurisdiction and in Sri Lanka", owner:"", start:"2026-11-02", due:"2026-11-28", status:"todo", partner:""},
-    {id:"t305", ws:"WS3", title:"Informal regulatory pre-engagement: IRCSL, TRCSL, CBSL", owner:"", start:"2026-11-09", due:"2026-12-12", status:"todo", partner:"p80"},
+    {id:"t305", ws:"WS3", title:"Informal regulatory pre-engagement: IRCSL, TRCSL, CBSL", owner:"", start:"2026-11-09", due:"2026-12-12", status:"todo", partner:"p04"},
 
-    {id:"t401", ws:"WS4", title:"Shortlist target operators and map warm introduction routes", owner:"", start:"2026-08-10", due:"2026-08-22", status:"todo", partner:"p43"},
-    {id:"t402", ws:"WS4", title:"First discovery meeting with lead operator", owner:"", start:"2026-08-24", due:"2026-09-12", status:"todo", partner:"p40"},
-    {id:"t403", ws:"WS4", title:"Data NDA and telemetry access agreement", owner:"", start:"2026-09-14", due:"2026-10-10", status:"todo", partner:"p40"},
-    {id:"t404", ws:"WS4", title:"Define candidate response commitments with the operator", owner:"", start:"2026-10-12", due:"2026-11-14", status:"todo", partner:"p40"},
-    {id:"t405", ws:"WS4", title:"Operator MoU signed", owner:"", start:"2026-11-16", due:"2026-12-19", status:"todo", partner:"p40"},
+    {id:"t401", ws:"WS4", title:"Shortlist target operators and map warm introduction routes", owner:"", start:"2026-08-10", due:"2026-08-22", status:"todo", partner:""},
+    {id:"t402", ws:"WS4", title:"First discovery meeting with lead operator", owner:"", start:"2026-08-24", due:"2026-09-12", status:"todo", partner:""},
+    {id:"t403", ws:"WS4", title:"Data NDA and telemetry access agreement", owner:"", start:"2026-09-14", due:"2026-10-10", status:"todo", partner:""},
+    {id:"t404", ws:"WS4", title:"Define candidate response commitments with the operator", owner:"", start:"2026-10-12", due:"2026-11-14", status:"todo", partner:""},
+    {id:"t405", ws:"WS4", title:"Operator MoU signed", owner:"", start:"2026-11-16", due:"2026-12-19", status:"todo", partner:""},
 
     {id:"t501", ws:"WS5", title:"Requirements spec: capital states, claims, settlement, audit trail", owner:"", start:"2026-09-07", due:"2026-10-03", status:"todo", partner:""},
-    {id:"t502", ws:"WS5", title:"Vendor shortlist and technical demos", owner:"", start:"2026-10-05", due:"2026-11-07", status:"todo", partner:"p50"},
-    {id:"t503", ws:"WS5", title:"Custody and regulated-issuance path decision", owner:"", start:"2026-11-09", due:"2026-12-12", status:"todo", partner:"p52"},
+    {id:"t502", ws:"WS5", title:"Vendor shortlist and technical demos", owner:"", start:"2026-10-05", due:"2026-11-07", status:"todo", partner:""},
+    {id:"t503", ws:"WS5", title:"Custody and regulated-issuance path decision", owner:"", start:"2026-11-09", due:"2026-12-12", status:"todo", partner:""},
     {id:"t504", ws:"WS5", title:"Integration architecture v0.1", owner:"", start:"2026-12-14", due:"2027-01-23", status:"todo", partner:""},
 
     {id:"t601", ws:"WS6", title:"Evidence taxonomy: what proves respond, restore and recover delivery", owner:"", start:"2026-09-28", due:"2026-10-24", status:"todo", partner:""},
-    {id:"t602", ws:"WS6", title:"Telemetry specification agreed with the operator", owner:"", start:"2026-10-26", due:"2026-11-28", status:"todo", partner:"p40"},
-    {id:"t603", ws:"WS6", title:"Third-party verification standard drafted", owner:"", start:"2026-11-30", due:"2027-01-09", status:"todo", partner:"p70"},
+    {id:"t602", ws:"WS6", title:"Telemetry specification agreed with the operator", owner:"", start:"2026-10-26", due:"2026-11-28", status:"todo", partner:""},
+    {id:"t603", ws:"WS6", title:"Third-party verification standard drafted", owner:"", start:"2026-11-30", due:"2027-01-09", status:"todo", partner:""},
     {id:"t604", ws:"WS6", title:"Outcome reporting framework for sponsors", owner:"", start:"2027-01-04", due:"2027-01-30", status:"todo", partner:""},
 
     {id:"t701", ws:"WS7", title:"Map facility administration workflow end to end", owner:"", start:"2026-09-21", due:"2026-10-17", status:"todo", partner:""},
     {id:"t702", ws:"WS7", title:"Prototype: contract to obligations to evidence matching", owner:"", start:"2026-10-19", due:"2026-12-19", status:"todo", partner:""},
     {id:"t703", ws:"WS7", title:"Reporting output specification", owner:"", start:"2027-01-04", due:"2027-01-30", status:"todo", partner:""},
 
-    {id:"t801", ws:"WS8", title:"Map the grant pipeline and deadlines", owner:"", start:"2026-08-10", due:"2026-08-29", status:"todo", partner:"p33"},
+    {id:"t801", ws:"WS8", title:"Map the grant pipeline and deadlines", owner:"", start:"2026-08-10", due:"2026-08-29", status:"todo", partner:""},
     {id:"t802", ws:"WS8", title:"Concept note v1", owner:"", start:"2026-08-31", due:"2026-09-19", status:"todo", partner:""},
-    {id:"t803", ws:"WS8", title:"Two grant submissions", owner:"", start:"2026-09-21", due:"2026-11-21", status:"todo", partner:"p22"},
+    {id:"t803", ws:"WS8", title:"Two grant submissions", owner:"", start:"2026-09-21", due:"2026-11-21", status:"todo", partner:""},
     {id:"t804", ws:"WS8", title:"Investor materials for the company round", owner:"", start:"2026-11-02", due:"2026-12-12", status:"todo", partner:""},
 
     {id:"t901", ws:"WS9", title:"Build the 14-slide deck from the narrative spine", owner:"", start:"2026-08-10", due:"2026-08-22", status:"doing", partner:""},
@@ -1645,7 +1609,7 @@ function viewPartners(){
     </div>
   </div>
 
-  <div class="note">Seeded organisations are research targets drawn from the narrative's partner types — not existing relationships. Verify the right entity and entry point before you use anything here in outreach.</div>`;
+  <div class="note">Confirm the exact legal entity and the right entry point before you use anything here in outreach — several records still hold a group name rather than the signing entity. Open questions sit in each partner's thread.</div>`;
 }
 
 /* ── Plan ─────────────────────────────────────────────────────────── */
