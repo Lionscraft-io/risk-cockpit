@@ -36,7 +36,11 @@ is done but waiting on someone else's eyes. The same vocabulary as the
 [workforce board](https://github.com/toniilein/workforce), so the two can share
 tasks.
 
-**Drag a card between columns** to change its status. It saves immediately, and
+**Drag a card between columns** to change its status, **or within a column** to
+reorder it — a line shows where it will land. Dragging writes an explicit
+position, so hand-ordering sticks; anything never dragged still falls back to
+soonest due date, which means a fresh column reads sensibly without anyone
+arranging it. It saves immediately, and
 the change appears everywhere else: struck through in the plan list, recoloured
 on the timeline, and recorded in the [Activity](../activity/) log.
 
@@ -59,10 +63,10 @@ is unassigned is a wish list.
 
 By workstream, by owner (including *Unassigned*), and free text. You will want these once the list grows.
 
-## Cards are sorted by due date
+## Order
 
-Within each column, soonest first. The top of *To do* is therefore what to pick
-up next, and the top of *Doing* is what should be finishing.
+Within a column, cards you have dragged keep the position you gave them.
+Everything else sits in due-date order, soonest first.
 
 Cards can carry **labels**. A task labelled `risk` is one meant to appear on the
 workforce board too.

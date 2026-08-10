@@ -99,6 +99,8 @@ for (const t of db.tasks){
     err("task " + t.id + " references unknown partner: " + t.partner);
   if (t.labels !== undefined && !Array.isArray(t.labels))
     err("task " + t.id + " labels must be an array");
+  if (t.order !== undefined && typeof t.order !== "number")
+    err("task " + t.id + " order must be a number");
 }
 
 for (const m of db.milestones){

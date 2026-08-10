@@ -52,6 +52,9 @@
 }
 
 *{box-sizing:border-box}
+/* Reserve the scrollbar gutter always, so opening a dialog cannot shift the
+   page sideways when the background stops scrolling. */
+html{scrollbar-gutter:stable}
 body{
   margin:0; background:var(--paper); color:var(--ink);
   font-family:var(--body); font-size:14px; line-height:1.55;
@@ -359,6 +362,8 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 }
 .kcard:hover{border-color:var(--line-strong); box-shadow:var(--shadow)}
 .kcard.dragging{opacity:.4}
+.kcard.dropbefore{box-shadow:0 -2px 0 0 var(--accent)}
+.col .stack.dropend{box-shadow:inset 0 -3px 0 -1px var(--accent)}
 .kcard{border-left-color:var(--cardcolor, var(--line-strong))}
 .kcard.isdone .kt{color:var(--ink-3); text-decoration:line-through; text-decoration-color:var(--line-strong)}
 .kcard .kt{font-size:12.5px; line-height:1.4}
@@ -448,16 +453,24 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 /* ─── Drawer ─────────────────────────────────────────────────────────── */
 .scrim{position:fixed; inset:0; background:rgba(10,16,15,.42); z-index:60; opacity:0; pointer-events:none; transition:opacity .18s}
 .scrim.open{opacity:1; pointer-events:auto}
+/* A centred dialog rather than a side panel: editing a card is a focused task,
+   and the card it came from stays visible behind it. */
 .drawer{
-  position:fixed; top:0; right:0; height:100%; width:min(460px,100%); z-index:61;
-  background:var(--surface); border-left:1px solid var(--line); box-shadow:var(--shadow);
-  transform:translateX(100%); transition:transform .22s ease; display:flex; flex-direction:column;
+  position:fixed; inset:0; margin:auto; z-index:61;
+  width:min(560px, calc(100% - 32px));
+  height:max-content; max-height:min(86vh, 780px);
+  background:var(--surface); border:1px solid var(--line-strong);
+  border-radius:10px; box-shadow:0 12px 48px -12px rgba(10,16,15,.45);
+  display:flex; flex-direction:column; overflow:hidden;
+  opacity:0; transform:translateY(10px) scale(.985);
+  transition:opacity .16s ease, transform .16s ease;
 }
-.drawer.open{transform:none}
-.drawer > header{padding:15px 18px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px}
+.drawer.open{opacity:1; transform:none}
+@media (prefers-reduced-motion: reduce){.drawer{transition:none}}
+.drawer > header{padding:15px 18px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; flex:none}
 .drawer > header h3{font-size:16px; margin-right:auto}
 .drawer .body{padding:16px 18px; overflow-y:auto; display:flex; flex-direction:column; gap:13px; flex:1}
-.drawer > footer{padding:12px 18px; border-top:1px solid var(--line); display:flex; gap:8px}
+.drawer > footer{padding:12px 18px; border-top:1px solid var(--line); display:flex; gap:8px; flex:none}
 .drawer > footer .spacer{margin-left:auto}
 
 /* ─── Activity feed and threads ──────────────────────────────────────── */
@@ -629,6 +642,10 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
   .bnr{padding:10px 12px}
   .bnr .grow{margin-left:0; width:100%}
   .bnr .grow .btn{flex:1}
+  .drawer{
+    width:100%; max-width:100%; height:100%; max-height:100%;
+    border-radius:0; border:0; inset:0; margin:0;
+  }
   .drawer > footer{padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
   .board, .tablewrap, .gantt{-webkit-overflow-scrolling:touch}
 }
@@ -1827,7 +1844,10 @@ function viewBoard(){
     const q = boardQ.toLowerCase();
     list = list.filter(t => (t.title + " " + t.owner + " " + t.ws).toLowerCase().includes(q));
   }
-  list.sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
+  /* Explicit order first — set by dragging — then due date for anything never
+     moved by hand, so a fresh board still reads soonest-first. */
+  const rankT = t => (typeof t.order === "number" ? t.order : Number.MAX_SAFE_INTEGER);
+  list.sort((a, b) => (rankT(a) - rankT(b)) || (a.due || "9999").localeCompare(b.due || "9999"));
 
   /* Bridged tasks have no workstream, so a workstream filter hides them. */
   let bridge = boardWs ? [] : bridged.slice();
@@ -1878,7 +1898,7 @@ function viewBoard(){
           ${(boardWs || boardOwner || boardQ) ? '<button class="btn ghost" id="boardClear">Clear</button>' : ""}
         </div>
         <span class="spacer"></span>
-        <span class="cat">Sorted by due date</span>
+        <span class="cat">Drag to reorder</span>
       </header>
       <div style="padding:12px">
         <div class="board">
@@ -2068,22 +2088,61 @@ function wireBoard(){
     });
   });
 
+  /* Where would a drop land? Among this column's own cards — bridged ones
+     belong to the other board and are not reorderable. */
+  const insertionPoint = (col, y, movingId) => {
+    const cards = [...col.querySelectorAll(".kcard[data-card]")]
+      .filter(c => c.dataset.card !== movingId);
+    for (let i = 0; i < cards.length; i++){
+      const r = cards[i].getBoundingClientRect();
+      if (y < r.top + r.height / 2) return {index: i, before: cards[i]};
+    }
+    return {index: cards.length, before: null};
+  };
+  const clearMarks = () => {
+    document.querySelectorAll(".kcard.dropbefore").forEach(c => c.classList.remove("dropbefore"));
+    document.querySelectorAll(".stack.dropend").forEach(c => c.classList.remove("dropend"));
+  };
+
   document.querySelectorAll(".col").forEach(col => {
-    col.addEventListener("dragover", e => { e.preventDefault(); col.classList.add("over"); });
+    col.addEventListener("dragover", e => {
+      e.preventDefault();
+      col.classList.add("over");
+      clearMarks();
+      const {before} = insertionPoint(col, e.clientY, dragId);
+      if (before) before.classList.add("dropbefore");
+      else col.querySelector(".stack").classList.add("dropend");
+    });
     col.addEventListener("dragleave", e => {
-      if (!col.contains(e.relatedTarget)) col.classList.remove("over");
+      if (!col.contains(e.relatedTarget)){ col.classList.remove("over"); clearMarks(); }
     });
     col.addEventListener("drop", e => {
       e.preventDefault();
       col.classList.remove("over");
+      clearMarks();
       const id = dragId || e.dataTransfer.getData("text/plain");
       const t = DB.tasks.find(x => x.id === id);
-      if (!t || t.status === col.dataset.col) return;
+      if (!t) return;
+
+      const status = col.dataset.col;
+      const moved = t.status !== status;
       const was = t.status;
-      t.status = col.dataset.col;
-      logEvent({kind:"change", refType:"task", ref:t.id, body:statusLabel[was] + " → " + statusLabel[t.status]});
+      const {index} = insertionPoint(col, e.clientY, id);
+
+      /* Rewrite this column's order so the sequence is explicit rather than
+         implied by whatever the array happened to look like. */
+      const rank = x => (typeof x.order === "number" ? x.order : Number.MAX_SAFE_INTEGER);
+      const rest = DB.tasks
+        .filter(x => x.status === status && x.id !== id)
+        .sort((a, b) => (rank(a) - rank(b)) || (a.due || "9999").localeCompare(b.due || ""));
+      t.status = status;
+      rest.splice(Math.min(index, rest.length), 0, t);
+      rest.forEach((x, i) => { x.order = i; });
+
+      if (moved) logEvent({kind:"change", refType:"task", ref:t.id,
+        body:statusLabel[was] + " → " + statusLabel[status]});
       save(); renderRail(); render();
-      toast("Moved to " + statusLabel[t.status]);
+      if (moved) toast("Moved to " + statusLabel[status]);
     });
   });
 }
@@ -3083,15 +3142,21 @@ function viewNarrative(){
 const drawer = document.getElementById("drawer");
 const scrim = document.getElementById("scrim");
 
+/* Hold the board still while a dialog is open — scrolling the page behind a
+   modal loses your place for no reason. */
+const lockScroll = on => { document.documentElement.style.overflow = on ? "hidden" : ""; };
+
 function closeDrawer(){
   drawer.classList.remove("open"); scrim.classList.remove("open");
   drawer.setAttribute("aria-hidden", "true"); drawer.innerHTML = "";
+  lockScroll(false);
 }
 scrim.onclick = closeDrawer;
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
 
 function openDrawer(html){
   drawer.innerHTML = html;
+  lockScroll(true);
   drawer.classList.add("open"); scrim.classList.add("open");
   drawer.setAttribute("aria-hidden", "false");
   const f = drawer.querySelector("input,select,textarea");
