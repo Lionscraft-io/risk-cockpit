@@ -83,5 +83,45 @@
     "refType": "partner",
     "ref": "p07",
     "body": "Researched → MoU sent"
+  },
+  {
+    "id": "ei9z0o5",
+    "at": "2026-08-10T19:01:31.779Z",
+    "actor": "unattributed",
+    "actorKind": "human",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p05",
+    "body": "MoU sent → Aligning MoU"
+  },
+  {
+    "id": "elysp2a",
+    "at": "2026-08-10T19:01:46.516Z",
+    "actor": "unattributed",
+    "actorKind": "human",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p08",
+    "body": "Researched → Meeting held"
+  },
+  {
+    "id": "edrsrn2",
+    "at": "2026-08-10T19:01:51.807Z",
+    "actor": "unattributed",
+    "actorKind": "human",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p06",
+    "body": "Researched → Aligning MoU"
+  },
+  {
+    "id": "eubx74f",
+    "at": "2026-08-10T19:02:02.257Z",
+    "actor": "unattributed",
+    "actorKind": "human",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p08",
+    "body": "Meeting held → Aligning MoU"
   }
 ]
