@@ -73,5 +73,15 @@
     "refType": "board",
     "ref": "",
     "body": "Replaced the 39 seeded tasks with 13 real ones. The seeded plan assumed week zero — shortlist operators, first discovery meeting, operator MoU signed in December — while the board already showed one MoU signed and three sent. The new tasks come from that reality: the four open entity questions, follow-ups on the three MoUs out, and next steps for ADB, Aon and Vodafone. The old plan is in git history. Board columns are now Backlog / Weekly / Focus / Review / Done, matching the workforce board. No task has an owner yet."
+  },
+  {
+    "id": "e18ms8r",
+    "at": "2026-08-10T18:55:38.776Z",
+    "actor": "unattributed",
+    "actorKind": "human",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p07",
+    "body": "Researched → MoU sent"
   }
 ]

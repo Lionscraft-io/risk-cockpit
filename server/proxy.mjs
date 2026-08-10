@@ -56,6 +56,7 @@ const LOCAL = !GH_TOKEN;
 const FILES = [
   {key:"meta",        path:"data/meta.json",              wrap:true},
   {key:"partners",    path:"data/partners/partners.json"},
+  {key:"stages",      path:"data/partners/stages.json"},
   {key:"workstreams", path:"data/plan/workstreams.json"},
   {key:"tasks",       path:"data/plan/tasks.json"},
   {key:"milestones",  path:"data/plan/milestones.json"},

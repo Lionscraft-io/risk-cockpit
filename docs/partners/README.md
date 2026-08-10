@@ -43,16 +43,35 @@ The type is not decoration — it drives the [Outreach](../outreach/) tab. The
 hook, the ask, and the discovery questions for an operator are entirely
 different from those for a reinsurer.
 
-## The seven stages
+## The stages
 
 ```
-Identified → Researched → Approached → Meeting held → MoU sent → MoU signed → Active
+Identified → Researched → Approached → Meeting held →
+Aligning MoU → MoU sent → MoU signed → Active
 ```
 
 Plus two exits: **Parked** (right partner, wrong moment) and **Declined**.
 
+**Aligning MoU** is the one that covers real negotiation — you are talking, and
+working out what the agreement will actually say. Before it, *Meeting held* means
+a conversation happened; after it, *MoU sent* means the agreed text is with them
+to sign. Without it, the whole of that negotiation had nowhere to sit.
+
 Nothing is ever deleted — a partner that goes nowhere is parked or declined, so
 the record of having tried survives.
+
+### The stages are yours
+
+They are data — [`data/partners/stages.json`](../../data/partners/stages.json) —
+so adding or renaming one needs no code change. Order is the pipeline, and three
+flags carry the meaning the counts depend on:
+
+| Flag | What it means |
+| --- | --- |
+| `engaged` | From here on, a real conversation has started. Drives *Past first meeting* on the Overview and *Engaged* per partner type |
+| `committed` | Something is signed. Drives *MoU signed or active* |
+| `terminal` | Out of the pipeline — not counted as in play, and drawn separately |
+
 
 ## What a record holds
 

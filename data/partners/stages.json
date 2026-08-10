@@ -1,0 +1,12 @@
+[
+  { "id": "identified", "label": "Identified", "hint": "On the target list, no contact yet" },
+  { "id": "researched", "label": "Researched", "hint": "Right person and angle worked out" },
+  { "id": "approached", "label": "Approached", "hint": "Outreach sent, awaiting reply" },
+  { "id": "meeting", "label": "Meeting held", "hint": "First substantive conversation done", "engaged": true },
+  { "id": "aligning", "label": "Aligning MoU", "hint": "Talking, and agreeing what the MoU will say" },
+  { "id": "mou_sent", "label": "MoU sent", "hint": "Agreed text is with them to sign" },
+  { "id": "mou_signed", "label": "MoU signed", "hint": "Non-binding commitment in place", "committed": true },
+  { "id": "active", "label": "Active", "hint": "Working on the facility together", "committed": true },
+  { "id": "parked", "label": "Parked", "hint": "Right partner, wrong moment", "terminal": true },
+  { "id": "declined", "label": "Declined", "hint": "Not proceeding", "terminal": true }
+]

@@ -10,7 +10,8 @@
     "workstreams",
     "tasks",
     "milestones",
-    "columns"
+    "columns",
+    "stages"
   ],
   "properties": {
     "version": {
@@ -87,17 +88,8 @@
             "type": "string"
           },
           "stage": {
-            "enum": [
-              "identified",
-              "researched",
-              "approached",
-              "meeting",
-              "mou_sent",
-              "mou_signed",
-              "active",
-              "parked",
-              "declined"
-            ]
+            "type": "string",
+            "description": "A stage id from stages[]."
           },
           "owner": {
             "type": "string"
@@ -310,6 +302,40 @@
           "color": {
             "type": "string",
             "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        }
+      }
+    },
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Partner pipeline stages in order. A partner's stage is a stage id. engaged marks where a real conversation has begun, committed where something is signed, terminal takes a partner out of the pipeline.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "hint": {
+            "type": "string"
+          },
+          "engaged": {
+            "type": "boolean"
+          },
+          "committed": {
+            "type": "boolean"
+          },
+          "terminal": {
+            "type": "boolean"
           }
         }
       }

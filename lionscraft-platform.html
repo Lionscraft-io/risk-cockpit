@@ -165,7 +165,11 @@ td.num{white-space:nowrap}
 .chip.s3{background:var(--ochre-soft); color:var(--ochre)}
 .chip.s4{background:var(--accent-soft); color:var(--accent-ink)}
 .chip.s5{background:var(--accent-soft); color:var(--accent-ink)}
-.chip.s6{background:var(--accent); color:var(--paper)}
+.chip.s6{background:var(--accent-soft); color:var(--accent-ink); border-color:var(--accent)}
+.chip.s7{background:var(--accent); color:var(--paper)}
+:root[data-theme="dark"] .chip.s6{color:var(--accent)}
+@media (prefers-color-scheme: dark){.chip.s6{color:var(--accent)}}
+:root[data-theme="light"] .chip.s6{color:var(--accent-ink)}
 .chip.out{background:transparent; color:var(--ink-3); border-color:var(--line-strong); opacity:.75}
 .chip.warn{background:var(--danger-soft); color:var(--danger)}
 :root[data-theme="dark"] .chip.s4,:root[data-theme="dark"] .chip.s5{color:var(--accent)}
@@ -683,23 +687,41 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 
 /* ══ Reference data ═══════════════════════════════════════════════════ */
 
-const STAGES = [
+/* Stages are data, like the board columns — add or rename one in
+   data/partners/stages.json without touching this file. Order is the pipeline.
+   `engaged` marks where a real conversation has started, `committed` where
+   something has been signed, `terminal` takes a partner out of the pipeline —
+   so the counts stay meaningful when the list changes. */
+const DEFAULT_STAGES = [
   {id:"identified", label:"Identified",   hint:"On the target list, no contact yet"},
   {id:"researched", label:"Researched",   hint:"Right person and angle worked out"},
   {id:"approached", label:"Approached",   hint:"Outreach sent, awaiting reply"},
-  {id:"meeting",    label:"Meeting held", hint:"First substantive conversation done"},
-  {id:"mou_sent",   label:"MoU sent",     hint:"Cooperation agreement with them"},
-  {id:"mou_signed", label:"MoU signed",   hint:"Non-binding commitment in place"},
-  {id:"active",     label:"Active",       hint:"Working on the facility together"}
+  {id:"meeting",    label:"Meeting held", hint:"First substantive conversation done", engaged:true},
+  {id:"aligning",   label:"Aligning MoU", hint:"Talking, and agreeing what the MoU will say"},
+  {id:"mou_sent",   label:"MoU sent",     hint:"Agreed text is with them to sign"},
+  {id:"mou_signed", label:"MoU signed",   hint:"Non-binding commitment in place", committed:true},
+  {id:"active",     label:"Active",       hint:"Working on the facility together", committed:true},
+  {id:"parked",     label:"Parked",       hint:"Right partner, wrong moment", terminal:true},
+  {id:"declined",   label:"Declined",     hint:"Not proceeding", terminal:true}
 ];
-const OUT_STAGES = [
-  {id:"parked",   label:"Parked",   hint:"Right partner, wrong moment"},
-  {id:"declined", label:"Declined", hint:"Not proceeding"}
-];
-const ALL_STAGES = STAGES.concat(OUT_STAGES);
+const stageDefs = () => (Array.isArray(DB.stages) && DB.stages.length) ? DB.stages : DEFAULT_STAGES;
+Object.defineProperty(window, "STAGES",     {get: () => stageDefs().filter(s => !s.terminal)});
+Object.defineProperty(window, "OUT_STAGES", {get: () => stageDefs().filter(s => s.terminal)});
+Object.defineProperty(window, "ALL_STAGES", {get: () => stageDefs()});
+
 const stageRank = id => STAGES.findIndex(s => s.id === id);
 const stageLabel = id => (ALL_STAGES.find(s => s.id === id) || {label:id}).label;
-const stageClass = id => stageRank(id) < 0 ? (id === "declined" ? "out" : "out") : "s" + stageRank(id);
+/* Chip tone runs from neutral to accent along the pipeline. Eight distinct
+   tones; a longer pipeline than that shares the last one rather than leaving
+   a stage unstyled. */
+const stageClass = id => {
+  const i = stageRank(id);
+  return i < 0 ? "out" : "s" + Math.min(7, i);
+};
+/* Where a real conversation has started, and where something is signed. */
+const engagedFrom = () => { const i = STAGES.findIndex(s => s.engaged); return i < 0 ? 3 : i; };
+const isEngaged = id => stageRank(id) >= engagedFrom();
+const isCommitted = id => !!(ALL_STAGES.find(s => s.id === id) || {}).committed;
 
 const CATEGORIES = {
   carrier: {
@@ -1520,8 +1542,8 @@ function render(){
 function viewOverview(){
   const ps = DB.partners;
   const live = ps.filter(p => stageRank(p.stage) >= 0);
-  const engaged = ps.filter(p => stageRank(p.stage) >= 3).length;
-  const signed = ps.filter(p => ["mou_signed","active"].includes(p.stage)).length;
+  const engaged = ps.filter(p => isEngaged(p.stage)).length;
+  const signed = ps.filter(p => isCommitted(p.stage)).length;
   const openTasks = DB.tasks.filter(t => !isDone(t.status));
   const overdue = openTasks.filter(t => isOverdue(t.due)).length;
   const inFocus = openTasks.filter(t => t.status === "focus").length;
@@ -1544,7 +1566,7 @@ function viewOverview(){
 
   const byCat = Object.keys(CATEGORIES).map(c => {
     const list = ps.filter(p => p.cat === c);
-    return {c, n:list.length, adv:list.filter(p => stageRank(p.stage) >= 3).length};
+    return {c, n:list.length, adv:list.filter(p => isEngaged(p.stage)).length};
   });
 
   return `
@@ -1572,7 +1594,7 @@ function viewOverview(){
           <button class="btn ghost" data-view="partners">Open ›</button></header>
         <div class="funnel">
           ${funnel.map(f => `
-            <div class="frow ${f.n && stageRank(f.s.id) >= 3 ? "hot" : ""}">
+            <div class="frow ${f.n && isEngaged(f.s.id) ? "hot" : ""}">
               <label title="${esc(f.s.hint)}">${f.s.label}</label>
               <div class="bar"><i style="width:${(f.n / max * 100).toFixed(1)}%"></i></div>
               <span class="n">${f.n}</span>

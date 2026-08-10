@@ -12,6 +12,7 @@ const err = m => errors.push(m);
 const FILES = {
   meta:        "../data/meta.json",
   partners:    "../data/partners/partners.json",
+  stages:      "../data/partners/stages.json",
   workstreams: "../data/plan/workstreams.json",
   tasks:       "../data/plan/tasks.json",
   milestones:  "../data/plan/milestones.json",
@@ -44,7 +45,7 @@ else {
   if (!isDate(db.meta.updated)) err("meta.updated must be YYYY-MM-DD");
 }
 
-for (const key of ["partners", "workstreams", "tasks", "milestones", "columns"])
+for (const key of ["partners", "workstreams", "tasks", "milestones", "columns", "stages"])
   if (!Array.isArray(db[key])) err(key + " must be an array");
 if (Array.isArray(db.columns) && !db.columns.length) err("columns must not be empty");
 if (db.activity !== undefined && !Array.isArray(db.activity)) err("activity must be an array");
@@ -62,12 +63,17 @@ const uniq = (list, what) => {
 };
 
 const CATS = ["carrier","capital","donor","dfi","operator","digital","data","verifier","public"];
-const STAGES = ["identified","researched","approached","meeting","mou_sent","mou_signed","active","parked","declined"];
+const STAGES = (db.stages || []).map(s => s.id);
 const STATUSES = (db.columns || []).map(c => c.id);
 const KINDS = ["comment","change","finding","question","handoff"];
 const REFTYPES = ["partner","task","milestone","board"];
 
 uniq(db.columns, "column");
+uniq(db.stages, "stage");
+if (Array.isArray(db.stages)){
+  if (!db.stages.some(s => !s.terminal)) err("stages must include at least one pipeline stage");
+  for (const st of db.stages) if (!st.label) err("stage " + st.id + " has no label");
+}
 for (const c of db.columns){
   if (!c.title) err("column " + c.id + " has no title");
   if (c.color && !/^#[0-9a-fA-F]{6}$/.test(c.color)) err("column " + c.id + " colour is not a hex value: " + c.color);
@@ -82,7 +88,8 @@ const taskIds = new Set(db.tasks.map(t => t.id));
 for (const p of db.partners){
   if (!p.name) err("partner " + p.id + " has no name");
   if (!CATS.includes(p.cat)) err("partner " + p.id + " has unknown cat: " + p.cat);
-  if (!STAGES.includes(p.stage)) err("partner " + p.id + " has unknown stage: " + p.stage);
+  if (!STAGES.includes(p.stage))
+    err("partner " + p.id + " is at stage '" + p.stage + "', which does not exist (have: " + STAGES.join(", ") + ")");
   if (!isDateOrEmpty(p.nextDate)) err("partner " + p.id + " nextDate is not YYYY-MM-DD or empty");
 }
 
