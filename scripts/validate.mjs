@@ -61,7 +61,7 @@ const uniq = (list, what) => {
 
 const CATS = ["carrier","capital","donor","dfi","operator","digital","data","verifier","public"];
 const STAGES = ["identified","researched","approached","meeting","mou_sent","mou_signed","active","parked","declined"];
-const STATUSES = ["todo","doing","blocked","done"];
+const STATUSES = ["backlog","weekly","focus","review","done"];
 const KINDS = ["comment","change","finding","question","handoff"];
 const REFTYPES = ["partner","task","milestone","board"];
 
@@ -88,6 +88,8 @@ for (const t of db.tasks){
     err("task " + t.id + " starts after it is due (" + t.start + " > " + t.due + ")");
   if (t.partner && !partnerIds.has(t.partner))
     err("task " + t.id + " references unknown partner: " + t.partner);
+  if (t.labels !== undefined && !Array.isArray(t.labels))
+    err("task " + t.id + " labels must be an array");
 }
 
 for (const m of db.milestones){

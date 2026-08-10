@@ -3,39 +3,119 @@
   "title": "Lionscraft desk dataset",
   "description": "Shape of the board once assembled from the files under data/ (meta.json, partners/partners.json, plan/*.json, activity/activity.json). Unknown fields are allowed everywhere and must be preserved by writers — see AGENTS.md.",
   "type": "object",
-  "required": ["version", "meta", "partners", "workstreams", "tasks", "milestones"],
+  "required": [
+    "version",
+    "meta",
+    "partners",
+    "workstreams",
+    "tasks",
+    "milestones"
+  ],
   "properties": {
-    "version": { "type": "integer", "minimum": 1 },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
     "meta": {
       "type": "object",
-      "required": ["org", "facility", "product", "revision", "updated"],
+      "required": [
+        "org",
+        "facility",
+        "product",
+        "revision",
+        "updated"
+      ],
       "properties": {
-        "org": { "type": "string" },
-        "facility": { "type": "string" },
-        "product": { "type": "string" },
-        "revision": { "type": "integer", "minimum": 1 },
-        "updated": { "$ref": "#/definitions/date" }
+        "org": {
+          "type": "string"
+        },
+        "facility": {
+          "type": "string"
+        },
+        "product": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "updated": {
+          "$ref": "#/definitions/date"
+        }
       }
     },
     "partners": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "cat", "stage"],
+        "required": [
+          "id",
+          "name",
+          "cat",
+          "stage"
+        ],
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "name": { "type": "string", "minLength": 1 },
-          "cat": { "enum": ["carrier", "capital", "donor", "dfi", "operator", "digital", "data", "verifier", "public"] },
-          "country": { "type": "string" },
-          "why": { "type": "string" },
-          "ask": { "type": "string" },
-          "stage": { "enum": ["identified", "researched", "approached", "meeting", "mou_sent", "mou_signed", "active", "parked", "declined"] },
-          "owner": { "type": "string" },
-          "contact": { "type": "string" },
-          "next": { "type": "string" },
-          "nextDate": { "$ref": "#/definitions/dateOrEmpty" },
-          "notes": { "type": "string" },
-          "seeded": { "type": "boolean" }
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "cat": {
+            "enum": [
+              "carrier",
+              "capital",
+              "donor",
+              "dfi",
+              "operator",
+              "digital",
+              "data",
+              "verifier",
+              "public"
+            ]
+          },
+          "country": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          },
+          "ask": {
+            "type": "string"
+          },
+          "stage": {
+            "enum": [
+              "identified",
+              "researched",
+              "approached",
+              "meeting",
+              "mou_sent",
+              "mou_signed",
+              "active",
+              "parked",
+              "declined"
+            ]
+          },
+          "owner": {
+            "type": "string"
+          },
+          "contact": {
+            "type": "string"
+          },
+          "next": {
+            "type": "string"
+          },
+          "nextDate": {
+            "$ref": "#/definitions/dateOrEmpty"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "seeded": {
+            "type": "boolean"
+          }
         }
       }
     },
@@ -43,12 +123,24 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name"],
+        "required": [
+          "id",
+          "name"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^WS[0-9]+$" },
-          "name": { "type": "string" },
-          "layer": { "type": "string" },
-          "lead": { "type": "string" }
+          "id": {
+            "type": "string",
+            "pattern": "^WS[0-9]+$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "layer": {
+            "type": "string"
+          },
+          "lead": {
+            "type": "string"
+          }
         }
       }
     },
@@ -56,16 +148,53 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "ws", "title", "status"],
+        "required": [
+          "id",
+          "ws",
+          "title",
+          "status"
+        ],
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "ws": { "type": "string", "pattern": "^WS[0-9]+$" },
-          "title": { "type": "string", "minLength": 1 },
-          "owner": { "type": "string" },
-          "start": { "$ref": "#/definitions/dateOrEmpty" },
-          "due": { "$ref": "#/definitions/dateOrEmpty" },
-          "status": { "enum": ["todo", "doing", "blocked", "done"] },
-          "partner": { "type": "string" }
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ws": {
+            "type": "string",
+            "pattern": "^WS[0-9]+$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "owner": {
+            "type": "string"
+          },
+          "start": {
+            "$ref": "#/definitions/dateOrEmpty"
+          },
+          "due": {
+            "$ref": "#/definitions/dateOrEmpty"
+          },
+          "status": {
+            "enum": [
+              "backlog",
+              "weekly",
+              "focus",
+              "review",
+              "done"
+            ]
+          },
+          "partner": {
+            "type": "string"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Cross-board tags. A task labelled \"risk\" is shared with the workforce board."
+          }
         }
       }
     },
@@ -73,13 +202,30 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "date", "hit"],
+        "required": [
+          "id",
+          "name",
+          "date",
+          "hit"
+        ],
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "name": { "type": "string", "minLength": 1 },
-          "date": { "$ref": "#/definitions/date" },
-          "hit": { "type": "boolean" },
-          "note": { "type": "string" }
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "date": {
+            "$ref": "#/definitions/date"
+          },
+          "hit": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string"
+          }
         }
       }
     },
@@ -88,24 +234,73 @@
       "description": "Append-only. Never edit or delete an existing entry.",
       "items": {
         "type": "object",
-        "required": ["id", "at", "actor", "actorKind", "kind"],
+        "required": [
+          "id",
+          "at",
+          "actor",
+          "actorKind",
+          "kind"
+        ],
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "at": { "type": "string", "format": "date-time" },
-          "actor": { "type": "string", "minLength": 1 },
-          "actorKind": { "enum": ["human", "agent"] },
-          "kind": { "enum": ["comment", "change", "finding", "question", "handoff"] },
-          "refType": { "enum": ["partner", "task", "milestone", "board"] },
-          "ref": { "type": "string" },
-          "body": { "type": "string" },
-          "summary": { "type": "string" },
-          "to": { "type": "string" }
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actorKind": {
+            "enum": [
+              "human",
+              "agent"
+            ]
+          },
+          "kind": {
+            "enum": [
+              "comment",
+              "change",
+              "finding",
+              "question",
+              "handoff"
+            ]
+          },
+          "refType": {
+            "enum": [
+              "partner",
+              "task",
+              "milestone",
+              "board"
+            ]
+          },
+          "ref": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
         }
       }
     }
   },
   "definitions": {
-    "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
-    "dateOrEmpty": { "type": "string", "pattern": "^([0-9]{4}-[0-9]{2}-[0-9]{2})?$" }
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "dateOrEmpty": {
+      "type": "string",
+      "pattern": "^([0-9]{4}-[0-9]{2}-[0-9]{2})?$"
+    }
   }
 }
