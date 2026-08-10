@@ -55,6 +55,5 @@ four narrow columns.
 
 ---
 
-**Data:** the `tasks` array in [`data/desk.json`](../../data/desk.json) — the same
-array the Plan uses ·
+**Data:** [`data/plan/tasks.json`](../../data/plan/tasks.json) — the same file the Plan uses ·
 **See also:** [Plan](../plan/) · [Activity](../activity/)

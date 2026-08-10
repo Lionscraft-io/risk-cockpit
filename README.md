@@ -25,7 +25,7 @@ Underneath: [Data and sync](docs/data/) · [Development](docs/development/) ·
 
 The desk is a **single self-contained HTML file** — no build step, no
 dependencies, no framework. **This repository is the database**: the board lives
-in [`data/desk.json`](data/desk.json), every change is a commit, and git history
+under [`data/`](data/) — one file per section — every change is a commit, and git history
 is the audit trail. Nothing is hosted beyond GitHub Pages serving static files.
 
 Agents read and write the same file through GitHub's own hosted MCP server, its
@@ -33,8 +33,12 @@ Contents API, or plain git — nothing to deploy. See [AGENTS.md](AGENTS.md).
 
 ```
 lionscraft-platform.html    the entire application
-data/desk.json              the board — partners, tasks, milestones, activity
-data/schema.json            its formal shape
+data/                       the board, one file per section
+  meta.json                 revision and facility metadata
+  partners/partners.json    the CRM
+  plan/                     workstreams, tasks, milestones
+  activity/activity.json    the shared log
+data/schema.json            the assembled shape
 scripts/validate.mjs        validator (node scripts/validate.mjs)
 AGENTS.md                   contract for agents working on the board
 docs/                       documentation, one folder per tab

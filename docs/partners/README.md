@@ -87,5 +87,5 @@ date, an owner, and a log entry.
 
 ---
 
-**Data:** the `partners` array in [`data/desk.json`](../../data/desk.json) ·
+**Data:** [`data/partners/partners.json`](../../data/partners/partners.json) ·
 **See also:** [Outreach](../outreach/) · [Activity](../activity/) · [Data and sync](../data/)

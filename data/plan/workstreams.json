@@ -1,0 +1,56 @@
+[
+  {
+    "id": "WS1",
+    "name": "Risk & modelling",
+    "layer": "Layer 1 — Risk and modelling",
+    "lead": ""
+  },
+  {
+    "id": "WS2",
+    "name": "Capital & structure",
+    "layer": "Layer 2 — Financial structure",
+    "lead": ""
+  },
+  {
+    "id": "WS3",
+    "name": "Legal & regulatory",
+    "layer": "Layer 3 — Rights and obligations",
+    "lead": ""
+  },
+  {
+    "id": "WS4",
+    "name": "Operator engagement",
+    "layer": "Layers 3 & 5 — Obligations, evidence",
+    "lead": ""
+  },
+  {
+    "id": "WS5",
+    "name": "Digital-asset infrastructure",
+    "layer": "Layer 4 — Digital asset infrastructure",
+    "lead": ""
+  },
+  {
+    "id": "WS6",
+    "name": "Data & evidence",
+    "layer": "Layer 5 — Data and evidence",
+    "lead": ""
+  },
+  {
+    "id": "WS7",
+    "name": "AI administration",
+    "layer": "Layer 6 — AI administration",
+    "lead": ""
+  },
+  {
+    "id": "WS8",
+    "name": "Funding & partnerships",
+    "layer": "Cross-cutting",
+    "lead": ""
+  },
+  {
+    "id": "WS9",
+    "name": "Narrative & materials",
+    "layer": "Cross-cutting",
+    "lead": ""
+  }
+]

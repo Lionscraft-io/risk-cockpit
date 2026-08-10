@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Validates data/desk.json against the contract in AGENTS.md.
+/* Validates the board files under data/ against the contract in AGENTS.md.
    No dependencies. Run before pushing any change to the data:
 
      node scripts/validate.mjs
@@ -9,12 +9,26 @@ import { readFileSync } from "node:fs";
 const errors = [];
 const err = m => errors.push(m);
 
-let db;
-try {
-  db = JSON.parse(readFileSync(new URL("../data/desk.json", import.meta.url), "utf8"));
-} catch (e) {
-  console.error("data/desk.json does not parse: " + e.message);
-  process.exit(1);
+const FILES = {
+  meta:        "../data/meta.json",
+  partners:    "../data/partners/partners.json",
+  workstreams: "../data/plan/workstreams.json",
+  tasks:       "../data/plan/tasks.json",
+  milestones:  "../data/plan/milestones.json",
+  activity:    "../data/activity/activity.json"
+};
+
+const db = {};
+for (const [key, rel] of Object.entries(FILES)){
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(new URL(rel, import.meta.url), "utf8"));
+  } catch (e) {
+    console.error(rel.replace("../", "") + " missing or does not parse: " + e.message);
+    process.exit(1);
+  }
+  if (key === "meta") Object.assign(db, parsed);
+  else db[key] = parsed;
 }
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -102,6 +116,7 @@ function report(){
     process.exit(1);
   }
   const counts = ["partners","tasks","milestones"].map(k => db[k].length + " " + k).join(", ");
-  console.log("valid — revision " + db.meta.revision + ", " + counts + ", " + (db.activity || []).length + " activity entries");
+  console.log("valid — revision " + db.meta.revision + ", " + counts + ", " +
+    (db.activity || []).length + " activity entries, across " + Object.keys(FILES).length + " files");
   process.exit(0);
 }

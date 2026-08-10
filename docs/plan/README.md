@@ -81,6 +81,6 @@ timeline is for.
 
 ---
 
-**Data:** the `workstreams`, `tasks` and `milestones` arrays in
-[`data/desk.json`](../../data/desk.json) ·
+**Data:** [`data/plan/`](../../data/plan/) — `workstreams.json`, `tasks.json`,
+`milestones.json` ·
 **See also:** [Board](../board/) — the same tasks by state

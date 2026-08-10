@@ -946,16 +946,27 @@ const saveSync = () => { try { localStorage.setItem(META_KEY, JSON.stringify(syn
 const revOf = d => (d && d.meta && d.meta.revision) || 0;
 
 /* ── GitHub as the store ──────────────────────────────────────────────
-   The board lives in data/desk.json in the repo. There is no server: reads
-   come from GitHub, writes are commits, and git history is the audit trail.
-   Agents reach the same file through GitHub's own API or its hosted MCP
-   server — see AGENTS.md. */
+   The board is split across files under data/, one per section, so each is
+   small enough to read and review on its own. There is no server: reads come
+   from GitHub, a save is a single commit touching only what changed, and git
+   history is the audit trail. Agents use the same files — see AGENTS.md. */
 const GH_REPO   = "Lionscraft-io/risk-cockpit";
-const GH_PATH   = "data/desk.json";
 const GH_BRANCH = "main";
 const GH_API    = "https://api.github.com";
 const REPO_KEY  = "lionscraft-desk-repo";     // override, for forks
 const TOKEN_KEY = "lionscraft-desk-token";    // fine-grained PAT, contents:write
+
+/* Each part of the board is its own file. `key` is where it lives on the
+   in-memory document; `wrap` means the file holds an object rather than the
+   bare array. */
+const FILES = [
+  {key:"meta",        path:"data/meta.json",              wrap:true},
+  {key:"partners",    path:"data/partners/partners.json"},
+  {key:"workstreams", path:"data/plan/workstreams.json"},
+  {key:"tasks",       path:"data/plan/tasks.json"},
+  {key:"milestones",  path:"data/plan/milestones.json"},
+  {key:"activity",    path:"data/activity/activity.json"}
+];
 
 const ghRepo = (() => {
   try { return localStorage.getItem(REPO_KEY) || GH_REPO; } catch (e) { return GH_REPO; }
@@ -964,11 +975,11 @@ let apiToken = "";
 try { apiToken = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) {}
 
 let liveMode = false;          // reached the store this session
-let fileSha = null;            // blob sha of the copy we last read — our CAS token
+let headSha = null;            // commit the working copy came from — our CAS token
 let pushTimer = null, pollTimer = null, pushing = false;
 
 /* Base64 <-> UTF-8. btoa/atob are byte-oriented, and the board is full of
-   em-dashes and other non-ASCII, so go through TextEncoder/TextDecoder. */
+   em-dashes, so go through TextEncoder/TextDecoder. */
 const b64encode = str => {
   const bytes = new TextEncoder().encode(str);
   let bin = "";
@@ -977,93 +988,143 @@ const b64encode = str => {
 };
 const b64decode = b64 => {
   const bin = atob(b64.replace(/\s/g, ""));
-  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
+  return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
 };
 
-function ghHeaders(){
+const serialize = f => JSON.stringify(f.wrap ? {version:DB.version || 1, meta:DB.meta} : DB[f.key], null, 2) + "\n";
+
+function ghHeaders(extra){
   const h = {"accept": "application/vnd.github+json", "x-github-api-version": "2022-11-28"};
   if (apiToken) h.authorization = "Bearer " + apiToken;
-  return h;
+  return Object.assign(h, extra || {});
 }
 
 async function ghFetch(path, opts){
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 12000);
+  const t = setTimeout(() => ctrl.abort(), 15000);
   try {
     return await fetch(GH_API + path, Object.assign({signal:ctrl.signal, cache:"no-store"}, opts, {
-      headers: Object.assign(ghHeaders(), (opts && opts.headers) || {})
+      headers: ghHeaders(opts && opts.headers)
     }));
   } finally { clearTimeout(t); }
 }
 
-/* Read the board. With a token this goes through the API, which is immediate
-   after a commit and carries the sha we need to write safely. Without one it
-   falls back to the copy GitHub Pages serves beside this page — good enough to
-   read, and it costs no rate limit. */
-async function fetchBoard(){
-  if (apiToken){
-    const res = await ghFetch("/repos/" + ghRepo + "/contents/" + GH_PATH + "?ref=" + GH_BRANCH);
-    if (!res.ok) throw new Error("read failed: HTTP " + res.status);
-    const meta = await res.json();
-    return {doc: JSON.parse(b64decode(meta.content)), sha: meta.sha};
-  }
-  const res = await fetch(GH_PATH + "?t=" + Date.now(), {cache:"no-store"});
-  if (!res.ok) throw new Error("read failed: HTTP " + res.status);
-  return {doc: await res.json(), sha: null};
+/* The commit the branch currently points at. One cheap call, so polling can
+   ask "has anything changed?" without downloading the board. */
+async function headCommit(){
+  const res = await ghFetch("/repos/" + ghRepo + "/commits/" + GH_BRANCH + "?per_page=1");
+  if (!res.ok) throw new Error("head failed: HTTP " + res.status);
+  return (await res.json()).sha;
 }
 
-/* Commit the board. Re-reads first and unions the activity logs by id, so a
-   comment or agent finding written since our last read is never lost; data
-   fields are last-write-wins. The blob sha makes the write compare-and-swap:
-   if anyone committed in between, GitHub rejects it and we retry once against
-   the fresh state. */
+/* Read every part and assemble the document. With a token this goes through
+   the API, which is immediate after a commit; without one it reads the copies
+   GitHub Pages serves beside this page, which costs no rate limit. */
+async function fetchBoard(){
+  const parts = await Promise.all(FILES.map(async f => {
+    if (apiToken){
+      const res = await ghFetch("/repos/" + ghRepo + "/contents/" + f.path + "?ref=" + GH_BRANCH);
+      if (!res.ok) throw new Error(f.path + ": HTTP " + res.status);
+      return JSON.parse(b64decode((await res.json()).content));
+    }
+    const res = await fetch(f.path + "?t=" + Date.now(), {cache:"no-store"});
+    if (!res.ok) throw new Error(f.path + ": HTTP " + res.status);
+    return res.json();
+  }));
+
+  const doc = {};
+  FILES.forEach((f, i) => {
+    if (f.wrap) Object.assign(doc, parts[i]);
+    else doc[f.key] = parts[i];
+  });
+  if (!Array.isArray(doc.activity)) doc.activity = [];
+  return doc;
+}
+
+/* Commit the board. Re-reads first and unions the activity log by id, so a
+   comment or agent finding written since our last read is never lost; other
+   fields are last-write-wins.
+
+   The write goes through the git data API rather than the contents API,
+   because the board is several files and a save must be one commit: a
+   half-applied save would leave partners updated and the log describing it
+   missing. Blobs -> tree -> commit -> move the branch. Moving the branch is
+   the compare-and-swap: it only succeeds if nobody else committed in between. */
 async function pushLive(retried){
   if (!liveMode || pushing) return;
   if (!apiToken){ syncState = "ahead"; renderBanner(); return; }
   pushing = true;
   try {
+    const parent = await headCommit();
     const cur = await fetchBoard();
     const seen = new Set(DB.activity.map(e => e.id));
-    for (const e of (cur.doc.activity || [])) if (!seen.has(e.id)) DB.activity.push(e);
+    for (const e of (cur.activity || [])) if (!seen.has(e.id)) DB.activity.push(e);
     DB.activity.sort((a, b) => (a.at || "").localeCompare(b.at || ""));
-    DB.meta.revision = revOf(cur.doc) + 1;
+    DB.meta.revision = revOf(cur) + 1;
     DB.meta.updated = TODAY;
-    fileSha = cur.sha;
 
-    const res = await ghFetch("/repos/" + ghRepo + "/contents/" + GH_PATH, {
-      method: "PUT",
-      headers: {"content-type": "application/json"},
+    /* Only write files whose contents actually differ, so a comment does not
+       rewrite the partner list. */
+    const changed = FILES.filter(f => {
+      const before = f.wrap ? {version:cur.version || 1, meta:cur.meta} : cur[f.key];
+      return JSON.stringify(before) !== JSON.stringify(f.wrap ? {version:DB.version || 1, meta:DB.meta} : DB[f.key]);
+    });
+    if (!changed.length){
+      sync = {base:DB.meta.revision, dirty:false}; saveSync();
+      syncState = "live"; renderBanner(); pushing = false; return;
+    }
+
+    const blobs = await Promise.all(changed.map(async f => {
+      const res = await ghFetch("/repos/" + ghRepo + "/git/blobs", {
+        method:"POST", headers:{"content-type":"application/json"},
+        body: JSON.stringify({content: b64encode(serialize(f)), encoding: "base64"})
+      });
+      if (!res.ok) throw new Error("blob " + f.path + ": HTTP " + res.status);
+      return {path: f.path, mode: "100644", type: "blob", sha: (await res.json()).sha};
+    }));
+
+    const treeRes = await ghFetch("/repos/" + ghRepo + "/git/trees", {
+      method:"POST", headers:{"content-type":"application/json"},
+      body: JSON.stringify({base_tree: parent, tree: blobs})
+    });
+    if (!treeRes.ok) throw new Error("tree: HTTP " + treeRes.status);
+
+    const commitRes = await ghFetch("/repos/" + ghRepo + "/git/commits", {
+      method:"POST", headers:{"content-type":"application/json"},
       body: JSON.stringify({
         message: "Desk: revision " + DB.meta.revision + " (" + whoami() + ")",
-        content: b64encode(JSON.stringify(DB, null, 2) + "\n"),
-        sha: fileSha,
-        branch: GH_BRANCH
+        tree: (await treeRes.json()).sha,
+        parents: [parent]
       })
     });
+    if (!commitRes.ok) throw new Error("commit: HTTP " + commitRes.status);
+    const newSha = (await commitRes.json()).sha;
 
-    if (res.ok){
-      const out = await res.json();
-      fileSha = out.content && out.content.sha;
+    const refRes = await ghFetch("/repos/" + ghRepo + "/git/refs/heads/" + GH_BRANCH, {
+      method:"PATCH", headers:{"content-type":"application/json"},
+      body: JSON.stringify({sha: newSha, force: false})
+    });
+
+    if (refRes.ok){
+      headSha = newSha;
       sync = {base:DB.meta.revision, dirty:false}; saveSync();
       try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {}
       syncState = "live"; renderBanner(); renderRail();
-    } else if ((res.status === 409 || res.status === 422) && !retried){
-      pushing = false; return pushLive(true);          // someone committed first
-    } else if (res.status === 401 || res.status === 403){
+    } else if ((refRes.status === 422 || refRes.status === 409) && !retried){
+      pushing = false; return pushLive(true);        // someone committed first
+    } else if (refRes.status === 401 || refRes.status === 403){
       apiToken = ""; try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
       syncState = "ahead"; renderBanner();
-      toast(res.status === 403 ? "Token lacks write access to the repo" : "Token rejected — set it under Data");
+      toast(refRes.status === 403 ? "Token lacks write access to the repo" : "Token rejected — set it under Data");
     } else {
       syncState = "ahead"; renderBanner();
     }
   } catch (e) {
-    syncState = "ahead"; renderBanner();               // offline; next save retries
+    syncState = "ahead"; renderBanner();             // offline or refused; next save retries
   } finally { pushing = false; }
 }
 
-/* Each push is a commit, so batch a burst of edits into one rather than
-   writing a commit per keystroke. */
+/* Each push is a commit, so batch a burst of edits into one. */
 const queuePush = () => {
   if (!liveMode) return;
   clearTimeout(pushTimer);
@@ -1071,20 +1132,21 @@ const queuePush = () => {
 };
 
 /* One poll, two jobs: reconnect while offline, and pick up what other people
-   and agents committed — adopted silently when this copy has nothing unpushed,
-   offered via banner when it does. */
+   and agents committed. Checks the branch head first — one cheap call — and
+   only downloads the board when it has actually moved. */
 function startPolling(){
   clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
     if (document.hidden || pushing) return;
     try {
-      const cur = await fetchBoard();
-      if (!liveMode){
-        liveMode = true;
-        toast("Back online");
+      if (apiToken){
+        const head = await headCommit();
+        if (liveMode && head === headSha) return;
+        headSha = head;
       }
-      fileSha = cur.sha;
-      shared = cur.doc;
+      const cur = await fetchBoard();
+      if (!liveMode){ liveMode = true; toast("Back online"); }
+      shared = cur;
       if (revOf(shared) <= sync.base) return;
       if (!sync.dirty){
         DB = structuredClone(shared);
@@ -1109,10 +1171,10 @@ function startPolling(){
 async function connectBackend(){
   try {
     const cur = await fetchBoard();
-    if (!Array.isArray(cur.doc.partners)) throw new Error("unexpected shape");
-    shared = cur.doc;
-    fileSha = cur.sha;
+    if (!Array.isArray(cur.partners)) throw new Error("unexpected shape");
+    shared = cur;
     liveMode = true;
+    if (apiToken){ try { headSha = await headCommit(); } catch (e) {} }
     /* Decide on the current dirty flag, not the boot-time state — this also
        runs on reconnection, where unpushed offline edits must survive. */
     if (!sync.dirty){
@@ -2957,7 +3019,7 @@ function noteDrawer(){
 
 function dataDrawer(){
   const state = {
-    live:    `Connected to <code>${esc(ghRepo)}</code> at revision <code>${revOf(DB)}</code>. Every save is a commit to <code>${esc(GH_PATH)}</code> — git is the database and the audit trail.`,
+    live:    `Connected to <code>${esc(ghRepo)}</code> at revision <code>${revOf(DB)}</code>. Every save is one commit under <code>data/</code> — git is the database and the audit trail.`,
     ahead:   apiToken ? `Pushing your edits to the board…`
                       : `The board is reachable but this browser has no write token, so your edits stay local. Set the token below.`,
     behind:  `The board is at revision <code>${revOf(shared)}</code>; your unpushed edits started from <code>${sync.base}</code>. Use the banner to resolve it.`,
@@ -3044,9 +3106,7 @@ function dataDrawer(){
       : "Discard everything in this browser and go back to the built-in seed?")) return;
     if (liveMode){
       try {
-        const cur = await fetchBoard();
-        shared = cur.doc;
-        fileSha = cur.sha;
+        shared = await fetchBoard();
       } catch (e) {}
     }
     const target = shared || SEED;

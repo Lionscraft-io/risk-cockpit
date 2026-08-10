@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Lionscraft desk dataset",
-  "description": "Shape of data/desk.json. Unknown fields are allowed everywhere and must be preserved by writers — see AGENTS.md.",
+  "description": "Shape of the board once assembled from the files under data/ (meta.json, partners/partners.json, plan/*.json, activity/activity.json). Unknown fields are allowed everywhere and must be preserved by writers — see AGENTS.md.",
   "type": "object",
   "required": ["version", "meta", "partners", "workstreams", "tasks", "milestones"],
   "properties": {

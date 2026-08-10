@@ -66,5 +66,5 @@ details, nothing said to you in confidence.
 
 ---
 
-**Data:** the `activity` array in [`data/desk.json`](../../data/desk.json) ·
+**Data:** [`data/activity/activity.json`](../../data/activity/activity.json) ·
 **See also:** [AGENTS.md](../../AGENTS.md) — how agents write here

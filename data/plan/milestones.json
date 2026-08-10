@@ -1,0 +1,44 @@
+[
+  {
+    "id": "m1",
+    "name": "Operator MoU signed",
+    "date": "2026-12-19",
+    "hit": false,
+    "note": "Lead operator committed to co-design, telemetry access and candidate response commitments."
+  },
+  {
+    "id": "m2",
+    "name": "Term sheet v1 issued",
+    "date": "2027-01-16",
+    "hit": false,
+    "note": "Risk, layers, capital, triggers and obligations described well enough to quote against."
+  },
+  {
+    "id": "m3",
+    "name": "Capital indication received",
+    "date": "2027-02-27",
+    "hit": false,
+    "note": "Non-binding appetite from at least one risk carrier and one investor."
+  },
+  {
+    "id": "m4",
+    "name": "Regulatory pathway confirmed",
+    "date": "2027-03-27",
+    "hit": false,
+    "note": "Wrapper and jurisdiction settled; no-objection or clear route from the relevant authorities."
+  },
+  {
+    "id": "m5",
+    "name": "Sponsor funding secured",
+    "date": "2027-04-30",
+    "hit": false,
+    "note": "Premium support or grant funding committed for the first period."
+  },
+  {
+    "id": "m6",
+    "name": "Facility go-live decision",
+    "date": "2027-06-30",
+    "hit": false,
+    "note": "Bind or rebuild. Either way the architecture has been tested against reality."
+  }
+]

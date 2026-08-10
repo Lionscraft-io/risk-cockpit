@@ -1,8 +1,20 @@
 # Working on this board as an agent
 
-The board is `data/desk.json` in this repository. **Git is the database** —
-every change is a commit, every commit is attributable, and the history is the
-audit trail. There is no server to be up or down.
+The board lives under `data/` in this repository, one file per section.
+**Git is the database** — every change is a commit, every commit is
+attributable, and the history is the audit trail. There is no server to be up
+or down.
+
+| File | Holds |
+| --- | --- |
+| `data/meta.json` | `{version, meta}` — including `meta.revision` |
+| `data/partners/partners.json` | the partner array |
+| `data/plan/workstreams.json` | the workstream array |
+| `data/plan/tasks.json` | the task array |
+| `data/plan/milestones.json` | the milestone array |
+| `data/activity/activity.json` | the activity log |
+
+Each file holds the bare array (or object, for `meta.json`) — no wrapper.
 
 If you are an agent — Claude Code, another framework, a script, anything — this
 file is your contract. Three ways in:
@@ -29,7 +41,7 @@ becomes a set of typed tools. For Claude Code:
 claude mcp add github --transport http https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer <your-github-pat>"
 ```
 
-Then read and write `data/desk.json` on `Lionscraft-io/risk-cockpit` with the
+Then read and write the files above on `Lionscraft-io/risk-cockpit` with the
 file tools it exposes. Use a **fine-grained** PAT scoped to this one repository
 with **Contents: read and write** — nothing else.
 
@@ -37,17 +49,28 @@ with **Contents: read and write** — nothing else.
 
 ```bash
 # read, public, no token
-curl https://raw.githubusercontent.com/Lionscraft-io/risk-cockpit/main/data/desk.json
+curl https://raw.githubusercontent.com/Lionscraft-io/risk-cockpit/main/data/partners/partners.json
 
 # read with the sha you need in order to write
 curl -H "Authorization: Bearer $GH_PAT" \
-  https://api.github.com/repos/Lionscraft-io/risk-cockpit/contents/data/desk.json
+  https://api.github.com/repos/Lionscraft-io/risk-cockpit/contents/data/partners/partners.json
 
-# write: base64 content plus the sha you just read
+# write one file: base64 content plus the sha you just read
 curl -X PUT -H "Authorization: Bearer $GH_PAT" \
-  https://api.github.com/repos/Lionscraft-io/risk-cockpit/contents/data/desk.json \
+  https://api.github.com/repos/Lionscraft-io/risk-cockpit/contents/data/partners/partners.json \
   -d '{"message":"...","content":"<base64>","sha":"<sha from the read>","branch":"main"}'
 ```
+
+**If your change touches more than one file** — and it usually does, because a
+change to any section also bumps `meta.json` and appends to
+`activity/activity.json` — write them as a **single commit** using the git data
+API: create a blob per file, build a tree on the current head, create one
+commit, then move the branch ref. Moving the ref fails if anyone committed in
+between, which is the compare-and-swap. The desk itself does exactly this;
+`pushLive` in `lionscraft-platform.html` is a working reference.
+
+Several `PUT`s in a row would leave the board briefly inconsistent — partners
+updated while the log describing it is missing. Don't do that.
 
 ### Git — clone and push
 
@@ -66,9 +89,10 @@ Same rules whichever route you take:
    (`YYYY-MM-DD`). Open browsers use the revision to notice the board moved
 3. **Union the activity log by `id`** with what you just read, before writing.
    Someone else's comment must never vanish because you held an older copy
-4. **Pass the `sha`** you read (REST/MCP). That makes the write
-   compare-and-swap: if anyone committed in between, GitHub rejects it with
-   `409`. Re-read, merge again, retry — never force
+4. **Make it compare-and-swap.** Single file: pass the blob `sha` you read.
+   Multiple files: parent your commit on the head you read, and let the ref
+   update fail if it moved. Either way — re-read, merge again, retry once.
+   Never force
 5. **Append at least one activity entry** describing what you did (§4)
 
 The desk UI follows exactly these rules, so agents and people can work at the
@@ -78,7 +102,7 @@ same time with no coordinator.
 
 ## 3. The data contract
 
-`data/desk.json`:
+The assembled document, across the files listed above:
 
 ```jsonc
 {
@@ -235,14 +259,16 @@ git clone git@github.com:Lionscraft-io/risk-cockpit.git && cd risk-cockpit
 ```python
 import json, datetime, uuid
 
-with open("data/desk.json") as f:          # re-read immediately before editing
-    db = json.load(f)
+# re-read immediately before editing
+partners = json.load(open("data/partners/partners.json"))
+activity = json.load(open("data/activity/activity.json"))
+meta     = json.load(open("data/meta.json"))
 
-p = next(p for p in db["partners"] if p["id"] == "p40")
+p = next(p for p in partners if p["id"] == "p40")
 p["stage"] = "researched"
 p.pop("seeded", None)
 
-db["activity"].append({
+activity.append({
     "id": "e_" + uuid.uuid4().hex[:6],
     "at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     "actor": "partner-researcher",
@@ -254,12 +280,15 @@ db["activity"].append({
             "Route the approach through the network side.",
 })
 
-db["meta"]["revision"] += 1
-db["meta"]["updated"] = datetime.date.today().isoformat()
+meta["meta"]["revision"] += 1
+meta["meta"]["updated"] = datetime.date.today().isoformat()
 
-with open("data/desk.json", "w") as f:
-    json.dump(db, f, indent=2, ensure_ascii=False)
-    f.write("\n")
+for path, obj in [("data/partners/partners.json", partners),
+                  ("data/activity/activity.json", activity),
+                  ("data/meta.json", meta)]:
+    with open(path, "w") as f:
+        json.dump(obj, f, indent=2, ensure_ascii=False)
+        f.write("\n")
 ```
 
 Then `node scripts/validate.mjs`, commit, and push or open a PR.

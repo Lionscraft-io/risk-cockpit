@@ -1,19 +1,34 @@
 # Data and sync
 
-**This repository is the database.** The board lives in
-[`data/desk.json`](../data/desk.json), every change is a commit, and git history
-is the audit trail. There is no server to be up or down.
+**This repository is the database.** The board lives under
+[`data/`](../../data/), one file per section, and every change is a commit. Git
+history is the audit trail. There is no server to be up or down.
+
+| File | Holds |
+| --- | --- |
+| [`data/meta.json`](../../data/meta.json) | Revision and facility metadata |
+| [`data/partners/partners.json`](../../data/partners/partners.json) | The CRM |
+| [`data/plan/workstreams.json`](../../data/plan/workstreams.json) | The nine workstreams |
+| [`data/plan/tasks.json`](../../data/plan/tasks.json) | Every task |
+| [`data/plan/milestones.json`](../../data/plan/milestones.json) | The six milestones |
+| [`data/activity/activity.json`](../../data/activity/activity.json) | The shared log |
+
+Each holds the bare array — no wrapper — so a file can be read on its own.
 
 ---
 
 ## How a save works
 
-1. The desk reads `data/desk.json` on load
+1. The desk reads all six files on load and assembles them
 2. Your edits are held in the browser and batched — a burst of edits becomes
    **one commit**, not one per keystroke
-3. The commit is **compare-and-swap**: the desk sends back the blob `sha` it
-   read, so if anyone committed in between, GitHub rejects the write
-4. On rejection the desk re-reads, merges, and retries once
+3. It is **one commit touching only what changed** — editing a partner writes
+   `partners.json`, `activity.json` and `meta.json`, and leaves the plan files
+   alone. This goes through git's blob → tree → commit → ref API rather than
+   file-by-file writes, because several separate writes would leave the board
+   briefly inconsistent
+4. Moving the branch is the **compare-and-swap**: it only succeeds if nobody
+   committed in between. On rejection the desk re-reads, merges, and retries once
 
 **The activity log always merges by id union**, so no comment or agent finding
 is ever lost in a collision. Ordinary fields are last-write-wins.
@@ -56,12 +71,12 @@ approves them.
 
 ## The shape of the data
 
-`data/desk.json`:
+Assembled from the files above:
 
 ```jsonc
 {
-  "version": 1,
-  "meta": { "org", "facility", "product", "revision": 1, "updated": "YYYY-MM-DD" },
+  "version": 1,                                    // data/meta.json
+  "meta": { "org", "facility", "product", "revision", "updated" },
   "partners":    [ … ],   // id, name, cat, country, why, ask, stage, owner, contact, next, nextDate, notes
   "workstreams": [ … ],   // id (WS1…), name, layer, lead
   "tasks":       [ … ],   // id, ws, title, owner, start, due, status, partner
@@ -87,7 +102,7 @@ the board moved.
 
 | Thing | What it is |
 | --- | --- |
-| `data/desk.json` | **The database.** One live copy |
+| The files under `data/` | **The database.** One live copy |
 | Your browser's storage | Your cache plus any unpushed edits |
 | `server/desk-local.json` | Throwaway file from running the optional local server. Gitignored |
 

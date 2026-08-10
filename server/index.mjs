@@ -27,7 +27,15 @@ const PORT = Number(process.env.PORT) || 8787;
 const TOKEN = process.env.WRITE_TOKEN || "";
 const PG_URL = process.env.DATABASE_URL || "";
 const LOCAL_FILE = join(dirname(fileURLToPath(import.meta.url)), "desk-local.json");
-const SEED_URL = "https://lionscraft-io.github.io/risk-cockpit/data/desk.json";
+const SEED_PARTS = [
+  ["meta",        "data/meta.json"],
+  ["partners",    "data/partners/partners.json"],
+  ["workstreams", "data/plan/workstreams.json"],
+  ["tasks",       "data/plan/tasks.json"],
+  ["milestones",  "data/plan/milestones.json"],
+  ["activity",    "data/activity/activity.json"]
+];
+const SEED_BASE = "https://lionscraft-io.github.io/risk-cockpit/";
 
 const KINDS = ["comment", "change", "finding", "question", "handoff"];
 const REFTYPES = ["partner", "task", "milestone", "board"];
@@ -77,17 +85,22 @@ async function storeDesk(doc){
 }
 
 async function seed(){
-  /* Prefer the repo's own copy — this server normally runs from a clone of the
-     repo. Fall back to the public Pages URL. */
-  let doc = null;
-  const local = join(ROOT, "data", "desk.json");
-  if (existsSync(local)){
-    try { doc = JSON.parse(readFileSync(local, "utf8")); } catch {}
-  }
-  if (!doc){
-    const res = await fetch(SEED_URL);
-    if (!res.ok) throw new Error("seed fetch failed: HTTP " + res.status);
-    doc = await res.json();
+  /* The board is several files. Prefer the repo's own copies — this server
+     normally runs from a clone — and fall back to the public Pages URLs. */
+  const doc = {};
+  for (const [key, rel] of SEED_PARTS){
+    let part = null;
+    const local = join(ROOT, rel);
+    if (existsSync(local)){
+      try { part = JSON.parse(readFileSync(local, "utf8")); } catch {}
+    }
+    if (part === null){
+      const res = await fetch(SEED_BASE + rel);
+      if (!res.ok) throw new Error("seed fetch failed for " + rel + ": HTTP " + res.status);
+      part = await res.json();
+    }
+    if (key === "meta") Object.assign(doc, part);
+    else doc[key] = part;
   }
   if (!Array.isArray(doc.activity)) doc.activity = [];
   await storeDesk(doc);
