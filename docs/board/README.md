@@ -7,11 +7,28 @@ workstream. This is the working view — the one to open on a Monday.
 
 ---
 
-## Five columns
+## The columns are yours
 
 ```
 Backlog  →  Weekly  →  Focus  →  Review  →  Done
 ```
+
+They are **data, not code** — [`data/plan/columns.json`](../../data/plan/columns.json) —
+so you change them from the board itself, no edit to the source:
+
+| Action | How |
+| --- | --- |
+| Rename | click the title and type — it saves as you type |
+| Recolour, reorder, remove | the `⋯` on the column header |
+| Add a column | the `+` at the right edge of the board |
+| Add a task | `+ Add a task` at the foot of any column |
+
+A column's colour drives its dot and the left edge of its cards. The **last
+column means done** — tasks there are struck through and drop out of the open
+counts — so ordering carries meaning, not just layout.
+
+Removing a column moves its tasks to the first one rather than losing them, and
+says so before it does it.
 
 **Backlog** is everything not yet committed to. **Weekly** is what you have
 taken on for the week. **Focus** is what is being worked on right now. **Review**

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "backlog",
+    "title": "Backlog",
+    "color": "#8A9490"
+  },
+  {
+    "id": "weekly",
+    "title": "Weekly",
+    "color": "#6B7C99"
+  },
+  {
+    "id": "focus",
+    "title": "Focus",
+    "color": "#B4791A"
+  },
+  {
+    "id": "review",
+    "title": "Review",
+    "color": "#4C8C7A"
+  },
+  {
+    "id": "done",
+    "title": "Done",
+    "color": "#0E5F50"
+  }
+]

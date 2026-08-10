@@ -9,7 +9,8 @@
     "partners",
     "workstreams",
     "tasks",
-    "milestones"
+    "milestones",
+    "columns"
   ],
   "properties": {
     "version": {
@@ -177,13 +178,8 @@
             "$ref": "#/definitions/dateOrEmpty"
           },
           "status": {
-            "enum": [
-              "backlog",
-              "weekly",
-              "focus",
-              "review",
-              "done"
-            ]
+            "type": "string",
+            "description": "A column id from columns[]."
           },
           "partner": {
             "type": "string"
@@ -288,6 +284,32 @@
           },
           "to": {
             "type": "string"
+          }
+        }
+      }
+    },
+    "columns": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Board columns, in order. A task's status is a column id; the last column means done.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
           }
         }
       }

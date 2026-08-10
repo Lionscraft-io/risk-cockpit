@@ -327,11 +327,28 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 }
 .col > header b{margin-left:auto; font-family:var(--data); font-size:11px; color:var(--ink-2); font-weight:500}
 .col .rail-dot{width:7px; height:7px; border-radius:2px; background:var(--line-strong)}
-.col[data-col="weekly"] .rail-dot{background:var(--ink-3)}
-.col[data-col="focus"] .rail-dot{background:var(--ochre)}
-.col[data-col="review"] .rail-dot{background:var(--accent-ink)}
-.col[data-col="done"] .rail-dot{background:var(--accent)}
-:root[data-theme="dark"] .col[data-col="review"] .rail-dot{background:var(--accent)}
+.col > header .rail-dot{background:var(--colcolor, var(--line-strong))}
+.col > header{cursor:default}
+.col > header .title{cursor:text; border-radius:3px; padding:1px 3px; margin:-1px -3px}
+.col > header .title:hover{background:var(--surface-3)}
+.col > header .title:focus{outline:2px solid var(--accent); outline-offset:1px; background:var(--surface)}
+.colmenu{
+  background:none; border:0; color:var(--ink-3); cursor:pointer; font-family:var(--data);
+  font-size:13px; line-height:1; padding:2px 4px; border-radius:3px; opacity:0; transition:opacity .12s;
+}
+.col:hover .colmenu, .colmenu:focus-visible{opacity:1}
+.colmenu:hover{background:var(--surface-3); color:var(--ink)}
+.coladd{
+  margin:0 9px 9px; padding:7px 9px; border:1px dashed var(--line-strong); border-radius:var(--radius);
+  background:none; color:var(--ink-3); font-size:12.5px; cursor:pointer; text-align:left; width:calc(100% - 18px);
+}
+.coladd:hover{border-color:var(--ink-3); color:var(--ink-2); background:var(--surface)}
+.coladd input{width:100%; border:0; background:none; padding:0; font-size:12.5px}
+.addcol{
+  align-self:start; min-width:52px; height:44px; border:1px dashed var(--line-strong);
+  border-radius:var(--radius); background:none; color:var(--ink-3); font-size:18px; cursor:pointer;
+}
+.addcol:hover{border-color:var(--accent); color:var(--accent)}
 .col{max-height:min(68vh,660px)}
 .col .stack{padding:9px; display:flex; flex-direction:column; gap:8px; flex:1; overflow-y:auto; overscroll-behavior:contain}
 .col.over{border-color:var(--accent); background:var(--accent-soft)}
@@ -342,12 +359,8 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 }
 .kcard:hover{border-color:var(--line-strong); box-shadow:var(--shadow)}
 .kcard.dragging{opacity:.4}
-.kcard[data-s="weekly"]{border-left-color:var(--ink-3)}
-.kcard[data-s="focus"]{border-left-color:var(--ochre)}
-.kcard[data-s="review"]{border-left-color:var(--accent-ink)}
-.kcard[data-s="done"]{border-left-color:var(--accent)}
-:root[data-theme="dark"] .kcard[data-s="review"]{border-left-color:var(--accent)}
-.kcard[data-s="done"] .kt{color:var(--ink-3); text-decoration:line-through; text-decoration-color:var(--line-strong)}
+.kcard{border-left-color:var(--cardcolor, var(--line-strong))}
+.kcard.isdone .kt{color:var(--ink-3); text-decoration:line-through; text-decoration-color:var(--line-strong)}
 .kcard .kt{font-size:12.5px; line-height:1.4}
 .kcard .kmeta{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:var(--ink-3)}
 .kcard .kmeta .num{font-variant-numeric:tabular-nums}
@@ -903,6 +916,7 @@ const FILES = [
   {key:"workstreams", path:"data/plan/workstreams.json"},
   {key:"tasks",       path:"data/plan/tasks.json"},
   {key:"milestones",  path:"data/plan/milestones.json"},
+  {key:"columns",     path:"data/plan/columns.json"},
   {key:"activity",    path:"data/activity/activity.json"}
 ];
 
@@ -913,6 +927,7 @@ let apiToken = "";
 try { apiToken = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) {}
 
 let liveMode = false;          // reached the store this session
+let authRequired = true;       // false when the backend accepts open writes
 let headSha = null;            // commit the working copy came from — our CAS token
 let pushTimer = null, pollTimer = null, pushing = false;
 
@@ -1007,7 +1022,7 @@ async function fetchBoard(){
    the compare-and-swap: it only succeeds if nobody else committed in between. */
 async function pushLive(retried){
   if (!liveMode || pushing) return;
-  if (!apiToken){ syncState = "ahead"; renderBanner(); return; }
+  if (authRequired && !apiToken){ syncState = "ahead"; renderBanner(); return; }
   pushing = true;
 
   if (useProxy){
@@ -1021,7 +1036,7 @@ async function pushLive(retried){
 
       const res = await fetch(proxyBase + "/api/board", {
         method:"PUT",
-        headers:{"content-type":"application/json", "authorization":"Bearer " + apiToken},
+        headers:{"content-type":"application/json", "authorization":"Bearer " + (apiToken || "")},
         body: JSON.stringify({desk: DB, head: headSha, actor: whoami()})
       });
       if (res.ok){
@@ -1161,6 +1176,14 @@ function startPolling(){
    local cache, keep trying, and push unpushed edits when it returns. */
 async function connectBackend(){
   try {
+    if (useProxy){
+      /* Ask whether this backend wants a password at all. A local dev server
+         does not, and refusing to push without one would silently lose edits. */
+      try {
+        const h = await (await fetch(proxyBase + "/healthz", {cache:"no-store"})).json();
+        authRequired = h.auth !== "open";
+      } catch (e) { authRequired = true; }
+    }
     const cur = await fetchBoard();
     if (!Array.isArray(cur.partners)) throw new Error("unexpected shape");
     shared = cur;
@@ -1340,7 +1363,7 @@ function toast(msg){
 const VIEWS = [
   {id:"overview",  label:"Overview",   count:() => ""},
   {id:"partners",  label:"Partners",   count:() => DB.partners.length},
-  {id:"plan",      label:"Plan",       count:() => DB.tasks.filter(t => t.status !== "done").length},
+  {id:"plan",      label:"Plan",       count:() => DB.tasks.filter(t => !isDone(t.status)).length},
   {id:"board",     label:"Board",      count:() => DB.tasks.filter(t => t.status === "focus" || t.status === "review").length},
   {id:"activity",  label:"Activity",   count:() => DB.activity.length || ""},
   {id:"outreach",  label:"Outreach",   count:() => ""},
@@ -1420,7 +1443,7 @@ window.addEventListener("popstate", () => {
 
 const SYNC_LABEL = {
   live:    () => "live · rev " + revOf(DB),
-  ahead:   () => apiToken ? "saving…" : "token needed",
+  ahead:   () => (apiToken || !authRequired) ? "saving…" : "token needed",
   behind:  () => "update available",
   offline: () => "offline"
 };
@@ -1486,7 +1509,7 @@ function viewOverview(){
   const live = ps.filter(p => stageRank(p.stage) >= 0);
   const engaged = ps.filter(p => stageRank(p.stage) >= 3).length;
   const signed = ps.filter(p => ["mou_signed","active"].includes(p.stage)).length;
-  const openTasks = DB.tasks.filter(t => t.status !== "done");
+  const openTasks = DB.tasks.filter(t => !isDone(t.status));
   const overdue = openTasks.filter(t => isOverdue(t.due)).length;
   const inFocus = openTasks.filter(t => t.status === "focus").length;
 
@@ -1496,7 +1519,7 @@ function viewOverview(){
     .slice(0, 8);
 
   const soon = DB.tasks
-    .filter(t => t.status !== "done")
+    .filter(t => !isDone(t.status))
     .sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"))
     .slice(0, 8);
 
@@ -1668,8 +1691,23 @@ function viewPartners(){
 
 /* ── Plan ─────────────────────────────────────────────────────────── */
 
-const STATUS_CYCLE = ["backlog","weekly","focus","review","done"];
-const statusLabel = {backlog:"Backlog", weekly:"Weekly", focus:"Focus", review:"Review", done:"Done"};
+/* Columns are data, not code: renamed, recoloured, reordered and added from
+   the board itself. Everything that used to hardcode a status list reads these.
+   DEFAULT_COLUMNS only stands in for a board that has none yet. */
+const DEFAULT_COLUMNS = [
+  {id:"backlog", title:"Backlog", color:"#8A9490"},
+  {id:"weekly",  title:"Weekly",  color:"#6B7C99"},
+  {id:"focus",   title:"Focus",   color:"#B4791A"},
+  {id:"review",  title:"Review",  color:"#4C8C7A"},
+  {id:"done",    title:"Done",    color:"#0E5F50"}
+];
+const columns = () => (Array.isArray(DB.columns) && DB.columns.length) ? DB.columns : DEFAULT_COLUMNS;
+Object.defineProperty(window, "STATUS_CYCLE", {get: () => columns().map(c => c.id)});
+const statusLabel = new Proxy({}, {
+  get: (_, k) => (columns().find(c => c.id === k) || {}).title || String(k)
+});
+const columnColor = id => (columns().find(c => c.id === id) || {}).color || "var(--line-strong)";
+const isDone = id => columns().length && columns()[columns().length - 1].id === id;
 
 let planMode = "list";
 const collapsed = new Set();
@@ -1802,8 +1840,8 @@ function viewBoard(){
   const owners = [...new Set(DB.tasks.map(t => t.owner).filter(Boolean))].sort();
   const inFocus = list.filter(t => t.status === "focus").length;
   const inReview = list.filter(t => t.status === "review").length;
-  const late = list.filter(t => isOverdue(t.due) && t.status !== "done").length;
-  const unassigned = list.filter(t => !t.owner && t.status !== "done").length;
+  const late = list.filter(t => isOverdue(t.due) && !isDone(t.status)).length;
+  const unassigned = list.filter(t => !t.owner && !isDone(t.status)).length;
 
   return `
   <div class="pagehead">
@@ -1844,13 +1882,19 @@ function viewBoard(){
       </header>
       <div style="padding:12px">
         <div class="board">
-          ${STATUS_CYCLE.map(s => {
+          ${columns().map(col => {
+            const s = col.id;
             const mine = list.filter(t => t.status === s);
             const theirs = bridge.filter(t => t.status === s);
             const cards = mine.concat(theirs);
             return `
-            <div class="col" data-col="${s}">
-              <header><span class="rail-dot"></span>${statusLabel[s]}<b>${cards.length}</b></header>
+            <div class="col" data-col="${esc(s)}" style="--colcolor:${esc(col.color || "")}">
+              <header>
+                <span class="rail-dot"></span>
+                <span class="title" data-rename="${esc(s)}" contenteditable="true" spellcheck="false">${esc(col.title)}</span>
+                <b>${cards.length}</b>
+                <button class="colmenu" data-colmenu="${esc(s)}" title="Recolour, move or remove this column">⋯</button>
+              </header>
               <div class="stack">
                 ${cards.length ? cards.map(t => {
                   if (t.bridged) return `
@@ -1866,9 +1910,9 @@ function viewBoard(){
                     </span>
                   </article>`;
                   const p = DB.partners.find(x => x.id === t.partner);
-                  const isLate = isOverdue(t.due) && t.status !== "done";
+                  const isLate = isOverdue(t.due) && !isDone(t.status);
                   return `
-                  <article class="kcard" draggable="true" data-card="${t.id}" data-s="${t.status}">
+                  <article class="kcard ${isDone(t.status) ? "isdone" : ""}" draggable="true" data-card="${t.id}" data-s="${t.status}" style="--cardcolor:${esc(columnColor(t.status))}">
                     <span class="kt">${esc(t.title)}</span>
                     ${p ? `<span class="kpartner">${esc(p.name)}</span>` : ""}
                     <span class="kmeta">
@@ -1879,8 +1923,10 @@ function viewBoard(){
                   </article>`;
                 }).join("") : '<div class="colempty">Nothing here</div>'}
               </div>
+              <button class="coladd" data-addto="${esc(s)}">+ Add a task</button>
             </div>`;
           }).join("")}
+          <button class="addcol" id="addColumn" title="Add a column">+</button>
         </div>
         ${bridged.length ? `<div class="bridgenote"><i></i>
           ${bridge.length} task${bridge.length === 1 ? "" : "s"} labelled
@@ -1892,7 +1938,107 @@ function viewBoard(){
   </div>`;
 }
 
+/* Columns are edited in place. Every change is an ordinary board edit, so it
+   commits and syncs like any other. */
+function ensureColumns(){
+  if (!Array.isArray(DB.columns) || !DB.columns.length) DB.columns = structuredClone(DEFAULT_COLUMNS);
+}
+const slug = t => (t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "col") ;
+
+function addColumn(){
+  const title = prompt("New column name:", "");
+  if (!title || !title.trim()) return;
+  ensureColumns();
+  let id = slug(title.trim()), n = 2;
+  while (DB.columns.some(c => c.id === id)) id = slug(title.trim()) + "-" + n++;
+  DB.columns.push({id, title:title.trim(), color:"#6B7C99"});
+  logEvent({kind:"change", refType:"board", ref:"", body:"Added the column " + title.trim()});
+  save(); renderRail(); render();
+}
+
+function columnMenu(id){
+  ensureColumns();
+  const i = DB.columns.findIndex(c => c.id === id);
+  if (i < 0) return;
+  const col = DB.columns[i];
+  const used = DB.tasks.filter(t => t.status === id).length;
+  const choice = prompt(
+    'Column "' + col.title + '"' + (used ? " — " + used + " task" + (used === 1 ? "" : "s") : "") + "\n\n" +
+    "  colour   set a new colour\n" +
+    "  left     move it left\n" +
+    "  right    move it right\n" +
+    "  remove   delete it" + (used ? " (its tasks move to " + DB.columns[0].title + ")" : "") + "\n\n" +
+    "Type one:", "colour");
+  if (!choice) return;
+  const c = choice.trim().toLowerCase();
+
+  if (c === "colour" || c === "color"){
+    const v = prompt("Colour as a hex value:", col.color || "#6B7C99");
+    if (!v || !/^#[0-9a-f]{6}$/i.test(v.trim())) { if (v) toast("That is not a hex colour like #4C8C7A"); return; }
+    col.color = v.trim();
+  } else if (c === "left" || c === "right"){
+    const j = c === "left" ? i - 1 : i + 1;
+    if (j < 0 || j >= DB.columns.length) return;
+    DB.columns.splice(j, 0, DB.columns.splice(i, 1)[0]);
+  } else if (c === "remove"){
+    if (DB.columns.length <= 1){ toast("A board needs at least one column"); return; }
+    if (!confirm(used ? "Remove \"" + col.title + "\"? Its " + used + " task" + (used === 1 ? "" : "s") +
+                        " move to " + DB.columns.find(x => x.id !== id).title + "."
+                      : "Remove \"" + col.title + "\"?")) return;
+    DB.columns.splice(i, 1);
+    const fallback = DB.columns[0].id;
+    DB.tasks.forEach(t => { if (t.status === id) t.status = fallback; });
+    logEvent({kind:"change", refType:"board", ref:"", body:"Removed the column " + col.title +
+      (used ? "; " + used + " task" + (used === 1 ? "" : "s") + " moved to " + DB.columns[0].title : "")});
+  } else { toast("Type colour, left, right or remove"); return; }
+
+  save(); renderRail(); render();
+}
+
+function addTaskTo(status){
+  const title = prompt("New task in " + statusLabel[status] + ":", "");
+  if (!title || !title.trim()) return;
+  const t = {id:uid("t"), ws:DB.workstreams[0] ? DB.workstreams[0].id : "WS1",
+             title:title.trim(), owner:"", start:"", due:"", status, partner:"", labels:[]};
+  DB.tasks.push(t);
+  logEvent({kind:"change", refType:"task", ref:t.id, body:"Added to " + statusLabel[status]});
+  save(); renderRail(); render();
+}
+
 function wireBoard(){
+  const addCol = document.getElementById("addColumn");
+  if (addCol) addCol.onclick = addColumn;
+  document.querySelectorAll("[data-colmenu]").forEach(b =>
+    b.onclick = e => { e.stopPropagation(); columnMenu(b.dataset.colmenu); });
+  document.querySelectorAll("[data-addto]").forEach(b =>
+    b.onclick = () => addTaskTo(b.dataset.addto));
+
+  /* Rename in place, saving as it is typed rather than on blur — the same rule
+     as every other field here, and it does not depend on a blur event that a
+     background tab or a stray click can swallow. Escape puts it back. */
+  document.querySelectorAll("[data-rename]").forEach(el => {
+    const id = el.dataset.rename;
+    const original = el.textContent;
+    let settle;
+    const commit = () => {
+      const title = el.textContent.trim();
+      if (!title || title === original) return;
+      ensureColumns();
+      const col = DB.columns.find(c => c.id === id);
+      if (!col || col.title === title) return;
+      col.title = title;
+      logEvent({kind:"change", refType:"board", ref:"",
+        body: 'Renamed the column "' + original + '" to "' + title + '"'});
+      save(); renderRail();
+    };
+    el.oninput = () => { clearTimeout(settle); settle = setTimeout(commit, 900); };
+    el.onkeydown = ev => {
+      if (ev.key === "Enter"){ ev.preventDefault(); clearTimeout(settle); commit(); el.blur(); }
+      if (ev.key === "Escape"){ clearTimeout(settle); el.textContent = original; el.blur(); }
+    };
+    el.onblur = () => { clearTimeout(settle); commit(); };
+  });
+
   const ws = document.getElementById("boardWs");
   if (ws) ws.onchange = e => { boardWs = e.target.value; render(); };
   const ow = document.getElementById("boardOwner");
@@ -1970,7 +2116,7 @@ function planGantt(){
   const rows = DB.workstreams.map(ws => {
     const list = ts.filter(t => t.ws === ws.id);
     if (!list.length) return "";
-    const done = list.filter(t => t.status === "done").length;
+    const done = list.filter(t => isDone(t.status)).length;
     const wsStart = list.map(t => t.start || shiftDays(t.due, -21)).sort()[0];
     const wsEnd = list.map(t => t.due).sort()[list.length - 1];
     const isOpen = !collapsed.has(ws.id);
@@ -1995,7 +2141,7 @@ function planGantt(){
 
     return head + list.map(t => {
       const s = t.start || shiftDays(t.due, -21);
-      const late = isOverdue(t.due) && t.status !== "done";
+      const late = isOverdue(t.due) && !isDone(t.status);
       return `
       <div class="grow">
         <div class="glabel" data-task="${t.id}" style="cursor:pointer; padding-left:31px">
@@ -2165,7 +2311,7 @@ function previewDates(d, days){
 function planList(){
   return DB.workstreams.map(ws => {
     const ts = DB.tasks.filter(t => t.ws === ws.id);
-    const done = ts.filter(t => t.status === "done").length;
+    const done = ts.filter(t => isDone(t.status)).length;
     const pct = ts.length ? Math.round(done / ts.length * 100) : 0;
     return `
     <section class="card ws">
@@ -2180,11 +2326,11 @@ function planList(){
       <div class="tablewrap"><table><tbody>
         ${ts.length ? ts.map(t => {
           const p = DB.partners.find(x => x.id === t.partner);
-          return `<tr class="clickable ${t.status === "done" ? "done" : ""}" data-task="${t.id}">
+          return `<tr class="clickable ${isDone(t.status) ? "done" : ""}" data-task="${t.id}">
             <td style="width:88px"><button class="status" data-cycle="${t.id}" data-s="${t.status}">${statusLabel[t.status]}</button></td>
             <td>${esc(t.title)}${p ? `<span class="sub">${esc(p.name)}</span>` : ""}</td>
             <td style="width:130px" class="hide-sm">${esc(t.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
-            <td style="width:82px" class="num ${isOverdue(t.due) && t.status !== "done" ? "overdue" : ""}">${fmtDate(t.due)}</td>
+            <td style="width:82px" class="num ${isOverdue(t.due) && !isDone(t.status) ? "overdue" : ""}">${fmtDate(t.due)}</td>
           </tr>`;
         }).join("") : '<tr><td class="empty">No tasks in this workstream yet.</td></tr>'}
       </tbody></table></div>

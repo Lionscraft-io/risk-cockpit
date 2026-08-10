@@ -49,6 +49,7 @@ const FILES = [
   {key:"workstreams", path:"data/plan/workstreams.json"},
   {key:"tasks",       path:"data/plan/tasks.json"},
   {key:"milestones",  path:"data/plan/milestones.json"},
+  {key:"columns",     path:"data/plan/columns.json"},
   {key:"activity",    path:"data/activity/activity.json"}
 ];
 
@@ -209,7 +210,14 @@ http.createServer(async (req, res) => {
     /* Never touches GitHub: a health check must not fail because a rate limit
        was hit or a token expired. */
     if (req.method === "GET" && path === "/healthz")
-      return send(res, 200, {ok: true, repo: REPO, configured: !!GH_TOKEN && !!PASSWORD});
+      return send(res, 200, {
+        ok: true, repo: REPO,
+        configured: !!GH_TOKEN && !!PASSWORD,
+        /* "open" means development mode with no password — the desk can write
+           without asking for one. */
+        auth: (LOCAL && !PASSWORD) ? "open" : "password",
+        local: LOCAL
+      });
 
     if (req.method === "GET" && (path === "/" || path === "/lionscraft-platform.html")){
       let html;

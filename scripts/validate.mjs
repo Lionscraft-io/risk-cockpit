@@ -15,6 +15,7 @@ const FILES = {
   workstreams: "../data/plan/workstreams.json",
   tasks:       "../data/plan/tasks.json",
   milestones:  "../data/plan/milestones.json",
+  columns:     "../data/plan/columns.json",
   activity:    "../data/activity/activity.json"
 };
 
@@ -43,8 +44,9 @@ else {
   if (!isDate(db.meta.updated)) err("meta.updated must be YYYY-MM-DD");
 }
 
-for (const key of ["partners", "workstreams", "tasks", "milestones"])
+for (const key of ["partners", "workstreams", "tasks", "milestones", "columns"])
   if (!Array.isArray(db[key])) err(key + " must be an array");
+if (Array.isArray(db.columns) && !db.columns.length) err("columns must not be empty");
 if (db.activity !== undefined && !Array.isArray(db.activity)) err("activity must be an array");
 
 if (errors.length){ report(); }
@@ -61,9 +63,15 @@ const uniq = (list, what) => {
 
 const CATS = ["carrier","capital","donor","dfi","operator","digital","data","verifier","public"];
 const STAGES = ["identified","researched","approached","meeting","mou_sent","mou_signed","active","parked","declined"];
-const STATUSES = ["backlog","weekly","focus","review","done"];
+const STATUSES = (db.columns || []).map(c => c.id);
 const KINDS = ["comment","change","finding","question","handoff"];
 const REFTYPES = ["partner","task","milestone","board"];
+
+uniq(db.columns, "column");
+for (const c of db.columns){
+  if (!c.title) err("column " + c.id + " has no title");
+  if (c.color && !/^#[0-9a-fA-F]{6}$/.test(c.color)) err("column " + c.id + " colour is not a hex value: " + c.color);
+}
 
 const partnerIds = uniq(db.partners, "partner");
 const wsIds = uniq(db.workstreams, "workstream");
@@ -81,7 +89,8 @@ for (const p of db.partners){
 for (const t of db.tasks){
   if (!t.title) err("task " + t.id + " has no title");
   if (!wsIds.has(t.ws)) err("task " + t.id + " references unknown workstream: " + t.ws);
-  if (!STATUSES.includes(t.status)) err("task " + t.id + " has unknown status: " + t.status);
+  if (!STATUSES.includes(t.status))
+    err("task " + t.id + " is in column '" + t.status + "', which does not exist (have: " + STATUSES.join(", ") + ")");
   if (!isDateOrEmpty(t.start)) err("task " + t.id + " start is not a date");
   if (!isDateOrEmpty(t.due)) err("task " + t.id + " due is not a date");
   if (isDate(t.start) && isDate(t.due) && t.start > t.due)
@@ -117,7 +126,8 @@ function report(){
     for (const e of errors) console.error("  · " + e);
     process.exit(1);
   }
-  const counts = ["partners","tasks","milestones"].map(k => db[k].length + " " + k).join(", ");
+  const counts = ["partners","tasks","milestones"].map(k => db[k].length + " " + k).join(", ") +
+    ", columns " + db.columns.map(c => c.title).join(" → ");
   console.log("valid — revision " + db.meta.revision + ", " + counts + ", " +
     (db.activity || []).length + " activity entries, across " + Object.keys(FILES).length + " files");
   process.exit(0);
