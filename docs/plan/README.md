@@ -10,21 +10,6 @@ Two views of the same data: **List** and **Timeline**.
 
 ---
 
-## Where the MoUs stand
-
-The panel at the top of the tab is **derived from the partner records** — it
-reads each partner's stage and groups them. Nothing about it is stored, so it
-cannot drift from the CRM: change a stage on the [Partners](../partners/) tab
-and this changes with it.
-
-Stages appear newest-first, so signed sits above sent, above the ones still being
-negotiated. Everyone before a real conversation is rolled into one line, and
-parked or declined partners into another. Click any name to open its record.
-
-It reads the `engaged` flag in [`stages.json`](../../data/partners/stages.json)
-to decide where "in conversation" begins, so renaming or adding a stage keeps it
-correct.
-
 ## The MoUs are work, not a summary
 
 Every MoU in flight is also a **card**, in the workstream marked for it —
