@@ -135,13 +135,13 @@
     "body": "Removed six tasks that the MoU cards now track: the three MoU follow-ups (Sumitomo Insurance, Sumitomo Web3, Mobily) and the three approach tasks for ADB, Aon and Vodafone, all of whom are already in conversation. Seven tasks remain, none of which is an MoU state."
   },
   {
-    "id": "e_t013move",
-    "at": "2026-08-11T09:19:13.522977+00:00",
+    "id": "e_clrtasks",
+    "at": "2026-08-11T09:26:30.715097+00:00",
     "actor": "Claude",
     "actorKind": "agent",
     "kind": "change",
-    "refType": "task",
-    "ref": "t013",
-    "body": "Moved from Capital & structure to Legal & regulatory — what an MoU commits us to is obligations work, and it was the only task in WS2."
+    "refType": "board",
+    "ref": "",
+    "body": "Cleared all 7 tasks at your request. Every one of them was inferred by me from the partner records rather than written by you. The MoUs remain — they are derived from the partner stages, not invented. The removed list is in git history: Confirm the legal entity on the signed Hakuhodo Key3 MoU; Establish which Sumitomo entity the insurance MoU went to — Mitsui Sumitomo or Sumitomo Life; Confirm Sumitomo Web3 is the counterparty entity, not a group description; Establish which Sri Lankan body is the counterparty and can sign; Define what Hakuhodo Key3 actually does in the facility now the MoU is signed; Bring the MoU template to counsel — three are already out and one is signed; List what each MoU commits us to, signed and sent"
   }
 ]
