@@ -17,65 +17,59 @@ or down.
 Each file holds the bare array (or object, for `meta.json`) — no wrapper.
 
 If you are an agent — Claude Code, another framework, a script, anything — this
-file is your contract. Three ways in:
+file is your contract. Two doors in, and only two:
 
 | Access | For | Auth |
 | --- | --- | --- |
-| **MCP** — GitHub's hosted server at `https://api.githubcopilot.com/mcp/` | MCP-capable agents. Nothing to install or deploy | GitHub PAT or OAuth |
-| **REST** — GitHub Contents API | Any agent or script that can make an HTTP request | GitHub PAT |
+| **Proxy** — `PUT /api/board` on the desk's backend | The normal way. One request, one atomic commit | The app password |
 | **Git** — clone, edit, push or PR | Bulk or reviewed changes | Repo access |
 
-All three touch the same file, so they interleave safely as long as you follow
-§2. Reading is public and needs no token.
+Both end at the same single commit on `main`, so they interleave safely as long
+as you follow §2. Reading is public and needs no token.
+
+**There is no third door.** Never write the files one at a time through the
+GitHub Contents API or MCP file tools — several `PUT`s in a row leave the
+board briefly inconsistent (partners updated, the log entry describing it
+missing), and a reader in between sees a torn board. Never hold a GitHub token
+in a browser. And there is no other backend: the old Postgres API was removed
+precisely because a second store forks the truth.
 
 ---
 
 ## 1. Access
 
-### MCP — nothing to run
+### Proxy — the normal way
 
-GitHub hosts the MCP server; point your client at it with a token and the repo
-becomes a set of typed tools. For Claude Code:
-
-```bash
-claude mcp add github --transport http https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer <your-github-pat>"
-```
-
-Then read and write the files above on `Lionscraft-io/risk-cockpit` with the
-file tools it exposes. Use a **fine-grained** PAT scoped to this one repository
-with **Contents: read and write** — nothing else.
-
-### REST — GitHub Contents API
+The desk's backend (`server/proxy.mjs`, running at the desk's Replit address)
+holds the GitHub token. You send the app password and the whole board in one
+request; it makes the atomic commit for you.
 
 ```bash
-# read, public, no token
-curl https://raw.githubusercontent.com/Lionscraft-io/risk-cockpit/main/data/partners/partners.json
+# read — the head sha is your compare-and-swap token
+curl https://<desk-host>/api/board
+# → {"revision": 15, "head": "<sha>", "desk": {…}}
 
-# read with the sha you need in order to write
-curl -H "Authorization: Bearer $GH_PAT" \
-  https://api.github.com/repos/Lionscraft-io/risk-cockpit/contents/data/partners/partners.json
-
-# write one file: base64 content plus the sha you just read
-curl -X PUT -H "Authorization: Bearer $GH_PAT" \
-  https://api.github.com/repos/Lionscraft-io/risk-cockpit/contents/data/partners/partners.json \
-  -d '{"message":"...","content":"<base64>","sha":"<sha from the read>","branch":"main"}'
+# write — re-read immediately before this, merge, then send
+curl -X PUT -H "Authorization: Bearer $APP_PASSWORD" \
+  -H "content-type: application/json" \
+  https://<desk-host>/api/board \
+  -d '{"desk": <the full document>, "head": "<sha from the read>", "actor": "your-name"}'
 ```
 
-**If your change touches more than one file** — and it usually does, because a
-change to any section also bumps `meta.json` and appends to
-`activity/activity.json` — write them as a **single commit** using the git data
-API: create a blob per file, build a tree on the current head, create one
-commit, then move the branch ref. Moving the ref fails if anyone committed in
-between, which is the compare-and-swap. The desk itself does exactly this;
-`pushLive` in `lionscraft-platform.html` is a working reference.
-
-Several `PUT`s in a row would leave the board briefly inconsistent — partners
-updated while the log describing it is missing. Don't do that.
+A `409` means someone committed in between: take the `desk` and `head` from the
+response, re-apply your change on top, retry once. The read-modify-write rules
+in §2 apply exactly.
 
 ### Git — clone and push
 
 Normal git. Run `node scripts/validate.mjs` before pushing; external agents open
 a pull request rather than pushing to `main`.
+
+If you cannot use the proxy and cannot push, write through the git data API as
+**one commit**: create a blob per changed file, build a tree on the current
+head, create one commit, then move the branch ref. Moving the ref fails if
+anyone committed in between, which is the compare-and-swap. Re-read, merge
+again, retry once. Never force.
 
 ---
 
@@ -89,10 +83,10 @@ Same rules whichever route you take:
    (`YYYY-MM-DD`). Open browsers use the revision to notice the board moved
 3. **Union the activity log by `id`** with what you just read, before writing.
    Someone else's comment must never vanish because you held an older copy
-4. **Make it compare-and-swap.** Single file: pass the blob `sha` you read.
-   Multiple files: parent your commit on the head you read, and let the ref
-   update fail if it moved. Either way — re-read, merge again, retry once.
-   Never force
+4. **Make it compare-and-swap.** Through the proxy: pass the `head` you read,
+   and a `409` means re-read, merge again, retry once. Through git: parent your
+   commit on the head you read, and let the ref update fail if it moved.
+   Either way — never force
 5. **Append at least one activity entry** describing what you did (§4)
 
 The desk UI follows exactly these rules, so agents and people can work at the
@@ -295,4 +289,5 @@ for path, obj in [("data/partners/partners.json", partners),
 
 Then `node scripts/validate.mjs`, commit, and push or open a PR.
 
-The same edit over REST or MCP is the read → modify → write-with-sha cycle in §2.
+The same edit through the proxy is: re-read `/api/board`, apply the change,
+`PUT` it back with the `head` you read — one request, one commit.

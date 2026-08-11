@@ -58,17 +58,19 @@ node scripts/validate.mjs
 Checks structure, enums, referential integrity (tasks pointing at real
 workstreams and partners), date ordering, and id uniqueness. No dependencies.
 
-## The optional server
+## The server — the one backend
 
-`server/index.mjs` is a small REST backend with the same data contract —
-Postgres when `DATABASE_URL` is set, a local file otherwise. **Nothing uses it
-by default**; the desk talks to GitHub directly. It is kept for anyone who later
-wants a real backend with instant multi-user sync.
+`server/proxy.mjs` is the desk's only backend. It holds the GitHub token
+server-side, so browsers never see one: a person signs in with a short app
+password, and the proxy turns each save into a single atomic commit on the
+repo (blobs → tree → commit → move the branch; moving the branch is the
+compare-and-swap). It also serves the desk page itself — deployed, it serves
+the repo's current copy, so the UI can never drift from the data it writes.
 
 Run it:
 
 ```bash
-WRITE_TOKEN=<any-string> node server/index.mjs
+node server/proxy.mjs
 ```
 
 It serves the desk at `/` and the API under `/api/…`, and the desk auto-detects
@@ -80,13 +82,18 @@ you can edit the board freely and read the diff — but it does mean changes sta
 on your machine until you commit them. The desk says so: the chip reads
 `working copy`, in amber rather than green.
 
-Give it a `GITHUB_TOKEN` and the same server commits to the real repository
-instead. Dependencies are vendored, so a bare
+Give it `GITHUB_TOKEN` (fine-grained PAT, Contents: read and write on this one
+repo) and `APP_PASSWORD` (what people type into the desk) and the same server
+commits to the real repository. The proxy has zero dependencies, so a bare
 checkout plus `node` is a running server — no install step.
 
-`Dockerfile` and `render.yaml` deploy it to any container host or to Render with
-its own Postgres. Both are untested in production; the GitHub-native path is the
-supported one.
+`Dockerfile` deploys it to any container host. The Replit deployment runs the
+same file and is the desk's public editing address; the GitHub Pages copy is
+read-only by design.
+
+There used to be a second backend (`server/index.mjs`, Postgres) that kept its
+own copy of the board — a fork of the truth. It was removed; git history has it
+if anyone ever needs the reference.
 
 ## Publishing
 

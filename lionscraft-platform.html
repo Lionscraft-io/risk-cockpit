@@ -933,21 +933,21 @@ let syncState = "offline";         // live | ahead | behind | offline
 const saveSync = () => { try { localStorage.setItem(META_KEY, JSON.stringify(sync)); } catch (e) {} };
 const revOf = d => (d && d.meta && d.meta.revision) || 0;
 
-/* ── GitHub as the store ──────────────────────────────────────────────
+/* ── GitHub as the store, the proxy as the only door ──────────────────
    The board is split across files under data/, one per section, so each is
-   small enough to read and review on its own. There is no server: reads come
-   from GitHub, a save is a single commit touching only what changed, and git
-   history is the audit trail. Agents use the same files — see AGENTS.md. */
+   small enough to read and review on its own. Git is the database and the
+   audit trail — but the browser never talks to GitHub for writes. The one
+   write path is the proxy (server/proxy.mjs), which holds the GitHub token
+   server-side and turns each save into a single atomic commit. Browsers only
+   ever send the short app password. Served from anywhere else (GitHub Pages),
+   the desk is read-only. Agents use the same contract — see AGENTS.md. */
 const GH_REPO   = "Lionscraft-io/risk-cockpit";
-const GH_BRANCH = "main";
-const GH_API    = "https://api.github.com";
-const REPO_KEY  = "lionscraft-desk-repo";     // override, for forks
-const TOKEN_KEY = "lionscraft-desk-token";    // app password, or a GitHub PAT
+const TOKEN_KEY = "lionscraft-desk-token";    // the app password for the proxy
 const PROXY_KEY = "lionscraft-desk-proxy";
 
-/* With a proxy configured, it holds the GitHub token and the browser only ever
-   sends a short app password. Without one, the browser talks to GitHub itself
-   and needs a PAT. Either way the board is the same files in the same repo. */
+/* The proxy holds the GitHub token; the browser only ever sends the app
+   password. Without a proxy there is no write path at all — the desk keeps
+   working read-only from the copies served beside this page. */
 const DEFAULT_PROXY = "";
 const proxyBase = (() => {
   try { const o = localStorage.getItem(PROXY_KEY); if (o !== null) return o.replace(/\/+$/, ""); } catch (e) {}
@@ -972,9 +972,9 @@ const FILES = [
   {key:"activity",    path:"data/activity/activity.json"}
 ];
 
-const ghRepo = (() => {
-  try { return localStorage.getItem(REPO_KEY) || GH_REPO; } catch (e) { return GH_REPO; }
-})();
+/* Which repo the backend commits to, reported by its health check. Display
+   only — the backend decides, the browser has no say in it. */
+let backendRepo = GH_REPO;
 let apiToken = "";
 try { apiToken = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) {}
 
@@ -984,53 +984,19 @@ let localBackend = false;      // backend writes to a working tree, not GitHub
 let headSha = null;            // commit the working copy came from — our CAS token
 let pushTimer = null, pollTimer = null, pushing = false;
 
-/* Base64 <-> UTF-8. btoa/atob are byte-oriented, and the board is full of
-   em-dashes, so go through TextEncoder/TextDecoder. */
-const b64encode = str => {
-  const bytes = new TextEncoder().encode(str);
-  let bin = "";
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin);
-};
-const b64decode = b64 => {
-  const bin = atob(b64.replace(/\s/g, ""));
-  return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
-};
-
-const serialize = f => JSON.stringify(f.wrap ? {version:DB.version || 1, meta:DB.meta} : DB[f.key], null, 2) + "\n";
-
-function ghHeaders(extra){
-  const h = {"accept": "application/vnd.github+json", "x-github-api-version": "2022-11-28"};
-  if (apiToken) h.authorization = "Bearer " + apiToken;
-  return Object.assign(h, extra || {});
-}
-
-async function ghFetch(path, opts){
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 15000);
-  try {
-    return await fetch(GH_API + path, Object.assign({signal:ctrl.signal, cache:"no-store"}, opts, {
-      headers: ghHeaders(opts && opts.headers)
-    }));
-  } finally { clearTimeout(t); }
-}
-
 /* The commit the branch currently points at. One cheap call, so polling can
-   ask "has anything changed?" without downloading the board. */
+   ask "has anything changed?" without downloading the board. Proxy only —
+   without a backend there is nothing to compare against. */
 async function headCommit(){
-  if (useProxy){
-    const res = await fetch(proxyBase + "/api/board", {cache:"no-store"});
-    if (!res.ok) throw new Error("head failed: HTTP " + res.status);
-    return (await res.json()).head;
-  }
-  const res = await ghFetch("/repos/" + ghRepo + "/commits/" + GH_BRANCH + "?per_page=1");
+  const res = await fetch(proxyBase + "/api/board", {cache:"no-store"});
   if (!res.ok) throw new Error("head failed: HTTP " + res.status);
-  return (await res.json()).sha;
+  return (await res.json()).head;
 }
 
-/* Read every part and assemble the document. With a token this goes through
-   the API, which is immediate after a commit; without one it reads the copies
-   GitHub Pages serves beside this page, which costs no rate limit. */
+/* Read every part and assemble the document. Through the proxy this is one
+   request and immediate after a commit; served from anywhere else (GitHub
+   Pages) it reads the copies sitting beside this page — read-only, but it
+   costs no rate limit and needs no credential. */
 async function fetchBoard(){
   if (useProxy){
     const ctrl = new AbortController();
@@ -1045,11 +1011,6 @@ async function fetchBoard(){
     } finally { clearTimeout(t); }
   }
   const parts = await Promise.all(FILES.map(async f => {
-    if (apiToken){
-      const res = await ghFetch("/repos/" + ghRepo + "/contents/" + f.path + "?ref=" + GH_BRANCH);
-      if (!res.ok) throw new Error(f.path + ": HTTP " + res.status);
-      return JSON.parse(b64decode((await res.json()).content));
-    }
     const res = await fetch(f.path + "?t=" + Date.now(), {cache:"no-store"});
     if (!res.ok) throw new Error(f.path + ": HTTP " + res.status);
     return res.json();
@@ -1064,57 +1025,24 @@ async function fetchBoard(){
   return doc;
 }
 
-/* Commit the board. Re-reads first and unions the activity log by id, so a
-   comment or agent finding written since our last read is never lost; other
-   fields are last-write-wins.
+/* Commit the board — through the proxy, the only write path. Re-reads first
+   and unions the activity log by id, so a comment or agent finding written
+   since our last read is never lost; other fields are last-write-wins.
 
-   The write goes through the git data API rather than the contents API,
-   because the board is several files and a save must be one commit: a
-   half-applied save would leave partners updated and the log describing it
-   missing. Blobs -> tree -> commit -> move the branch. Moving the branch is
-   the compare-and-swap: it only succeeds if nobody else committed in between. */
+   The proxy turns the save into one commit through the git data API, because
+   the board is several files and a save must be atomic: a half-applied save
+   would leave partners updated and the log describing it missing. Moving the
+   branch is the compare-and-swap: it only succeeds if nobody else committed
+   in between, which is what the 409 retry below is for. */
 async function pushLive(retried){
   if (!liveMode || pushing) return;
+  /* No backend means read-only by design — edits stay local, no token in the
+     world would change that. */
+  if (!useProxy){ syncState = "ahead"; renderBanner(); return; }
   if (authRequired && !apiToken){ syncState = "ahead"; renderBanner(); return; }
   pushing = true;
 
-  if (useProxy){
-    try {
-      const cur = await fetchBoard();
-      const seen = new Set(DB.activity.map(e => e.id));
-      for (const e of (cur.activity || [])) if (!seen.has(e.id)) DB.activity.push(e);
-      DB.activity.sort((a, b) => (a.at || "").localeCompare(b.at || ""));
-      DB.meta.revision = revOf(cur) + 1;
-      DB.meta.updated = TODAY;
-
-      const res = await fetch(proxyBase + "/api/board", {
-        method:"PUT",
-        headers:{"content-type":"application/json", "authorization":"Bearer " + (apiToken || "")},
-        body: JSON.stringify({desk: DB, head: headSha, actor: whoami()})
-      });
-      if (res.ok){
-        headSha = (await res.json()).head;
-        sync = {base:DB.meta.revision, dirty:false}; saveSync();
-        try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {}
-        syncState = "live"; renderBanner(); renderRail();
-      } else if (res.status === 409 && !retried){
-        headSha = (await res.json()).head;
-        pushing = false; return pushLive(true);
-      } else if (res.status === 401){
-        apiToken = ""; try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
-        syncState = "ahead"; renderBanner();
-        toast("Password rejected — set it under Data");
-      } else {
-        syncState = "ahead"; renderBanner();
-      }
-    } catch (e) {
-      syncState = "ahead"; renderBanner();
-    } finally { pushing = false; }
-    return;
-  }
-
   try {
-    const parent = await headCommit();
     const cur = await fetchBoard();
     const seen = new Set(DB.activity.map(e => e.id));
     for (const e of (cur.activity || [])) if (!seen.has(e.id)) DB.activity.push(e);
@@ -1122,64 +1050,28 @@ async function pushLive(retried){
     DB.meta.revision = revOf(cur) + 1;
     DB.meta.updated = TODAY;
 
-    /* Only write files whose contents actually differ, so a comment does not
-       rewrite the partner list. */
-    const changed = FILES.filter(f => {
-      const before = f.wrap ? {version:cur.version || 1, meta:cur.meta} : cur[f.key];
-      return JSON.stringify(before) !== JSON.stringify(f.wrap ? {version:DB.version || 1, meta:DB.meta} : DB[f.key]);
+    const res = await fetch(proxyBase + "/api/board", {
+      method:"PUT",
+      headers:{"content-type":"application/json", "authorization":"Bearer " + (apiToken || "")},
+      body: JSON.stringify({desk: DB, head: headSha, actor: whoami()})
     });
-    if (!changed.length){
-      sync = {base:DB.meta.revision, dirty:false}; saveSync();
-      syncState = "live"; renderBanner(); pushing = false; return;
-    }
-
-    const blobs = await Promise.all(changed.map(async f => {
-      const res = await ghFetch("/repos/" + ghRepo + "/git/blobs", {
-        method:"POST", headers:{"content-type":"application/json"},
-        body: JSON.stringify({content: b64encode(serialize(f)), encoding: "base64"})
-      });
-      if (!res.ok) throw new Error("blob " + f.path + ": HTTP " + res.status);
-      return {path: f.path, mode: "100644", type: "blob", sha: (await res.json()).sha};
-    }));
-
-    const treeRes = await ghFetch("/repos/" + ghRepo + "/git/trees", {
-      method:"POST", headers:{"content-type":"application/json"},
-      body: JSON.stringify({base_tree: parent, tree: blobs})
-    });
-    if (!treeRes.ok) throw new Error("tree: HTTP " + treeRes.status);
-
-    const commitRes = await ghFetch("/repos/" + ghRepo + "/git/commits", {
-      method:"POST", headers:{"content-type":"application/json"},
-      body: JSON.stringify({
-        message: "Desk: revision " + DB.meta.revision + " (" + whoami() + ")",
-        tree: (await treeRes.json()).sha,
-        parents: [parent]
-      })
-    });
-    if (!commitRes.ok) throw new Error("commit: HTTP " + commitRes.status);
-    const newSha = (await commitRes.json()).sha;
-
-    const refRes = await ghFetch("/repos/" + ghRepo + "/git/refs/heads/" + GH_BRANCH, {
-      method:"PATCH", headers:{"content-type":"application/json"},
-      body: JSON.stringify({sha: newSha, force: false})
-    });
-
-    if (refRes.ok){
-      headSha = newSha;
+    if (res.ok){
+      headSha = (await res.json()).head;
       sync = {base:DB.meta.revision, dirty:false}; saveSync();
       try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {}
       syncState = "live"; renderBanner(); renderRail();
-    } else if ((refRes.status === 422 || refRes.status === 409) && !retried){
-      pushing = false; return pushLive(true);        // someone committed first
-    } else if (refRes.status === 401 || refRes.status === 403){
+    } else if (res.status === 409 && !retried){
+      headSha = (await res.json()).head;
+      pushing = false; return pushLive(true);
+    } else if (res.status === 401){
       apiToken = ""; try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
       syncState = "ahead"; renderBanner();
-      toast(refRes.status === 403 ? "Token lacks write access to the repo" : "Token rejected — set it under Data");
+      toast("Password rejected — set it under Data");
     } else {
       syncState = "ahead"; renderBanner();
     }
   } catch (e) {
-    syncState = "ahead"; renderBanner();             // offline or refused; next save retries
+    syncState = "ahead"; renderBanner();
   } finally { pushing = false; }
 }
 
@@ -1191,14 +1083,14 @@ const queuePush = () => {
 };
 
 /* One poll, two jobs: reconnect while offline, and pick up what other people
-   and agents committed. Checks the branch head first — one cheap call — and
-   only downloads the board when it has actually moved. */
+   and agents committed. With a backend it checks the branch head first — one
+   cheap call — and only downloads the board when it has actually moved. */
 function startPolling(){
   clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
     if (document.hidden || pushing) return;
     try {
-      if (apiToken){
+      if (useProxy){
         const head = await headCommit();
         if (liveMode && head === headSha) return;
         headSha = head;
@@ -1236,13 +1128,14 @@ async function connectBackend(){
         const h = await (await fetch(proxyBase + "/healthz", {cache:"no-store"})).json();
         authRequired = h.auth !== "open";
         localBackend = !!h.local;
+        if (typeof h.repo === "string" && h.repo) backendRepo = h.repo;
       } catch (e) { authRequired = true; localBackend = false; }
     }
     const cur = await fetchBoard();
     if (!Array.isArray(cur.partners)) throw new Error("unexpected shape");
     shared = cur;
     liveMode = true;
-    if (apiToken){ try { headSha = await headCommit(); } catch (e) {} }
+    if (useProxy){ try { headSha = await headCommit(); } catch (e) {} }
     /* Decide on the current dirty flag, not the boot-time state — this also
        runs on reconnection, where unpushed offline edits must survive. */
     if (!sync.dirty){
@@ -1499,7 +1392,7 @@ const SYNC_LABEL = {
   /* "live" must mean the shared board. A development backend writes to somebody's
      working tree and reaches nobody else, so it says so. */
   live:    () => (localBackend ? "working copy · rev " : "live · rev ") + revOf(DB),
-  ahead:   () => (apiToken || !authRequired) ? "saving…" : "token needed",
+  ahead:   () => !useProxy ? "read-only" : (apiToken || !authRequired) ? "saving…" : "password needed",
   behind:  () => "update available",
   offline: () => "offline"
 };
@@ -1513,7 +1406,9 @@ function renderBanner(){
     live:    localBackend
       ? "This backend is in development mode: saves are written to its working tree, not committed to GitHub. Nobody else sees them until someone commits."
       : "Connected to the backend. Saves push automatically and others' changes arrive on their own.",
-    ahead:   apiToken ? "Pushing your edits to the backend…" : "Edits are local only — set the write token under Data to push them.",
+    ahead:   !useProxy ? "This copy has no backend — read-only. Open the desk through its Replit address to edit."
+           : apiToken ? "Pushing your edits to the backend…"
+                      : "Edits are local only — set the team password under Data to push them.",
     behind:  "The board has moved on since your copy was taken.",
     offline: "Backend unreachable — working from this browser's copy and reconnecting automatically. Unpushed edits go up when it returns."
   }[syncState];
@@ -3498,10 +3393,11 @@ function noteDrawer(){
 function dataDrawer(){
   const state = {
     live:    localBackend
-      ? `This backend is in <b>development mode</b>: it writes to its own working tree at revision <code>${revOf(DB)}</code> and does not commit. Your changes are saved to disk but reach nobody else until someone commits them. Give the server a <code style="font-family:var(--data)">GITHUB_TOKEN</code> to have it commit to <code>${esc(ghRepo)}</code> instead.`
-      : `Connected to <code>${esc(ghRepo)}</code> at revision <code>${revOf(DB)}</code>. Every save is one commit under <code>data/</code> — git is the database and the audit trail.`,
-    ahead:   apiToken ? `Pushing your edits to the board…`
-                      : `The board is reachable but this browser has no write token, so your edits stay local. Set the token below.`,
+      ? `This backend is in <b>development mode</b>: it writes to its own working tree at revision <code>${revOf(DB)}</code> and does not commit. Your changes are saved to disk but reach nobody else until someone commits them. Give the server a <code style="font-family:var(--data)">GITHUB_TOKEN</code> to have it commit to <code>${esc(backendRepo)}</code> instead.`
+      : `Connected to <code>${esc(backendRepo)}</code> at revision <code>${revOf(DB)}</code>. Every save is one commit under <code>data/</code> — git is the database and the audit trail.`,
+    ahead:   !useProxy ? `This copy of the desk has no backend, so it is <b>read-only</b> — your edits stay in this browser. Open the desk through its Replit address to change the board.`
+           : apiToken ? `Pushing your edits to the board…`
+                      : `The board is reachable but this browser has no password, so your edits stay local. Set it below.`,
     behind:  `The board is at revision <code>${revOf(shared)}</code>; your unpushed edits started from <code>${sync.base}</code>. Use the banner to resolve it.`,
     offline: `The board's backend is unreachable right now. You are working from this browser's copy; it reconnects automatically and unpushed edits go up when it returns.`
   }[syncState];
@@ -3523,23 +3419,19 @@ function dataDrawer(){
         <input type="text" id="meName" value="${esc(me)}" placeholder="e.g. Toni"></label>
 
       <div>
-        <span class="eyebrow">GitHub</span>
+        <span class="eyebrow">Access</span>
         <div style="display:grid; gap:9px; margin-top:7px">
-          <label class="field"><span>Repository</span>
-            <input type="text" id="apiUrl" value="${esc(ghRepo === GH_REPO ? "" : ghRepo)}" placeholder="${esc(GH_REPO)}"></label>
-          <label class="field"><span>${useProxy ? "Password — the one your team was given" : "Access token — a fine-grained PAT with Contents: read and write"}</span>
-            <input type="password" id="apiTok" value="${esc(apiToken)}" placeholder="${useProxy ? "team password" : "github_pat_…"}"></label>
+          <label class="field"><span>Password — the one your team was given</span>
+            <input type="password" id="apiTok" value="${esc(apiToken)}" placeholder="${useProxy ? "team password" : "no backend on this copy — read-only"}" ${useProxy ? "" : "disabled"}></label>
           <p style="margin:0; color:var(--ink-3); font-size:11.5px">${useProxy
-            ? `Without it you can read the board but not change it. Saved as you type, kept in this browser. Your GitHub token is not here — it stays on the server at <code style="font-family:var(--data)">${esc(proxyBase)}</code>, so this password cannot touch the repository directly.`
-            : "Without a token you can read the board but not change it. It is saved as you type and stays in this browser — never committed. Scope it to this one repository, and revoke it on GitHub if it leaks."}</p>
-          ${apiToken ? `
+            ? `Without it you can read the board but not change it. Saved as you type, kept in this browser. No GitHub token ever reaches this browser — it stays on the server at <code style="font-family:var(--data)">${esc(proxyBase)}</code>, so this password cannot touch the repository directly.`
+            : "This copy of the desk is served read-only. The board is changed through the backend — open the desk's Replit address instead."}</p>
+          ${apiToken && useProxy ? `
           <div style="border-top:1px solid var(--line); padding-top:10px; display:grid; gap:7px">
             <span class="eyebrow">Set up another browser or phone</span>
-            <p style="margin:0; color:var(--ink-2); font-size:12.5px">Copy a link that configures whichever browser opens it — no pasting the token again. Open it once on your phone and that device is set up for good.</p>
+            <p style="margin:0; color:var(--ink-2); font-size:12.5px">Copy a link that configures whichever browser opens it — no pasting the password again. Open it once on your phone and that device is set up for good.</p>
             <button class="btn" data-setuplink style="justify-self:start">Copy setup link</button>
-            <p style="margin:0; color:var(--ochre); font-size:11.5px">${useProxy
-              ? "That link contains the team password. Anyone who opens it can edit the board."
-              : "That link contains your token. Anyone who opens it can edit the board — send it only to yourself or someone you would give the token to."}</p>
+            <p style="margin:0; color:var(--ochre); font-size:11.5px">That link contains the team password. Anyone who opens it can edit the board.</p>
           </div>` : ""}
         </div>
       </div>
@@ -3569,12 +3461,8 @@ function dataDrawer(){
     me = nameBox.value.trim();
     try { localStorage.setItem(ME_KEY, me); } catch (e) {}
   };
-  const apiBox = drawer.querySelector("#apiUrl");
-  if (apiBox) apiBox.oninput = () => {
-    try { localStorage.setItem(REPO_KEY, apiBox.value.trim()); } catch (e) {}
-  };
-  /* Save as it is typed, not on blur: pasting a token and closing the drawer
-     with Escape would otherwise lose it silently. */
+  /* Save as it is typed, not on blur: pasting a password and closing the
+     drawer with Escape would otherwise lose it silently. */
   const tokBox = drawer.querySelector("#apiTok");
   if (tokBox){
     let settle;
@@ -3586,7 +3474,7 @@ function dataDrawer(){
       } catch (e) {}
       clearTimeout(settle);
       settle = setTimeout(async () => {
-        if (apiToken){
+        if (apiToken && useProxy){
           /* Pick up the head commit so the first save can write straight away,
              with no reload needed. */
           try { headSha = await headCommit(); liveMode = true; } catch (e) {}
@@ -3594,7 +3482,7 @@ function dataDrawer(){
           syncState = sync.dirty ? "ahead" : "live";
           renderBanner();
         }
-        toast(apiToken ? "Token saved — it stays in this browser" : "Token cleared");
+        toast(apiToken ? "Password saved — it stays in this browser" : "Password cleared");
       }, 700);
     };
   }

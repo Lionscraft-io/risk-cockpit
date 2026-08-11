@@ -43,8 +43,11 @@ const BRIDGE_TOKEN = process.env.BRIDGE_TOKEN || process.env.GITHUB_TOKEN || "";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-/* The desk itself, from this checkout — so the deployed URL shows the board
-   rather than an API error, and that copy talks to its own origin. */
+/* The desk itself. When this server can reach GitHub it serves the repo's own
+   copy of the page, cached for a minute — the UI visitors get always matches
+   the repository, even if this deployment's checkout has fallen behind. The
+   checkout's copy is the fallback when GitHub cannot be reached, and the only
+   source in development mode. */
 const HTML = join(ROOT, "lionscraft-platform.html");
 
 /* With no GitHub token this reads and writes the checkout's own data/ files
@@ -120,6 +123,24 @@ async function readBoard(){
   FILES.forEach((f, i) => { if (f.wrap) Object.assign(doc, parts[i]); else doc[f.key] = parts[i]; });
   if (!Array.isArray(doc.activity)) doc.activity = [];
   return doc;
+}
+
+/* Serve the desk page. Deployed: the repo's current copy, cached for a
+   minute, so the UI can never drift from the data it writes. Development
+   mode (or GitHub unreachable): the checkout's own copy. */
+let htmlCache = {at: 0, text: null};
+async function readHtml(){
+  const local = () => { try { return readFileSync(HTML, "utf8"); } catch { return null; } };
+  if (LOCAL) return local();
+  if (htmlCache.text && Date.now() - htmlCache.at < 60000) return htmlCache.text;
+  try {
+    const m = await ghJson("/repos/" + REPO + "/contents/lionscraft-platform.html?ref=" + BRANCH, {}, "desk page");
+    const text = Buffer.from(m.content, "base64").toString("utf8");
+    htmlCache = {at: Date.now(), text};
+    return text;
+  } catch (e) {
+    return htmlCache.text || local();
+  }
 }
 
 /* One commit for the whole save. Writing files one at a time would leave the
@@ -336,9 +357,8 @@ http.createServer(async (req, res) => {
       });
 
     if (req.method === "GET" && (path === "/" || path === "/lionscraft-platform.html")){
-      let html;
-      try { html = readFileSync(HTML, "utf8"); }
-      catch { return send(res, 503, {error: "desk_unavailable", detail: "lionscraft-platform.html not found beside the server"}); }
+      const html = await readHtml();
+      if (!html) return send(res, 503, {error: "desk_unavailable", detail: "lionscraft-platform.html could not be read from GitHub or the checkout"});
       res.writeHead(200, Object.assign({"content-type": "text/html; charset=utf-8"}, CORS));
       return res.end(html);
     }
