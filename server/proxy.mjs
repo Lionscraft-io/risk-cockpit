@@ -64,6 +64,7 @@ const FILES = [
   {key:"tasks",       path:"data/plan/tasks.json"},
   {key:"milestones",  path:"data/plan/milestones.json"},
   {key:"columns",     path:"data/plan/columns.json"},
+  {key:"events",      path:"data/events/events.json"},
   {key:"activity",    path:"data/activity/activity.json"}
 ];
 

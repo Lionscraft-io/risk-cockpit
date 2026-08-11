@@ -1,0 +1,42 @@
+[
+  {
+    "id": "ev1",
+    "name": "HT Digital & Aon Roundtable",
+    "start": "2026-08-20",
+    "end": "",
+    "time": "09:00–10:30",
+    "location": "Aon Centre, London",
+    "partner": "p07",
+    "notes": ""
+  },
+  {
+    "id": "ev2",
+    "name": "Scott Petty meeting",
+    "start": "2026-08-24",
+    "end": "",
+    "time": "",
+    "location": "London",
+    "partner": "p08",
+    "notes": "Date given as 24 August. Task t102 and LC-013 on the workforce board both say 27–28 August — one of them is wrong."
+  },
+  {
+    "id": "ev3",
+    "name": "digital-insurance-cee",
+    "start": "2026-09-08",
+    "end": "2026-09-09",
+    "time": "",
+    "location": "Warsaw",
+    "partner": "",
+    "notes": ""
+  },
+  {
+    "id": "ev4",
+    "name": "ADB Business Opportunities Fair (BOF)",
+    "start": "2026-09-21",
+    "end": "2026-09-24",
+    "time": "",
+    "location": "Manila",
+    "partner": "p06",
+    "notes": ""
+  }
+]

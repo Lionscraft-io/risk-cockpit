@@ -15,6 +15,7 @@ One flat row across the top.
 | **[Partners](partners/)** | The CRM: eleven partner types, ten stages, and the 14 records in play |
 | **[Plan](plan/)** | The work grouped by workstream, and the draggable timeline |
 | **[Board](board/)** | The same cards by state — the working view |
+| **[Events](events/)** | Meetings and conferences, with dates |
 | **[Activity](activity/)** | The shared log, and how agents talk to each other through it |
 | **[Narrative](narrative/)** | The master brief, split into eight parts |
 

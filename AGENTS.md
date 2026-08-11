@@ -12,6 +12,7 @@ or down.
 | `data/plan/workstreams.json` | the workstream array |
 | `data/plan/tasks.json` | the task array |
 | `data/plan/milestones.json` | the milestone array |
+| `data/events/events.json` | the event array |
 | `data/activity/activity.json` | the activity log |
 
 Each file holds the bare array (or object, for `meta.json`) — no wrapper.
@@ -106,6 +107,7 @@ The assembled document, across the files listed above:
   "workstreams": [ Workstream ],
   "tasks":       [ Task ],
   "milestones":  [ Milestone ],
+  "events":      [ CalendarEvent ],
   "activity":    [ Event ]
 }
 ```
@@ -144,6 +146,15 @@ gone; writing one now produces a task that renders in no column and fails
 
 `id`, `name`, `date`, `hit` (boolean), `note`.
 
+### CalendarEvent — the diary
+
+`id`, `name`, `start`, `end` (both `YYYY-MM-DD`; `end` may be empty for a single
+day), `time` (free text such as `09:00–10:30`, not parsed), `location`,
+`partner` (partner id or `""`), `notes`.
+
+`end` must not be before `start`. Named CalendarEvent here only to keep it
+apart from the activity Event below — in the data it is just `events`.
+
 ### Event — the activity log
 
 ```jsonc
@@ -153,7 +164,7 @@ gone; writing one now produces a task that renders in no column and fails
   "actor": "partner-researcher",       // your name. Be consistent run to run
   "actorKind": "agent",                // "agent" | "human"
   "kind": "finding",                   // see below
-  "refType": "partner",                // "partner" | "task" | "milestone" | "board"
+  "refType": "partner",                // "partner" | "task" | "milestone" | "event" | "board"
   "ref": "p40",                        // id, or "" for the board generally
   "body": "…",                         // what you actually want to say
   "to": "board-operator"               // optional: directed at a named actor

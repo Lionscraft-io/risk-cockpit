@@ -15,7 +15,7 @@ Reading needs nothing — no login, no setup.
 **[docs/](docs/)** — one folder per tab, mirroring what you click:
 
 [Partners](docs/partners/) · [Plan](docs/plan/) · [Board](docs/board/) ·
-[Activity](docs/activity/) · [Narrative](docs/narrative/)
+[Events](docs/events/) · [Activity](docs/activity/) · [Narrative](docs/narrative/)
 
 Underneath: [Data and sync](docs/data/) · [Development](docs/development/) ·
 [AGENTS.md](AGENTS.md)

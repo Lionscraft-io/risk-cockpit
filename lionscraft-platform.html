@@ -809,6 +809,7 @@ const SEED = {
     {id:"WS9", name:"Narrative & materials",        layer:"Cross-cutting",                         lead:""}
   ],
   activity: [],
+  events: [],
   tasks: [],
   milestones: []
 };
@@ -877,6 +878,7 @@ const FILES = [
   {key:"tasks",       path:"data/plan/tasks.json"},
   {key:"milestones",  path:"data/plan/milestones.json"},
   {key:"columns",     path:"data/plan/columns.json"},
+  {key:"events",      path:"data/events/events.json"},
   {key:"activity",    path:"data/activity/activity.json"}
 ];
 
@@ -1095,6 +1097,9 @@ try { me = localStorage.getItem(ME_KEY) || ""; } catch (e) {}
 const whoami = () => me || "unattributed";
 
 if (!Array.isArray(DB.activity)) DB.activity = [];
+/* Events arrived after this file shipped, so a browser holding an older copy
+   has no such key. */
+if (!Array.isArray(DB.events)) DB.events = [];
 
 /* `quiet` is used by the sync machinery, which manages the dirty flag itself.
    Every other caller is a user edit, so it marks the copy as unpublished. */
@@ -1228,6 +1233,7 @@ const VIEWS = [
   {id:"partners",  label:"Partners",  count:() => DB.partners.length},
   {id:"plan",      label:"Plan",      count:() => planCards().filter(c => !isDone(c.status)).length},
   {id:"board",     label:"Board",     count:() => boardCards().filter(c => c.status === "focus" || c.status === "review").length},
+  {id:"events",    label:"Events",    count:() => DB.events.filter(e => !isPastEvent(e)).length},
   {id:"activity",  label:"Activity",  count:() => DB.activity.length || ""},
   {id:"narrative", label:"Narrative", count:() => ""}
 ];
@@ -1364,6 +1370,7 @@ function render(){
     partners:  viewPartners,
     plan:      viewPlan,
     board:     viewBoard,
+    events:    viewEvents,
     activity:  viewActivity,
     narrative: viewNarrative
   })[current]();
@@ -2465,6 +2472,126 @@ function addWorkstream(){
   save(); renderRail(); render();
 }
 
+/* ── Events ───────────────────────────────────────────────────────── */
+
+/* An event is over once its last day has passed, so a two-day conference is
+   still "upcoming" on its second morning. */
+const isPastEvent = e => (e.end || e.start) < TODAY;
+
+const eventDates = e => {
+  if (!e.end || e.end === e.start) return fmtDate(e.start);
+  const a = e.start.split("-"), b = e.end.split("-");
+  /* Same month reads better as "21–24 Sep 26" than as two full dates. The day
+     keeps its padding so it lines up with every other date on the desk —
+     unpadding only the first gave "8–09 Sep 26". */
+  return (a[0] === b[0] && a[1] === b[1])
+    ? a[2] + "–" + fmtDate(e.end)
+    : fmtDate(e.start) + " – " + fmtDate(e.end);
+};
+
+const daysUntil = d => Math.round((toMs(d) - toMs(TODAY)) / DAY);
+
+function viewEvents(){
+  const all = DB.events.slice().sort((a, b) => a.start.localeCompare(b.start));
+  const upcoming = all.filter(e => !isPastEvent(e));
+  const past = all.filter(isPastEvent).reverse();
+
+  const row = e => {
+    const p = DB.partners.find(x => x.id === e.partner);
+    const n = daysUntil(e.start);
+    const when = isPastEvent(e) ? "" : n <= 0 ? "now" : n === 1 ? "tomorrow" : "in " + n + " days";
+    return `
+    <tr class="clickable ${isPastEvent(e) ? "done" : ""}" data-event="${esc(e.id)}">
+      <td style="width:118px" class="num">${esc(eventDates(e))}</td>
+      <td><b class="pn">${esc(e.name)}</b>${
+        e.time ? `<span class="cat" style="margin-left:7px">${esc(e.time)}</span>` : ""}
+        <span class="sub">${esc(e.location) || "location not set"}${
+          p ? " · " + esc(p.name) : ""}</span></td>
+      <td style="width:96px" class="num" style="color:var(--ink-3)">${esc(when)}</td>
+    </tr>`;
+  };
+
+  const table = (list, empty) => `<div class="tablewrap"><table><tbody>${
+    list.length ? list.map(row).join("") : `<tr><td class="empty">${empty}</td></tr>`
+  }</tbody></table></div>`;
+
+  return `
+  <div class="pagehead">
+    <div><h1>Events</h1></div>
+    <div class="tools"><button class="btn primary" id="addEvent">Add event</button></div>
+  </div>
+
+  <div class="grid" style="gap:16px">
+    <section class="card">
+      <header><h2>Coming up</h2><span class="spacer"></span>
+        <span class="cat">${upcoming.length}</span></header>
+      ${table(upcoming, "Nothing in the diary.")}
+    </section>
+    ${past.length ? `
+    <section class="card">
+      <header><h2>Been and gone</h2><span class="spacer"></span>
+        <span class="cat">${past.length}</span></header>
+      ${table(past, "")}
+    </section>` : ""}
+  </div>`;
+}
+
+function eventDrawer(id){
+  const isNew = !id;
+  const e = isNew
+    ? {id:uid("ev"), name:"", start:TODAY, end:"", time:"", location:"", partner:"", notes:""}
+    : DB.events.find(x => x.id === id);
+  if (!e) return;
+
+  openDrawer(`
+    <header><h3>${isNew ? "New event" : "Event"}</h3><button class="btn ghost" data-close>Close</button></header>
+    <div class="body">
+      ${field("Event", "name", e.name)}
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        ${field("Starts", "start", e.start, "date")}
+        ${field("Ends (if longer)", "end", e.end, "date")}
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1.4fr; gap:10px">
+        ${field("Time", "time", e.time)}
+        ${field("Where", "location", e.location)}
+      </div>
+      <label class="field"><span>Linked partner</span><select name="partner">
+        <option value="">— none —</option>
+        ${DB.partners.slice().sort((a, b) => a.name.localeCompare(b.name))
+          .map(p => `<option value="${p.id}" ${e.partner === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}
+      </select></label>
+      <label class="field"><span>Notes</span><textarea name="notes" rows="4">${esc(e.notes)}</textarea></label>
+      ${isNew ? "" : threadBlock("event", e.id)}
+    </div>
+    <footer>
+      ${isNew ? "" : '<button class="btn danger" data-del>Delete</button>'}
+      <span class="spacer"></span>
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" data-save>Save</button>
+    </footer>`);
+
+  if (!isNew) wireThread("event", e.id, () => eventDrawer(e.id));
+
+  drawer.querySelector("[data-save]").onclick = () => {
+    drawer.querySelectorAll("[name]").forEach(el => e[el.name] = el.value.trim());
+    if (!e.name){ toast("Give it a name first"); return; }
+    if (!e.start){ toast("Give it a date first"); return; }
+    if (e.end && e.end < e.start){ toast("It cannot end before it starts"); return; }
+    if (isNew){
+      DB.events.push(e);
+      logEvent({kind:"change", refType:"event", ref:e.id, body:"Added the event " + e.name});
+    }
+    save(); closeDrawer(); renderRail(); render(); toast(isNew ? "Event added" : "Saved");
+  };
+  const del = drawer.querySelector("[data-del]");
+  if (del) del.onclick = () => {
+    if (!confirm("Delete " + e.name + "? This cannot be undone.")) return;
+    DB.events = DB.events.filter(x => x.id !== e.id);
+    logEvent({kind:"change", refType:"event", ref:"", body:"Deleted the event " + e.name});
+    save(); closeDrawer(); renderRail(); render(); toast("Deleted");
+  };
+}
+
 /* ── Activity ─────────────────────────────────────────────────────── */
 
 let actFilter = {actor:"", kind:"", q:""};
@@ -2473,6 +2600,7 @@ const refLabel = e => {
   if (e.refType === "partner"){ const p = DB.partners.find(x => x.id === e.ref); return p ? p.name : e.ref; }
   if (e.refType === "task"){ const t = DB.tasks.find(x => x.id === e.ref); return t ? t.title : e.ref; }
   if (e.refType === "milestone"){ const m = DB.milestones.find(x => x.id === e.ref); return m ? m.name : e.ref; }
+  if (e.refType === "event"){ const v = DB.events.find(x => x.id === e.ref); return v ? v.name : e.ref; }
   return e.ref || "the board";
 };
 
@@ -3129,8 +3257,12 @@ document.getElementById("view").addEventListener("click", e => {
   const tr = e.target.closest("[data-task]");
   if (tr){ taskDrawer(tr.dataset.task); return; }
 
+  const ev = e.target.closest("[data-event]");
+  if (ev){ eventDrawer(ev.dataset.event); return; }
+
   if (e.target.id === "addPartner"){ partnerDrawer(null); return; }
   if (e.target.id === "addTask"){ taskDrawer(null); return; }
+  if (e.target.id === "addEvent"){ eventDrawer(null); return; }
   if (e.target.id === "newNote"){ noteDrawer(); return; }
   if (e.target.id === "addMilestone"){ addMilestone(); return; }
   if (e.target.id === "fClear"){ filters = {stage:"", cat:"", q:""}; render(); return; }
