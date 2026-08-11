@@ -373,5 +373,15 @@
     "refType": "board",
     "ref": "",
     "body": "Researched the four events. Two have public pages and now carry links: Digital Insurance CEE (digital-insurance-cee.com, dates confirmed as 8-9 Sept, Warsaw) and the ADB Business Opportunities Fair (adb.org, confirmed 21-24 Sept at ADB HQ Manila, 09:00-17:30 local, with venue and times filled in from that page). The Scott Petty meeting is private. The HT Digital & Aon roundtable has no public listing — Aon's own events pages do not carry it — so it is treated as invite-only; only the Aon Centre street address was added, from aon.com. Both links were checked live before being saved."
+  },
+  {
+    "id": "e_sp24",
+    "at": "2026-08-11T18:49:21.115Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "task",
+    "ref": "t102",
+    "body": "Moved to 24 August on Toni's word, from \"Prepare the Vodafone CTO meeting (Scott Petty), 27–28 Aug\" due 2026-08-27. That settles the contradiction flagged when the event was added — the task and the event now agree. Still outstanding: LC-013 on the workforce board reads \"27 Aug 26\" and lives in the other repository, so it was not touched from here."
   }
 ]

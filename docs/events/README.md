@@ -56,9 +56,10 @@ from anyone here. The Scott Petty meeting is private, and the HT Digital & Aon
 roundtable has no public listing — not on Aon's own events pages either — so it
 is treated as invite-only. Its full street address sits in the record's notes.
 
-**The Scott Petty date is contested.** This record says 24 August. Task `t102`
-on the board and `LC-013` on the workforce board both say 27–28 August. One of
-them is wrong and nobody has said which.
+**The Scott Petty date was contested and is now settled at 24 August.** Task
+`t102` said 27–28 August and was moved to match. `LC-013` on the
+[workforce board](https://github.com/toniilein/workforce) still reads 27 Aug —
+it lives in the other repository and has to be changed there.
 
 ---
 
