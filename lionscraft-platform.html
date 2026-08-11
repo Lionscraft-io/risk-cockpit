@@ -120,30 +120,32 @@ button,input,select,textarea{font:inherit; color:inherit}
    Deliberately few type treatments: the tile has two, everything else has
    one each. The first pass mixed the monospace data font, the small-caps
    label style and two body sizes inside a single row. */
+/* The month is the heading the rows sit under, so it reads as one — which is
+   also why the tile no longer repeats it. */
 .evmonth{
-  display:flex; align-items:baseline; gap:10px; padding:16px 15px 7px;
-  font-family:var(--data); font-size:10.5px; letter-spacing:.11em;
-  text-transform:uppercase; color:var(--ink-3);
+  display:flex; align-items:center; gap:12px; padding:18px 15px 9px;
+  font-family:var(--display); font-size:15px; color:var(--ink);
 }
 .evmonth::after{content:""; flex:1; border-bottom:1px solid var(--line)}
 .evrow{
-  display:grid; grid-template-columns:64px minmax(0,1fr) auto; gap:15px; align-items:center;
+  display:grid; grid-template-columns:56px minmax(0,1fr) auto; gap:15px; align-items:center;
   padding:12px 15px; border-top:1px solid var(--line); cursor:pointer;
   transition:background .12s;
 }
 .evrow:hover{background:var(--surface-2)}
 .evtile{
-  text-align:center; padding:6px 2px; border-radius:var(--radius);
+  text-align:center; padding:9px 2px; border-radius:var(--radius);
   background:var(--surface-2); border:1px solid var(--line);
 }
 .evtile b{display:block; font-family:var(--display); font-size:19px; line-height:1.05; color:var(--ink); white-space:nowrap}
 /* A range has to fit the same tile on one line, or that row stands taller than
    every single-day row beside it. */
 .evtile b.range{font-size:14px; letter-spacing:-.02em}
-.evtile span{
-  display:block; margin-top:2px; font-family:var(--data); font-size:9.5px;
-  letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3);
-}
+.evlink{color:var(--ink-2); text-decoration:none; border-bottom:1px solid var(--line-strong)}
+.evlink:hover{color:var(--accent-ink); border-bottom-color:var(--accent)}
+:root[data-theme="dark"] .evlink:hover{color:var(--accent)}
+@media (prefers-color-scheme: dark){.evlink:hover{color:var(--accent)}}
+:root[data-theme="light"] .evlink:hover{color:var(--accent-ink)}
 .evname{font-size:14px; font-weight:600; color:var(--ink)}
 .evmeta{margin-top:3px; font-size:12.5px; color:var(--ink-2); display:flex; align-items:center; gap:7px; flex-wrap:wrap}
 .evmeta .sep{color:var(--line-strong)}
@@ -2501,6 +2503,9 @@ const eventDates = e => {
 
 const daysUntil = d => Math.round((toMs(d) - toMs(TODAY)) / DAY);
 
+/* Just the host, so a long conference URL does not push the row around. */
+const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return "link"; } };
+
 function viewEvents(){
   const all = DB.events.slice().sort((a, b) => a.start.localeCompare(b.start));
   const upcoming = all.filter(e => !isPastEvent(e));
@@ -2515,7 +2520,6 @@ function viewEvents(){
     const sameMonth = e.end && a[0] === b[0] && a[1] === b[1];
     return `<div class="evtile">
       <b class="${sameMonth ? "range" : ""}">${sameMonth ? +a[2] + "–" + +b[2] : +a[2]}</b>
-      <span>${MONTHS[+a[1] - 1]}</span>
     </div>`;
   };
 
@@ -2531,6 +2535,9 @@ function viewEvents(){
       spansMonths ? "until " + fmtDate(e.end) : "",
       e.location
     ].filter(Boolean).map(esc);
+    if (e.link) bits.push(
+      `<a class="evlink" href="${esc(e.link)}" target="_blank" rel="noopener noreferrer"
+          data-stop>${esc(hostOf(e.link))} ↗</a>`);
 
     return `
     <div class="evrow ${e.id === nextId ? "isnext" : ""} ${gone ? "gone" : ""}" data-event="${esc(e.id)}">
@@ -2577,7 +2584,7 @@ function viewEvents(){
     <section class="card">
       <header><h2>Been and gone</h2><span class="spacer"></span>
         <span class="cat">${past.length}</span></header>
-      ${past.map(row).join("")}
+      ${grouped(past)}
     </section>` : ""}
   </div>`;
 }
@@ -2585,7 +2592,7 @@ function viewEvents(){
 function eventDrawer(id){
   const isNew = !id;
   const e = isNew
-    ? {id:uid("ev"), name:"", start:TODAY, end:"", time:"", location:"", partner:"", notes:""}
+    ? {id:uid("ev"), name:"", start:TODAY, end:"", time:"", location:"", link:"", partner:"", notes:""}
     : DB.events.find(x => x.id === id);
   if (!e) return;
 
@@ -2606,6 +2613,7 @@ function eventDrawer(id){
         ${DB.partners.slice().sort((a, b) => a.name.localeCompare(b.name))
           .map(p => `<option value="${p.id}" ${e.partner === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}
       </select></label>
+      ${field("Link", "link", e.link || "")}
       <label class="field"><span>Notes</span><textarea name="notes" rows="4">${esc(e.notes)}</textarea></label>
       ${isNew ? "" : threadBlock("event", e.id)}
     </div>
@@ -2623,6 +2631,7 @@ function eventDrawer(id){
     if (!e.name){ toast("Give it a name first"); return; }
     if (!e.start){ toast("Give it a date first"); return; }
     if (e.end && e.end < e.start){ toast("It cannot end before it starts"); return; }
+    if (e.link && !/^https?:\/\//i.test(e.link)){ toast("A link has to start with http:// or https://"); return; }
     if (isNew){
       DB.events.push(e);
       logEvent({kind:"change", refType:"event", ref:e.id, body:"Added the event " + e.name});
@@ -3205,6 +3214,10 @@ document.getElementById("view").addEventListener("click", e => {
 
   const tr = e.target.closest("[data-task]");
   if (tr){ taskDrawer(tr.dataset.task); return; }
+
+  /* A real link inside a clickable row. Without this the row wins and the
+     editor opens on top of the tab that just started loading. */
+  if (e.target.closest("[data-stop]")) return;
 
   const ev = e.target.closest("[data-event]");
   if (ev){ eventDrawer(ev.dataset.event); return; }

@@ -7,7 +7,8 @@
     "time": "09:00–10:30",
     "location": "Aon Centre, London",
     "partner": "p07",
-    "notes": ""
+    "notes": "No public listing found — searched Aon's own events pages and the open web, so treated as private / invite-only. Full address, from aon.com: The Leadenhall Building, 122 Leadenhall Street, London EC3V 4AN.",
+    "link": ""
   },
   {
     "id": "ev2",
@@ -17,26 +18,29 @@
     "time": "",
     "location": "London",
     "partner": "p08",
-    "notes": "Date given as 24 August. Task t102 and LC-013 on the workforce board both say 27–28 August — one of them is wrong."
+    "notes": "Date given as 24 August. Task t102 and LC-013 on the workforce board both say 27–28 August — one of them is wrong.",
+    "link": ""
   },
   {
     "id": "ev3",
-    "name": "digital-insurance-cee",
+    "name": "Digital Insurance CEE",
     "start": "2026-09-08",
     "end": "2026-09-09",
     "time": "",
     "location": "Warsaw",
     "partner": "",
-    "notes": ""
+    "notes": "Confirmed on the official site: \"Sept. 8–9, Warsaw, Poland\". Billed as 500+ attendees, 60%+ insurers, plus insurtechs and solution providers.",
+    "link": "https://www.digital-insurance-cee.com/"
   },
   {
     "id": "ev4",
     "name": "ADB Business Opportunities Fair (BOF)",
     "start": "2026-09-21",
     "end": "2026-09-24",
-    "time": "",
-    "location": "Manila",
+    "time": "09:00–17:30 (GMT+8)",
+    "location": "ADB Headquarters, Manila",
     "partner": "p06",
-    "notes": ""
+    "notes": "Confirmed on adb.org: 21–24 September 2026 at ADB HQ, 09:00–17:30 Manila time. A forum for consultants, contractors, suppliers and CSOs seeking work on ADB-financed projects. Pre-fair sessions and sector booths open on day one. Times and venue are from the ADB event page, not from Toni.",
+    "link": "https://www.adb.org/news/events/business-opportunities-fair-2026"
   }
 ]

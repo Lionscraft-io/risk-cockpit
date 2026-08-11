@@ -125,6 +125,8 @@ for (const ev of db.events){
     err("event " + ev.id + " ends before it starts (" + ev.start + " > " + ev.end + ")");
   if (ev.partner && !partnerIds.has(ev.partner))
     err("event " + ev.id + " references unknown partner: " + ev.partner);
+  if (ev.link && !/^https?:\/\//i.test(ev.link))
+    err("event " + ev.id + " link must start with http:// or https:// (got: " + ev.link + ")");
 }
 
 for (const e of db.activity || []){

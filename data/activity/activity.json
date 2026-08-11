@@ -363,5 +363,15 @@
     "refType": "partner",
     "ref": "p15",
     "body": "Added at Toni's request as \"World Bank with Fundschain\", kept as one record in their own words rather than guessing at a split. Category inferred as development finance. Whether this is one joint approach or two counterparties is open."
+  },
+  {
+    "id": "e_evres",
+    "at": "2026-08-11T18:43:01.703Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "finding",
+    "refType": "board",
+    "ref": "",
+    "body": "Researched the four events. Two have public pages and now carry links: Digital Insurance CEE (digital-insurance-cee.com, dates confirmed as 8-9 Sept, Warsaw) and the ADB Business Opportunities Fair (adb.org, confirmed 21-24 Sept at ADB HQ Manila, 09:00-17:30 local, with venue and times filled in from that page). The Scott Petty meeting is private. The HT Digital & Aon roundtable has no public listing — Aon's own events pages do not carry it — so it is treated as invite-only; only the Aon Centre street address was added, from aon.com. Both links were checked live before being saved."
   }
 ]

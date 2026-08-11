@@ -26,6 +26,7 @@ as noise.
 | `start` / `end` | `YYYY-MM-DD`. Leave `end` empty for a single day |
 | `time` | Free text — `09:00–10:30`. Not parsed |
 | `location` | Free text |
+| `link` | Optional. Must start with `http://` or `https://`; shown as the bare host |
 | `partner` | Optional link to a partner record |
 | `notes` | Free text |
 
@@ -42,12 +43,18 @@ meeting itself lives here, and neither knows about the other.
 
 ## Currently in the diary
 
-| When | What | Where |
-| --- | --- | --- |
-| 20 Aug 2026 | HT Digital & Aon Roundtable, 09:00–10:30 | Aon Centre, London |
-| 24 Aug 2026 | Scott Petty meeting | London |
-| 8–9 Sep 2026 | digital-insurance-cee | Warsaw |
-| 21–24 Sep 2026 | ADB Business Opportunities Fair (BOF) | Manila |
+| When | What | Where | Link |
+| --- | --- | --- | --- |
+| 20 Aug 2026 | HT Digital & Aon Roundtable, 09:00–10:30 | Aon Centre, London | — |
+| 24 Aug 2026 | Scott Petty meeting | London | — |
+| 8–9 Sep 2026 | Digital Insurance CEE | Warsaw | [digital-insurance-cee.com](https://www.digital-insurance-cee.com/) |
+| 21–24 Sep 2026 | ADB Business Opportunities Fair (BOF), 09:00–17:30 | ADB HQ, Manila | [adb.org](https://www.adb.org/news/events/business-opportunities-fair-2026) |
+
+Two were researched and confirmed against their own sites; both links were
+checked live. The ADB venue and opening hours came from that page rather than
+from anyone here. The Scott Petty meeting is private, and the HT Digital & Aon
+roundtable has no public listing — not on Aon's own events pages either — so it
+is treated as invite-only. Its full street address sits in the record's notes.
 
 **The Scott Petty date is contested.** This record says 24 August. Task `t102`
 on the board and `LC-013` on the workforce board both say 27–28 August. One of
