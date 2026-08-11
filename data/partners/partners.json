@@ -62,7 +62,7 @@
     "country": "SA",
     "why": "Saudi mobile operator; network is the protected asset in a Gulf facility.",
     "ask": "Countersignature on the MoU, then restoration cost data.",
-    "stage": "aligning",
+    "stage": "mou_sent",
     "owner": "",
     "contact": "",
     "next": "Chase countersignature",
@@ -152,5 +152,47 @@
     "next": "Confirm what they advise on and how often we should talk",
     "nextDate": "",
     "notes": "No contact detail or link on file yet."
+  },
+  {
+    "id": "p12",
+    "name": "Ethereum Institutional Team",
+    "cat": "digital",
+    "country": "",
+    "why": "Institutional team within the Ethereum ecosystem. Why them specifically has not been recorded yet.",
+    "ask": "Not yet agreed.",
+    "stage": "identified",
+    "owner": "",
+    "contact": "",
+    "next": "Confirm the entity, the contact and what we want from them",
+    "nextDate": "",
+    "notes": "Entity unconfirmed — recorded from \"ethereum institutional team\". Confirm the exact team, and whether Matthew Dawson sits here or with the donation fund."
+  },
+  {
+    "id": "p13",
+    "name": "Ethereum Foundation Donation Fund",
+    "cat": "donor",
+    "country": "",
+    "why": "A donation fund — the philanthropic route rather than priced risk. What we would ask it to fund has not been recorded yet.",
+    "ask": "Not yet agreed.",
+    "stage": "identified",
+    "owner": "",
+    "contact": "",
+    "next": "Confirm the fund's scope and what we would ask it to fund",
+    "nextDate": "",
+    "notes": "Entity unconfirmed. Confirm whether Matthew Dawson is the contact here or on the institutional team."
+  },
+  {
+    "id": "p14",
+    "name": "David Palmer",
+    "cat": "network",
+    "country": "",
+    "why": "Network — ex-Pairpoint. Same role as Roland and Seena: opening doors rather than carrying risk or capital.",
+    "ask": "Agree which rooms to be introduced into, and what to send ahead.",
+    "stage": "identified",
+    "owner": "",
+    "contact": "",
+    "next": "Confirm where their network reaches and what to ask for",
+    "nextDate": "",
+    "notes": "Ex-Pairpoint, as given. If that is Pairpoint by Vodafone, it may connect to the Scott Petty conversation — worth confirming."
   }
 ]

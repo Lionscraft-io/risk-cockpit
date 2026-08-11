@@ -1191,19 +1191,6 @@ const whoami = () => me || "unattributed";
 
 if (!Array.isArray(DB.activity)) DB.activity = [];
 
-/* Backfill start dates for data saved before the timeline existed. Only fills
-   a missing field — never overwrites anything the team has edited. */
-(function backfillStarts(){
-  let touched = false;
-  DB.tasks.forEach(t => {
-    if (t.start) return;
-    const seeded = SEED.tasks.find(s => s.id === t.id);
-    t.start = seeded ? seeded.start : shiftDays(t.due, -21);
-    touched = true;
-  });
-  if (touched) try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {}
-})();
-
 /* `quiet` is used by the sync machinery, which manages the dirty flag itself.
    Every other caller is a user edit, so it marks the copy as unpublished. */
 const save = (quiet) => {
@@ -1243,6 +1230,25 @@ function shiftDays(d, n){
   if (!d) return "";
   return new Date(toMs(d) + n * DAY).toISOString().slice(0, 10);
 }
+/* Backfill start dates for data saved before the timeline existed. Only fills
+   a missing field — never overwrites anything the team has edited.
+
+   This has to run below shiftDays, not above it. It used to sit up with the
+   other boot-time fixups, where it read DAY before the const initialised — a
+   dead-zone crash that took the whole desk down to a blank page. It never
+   fired because the loop body only runs when there are tasks, and there were
+   none for a while. The first nine tasks put on the board found it. */
+(function backfillStarts(){
+  let touched = false;
+  DB.tasks.forEach(t => {
+    if (t.start) return;
+    const seeded = SEED.tasks.find(s => s.id === t.id);
+    t.start = seeded ? seeded.start : shiftDays(t.due, -21);
+    touched = true;
+  });
+  if (touched) try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {}
+})();
+
 function monthsBetween(from, to){
   const out = [];
   let y = +from.slice(0, 4), m = +from.slice(5, 7);

@@ -3,8 +3,9 @@
 **[Open the tab →](https://lionscraft-io.github.io/risk-cockpit/#plan)** ·
 **[Timeline →](https://lionscraft-io.github.io/risk-cockpit/#plan/gantt)**
 
-Nine workstreams, thirty-nine tasks, six milestones — the work of getting the
-Sri Lanka telecom resilience facility from a narrative to a bound instrument.
+Ten workstreams and the live task list — the work of getting the Sri Lanka
+telecom resilience facility from a narrative to a bound instrument, plus the
+work of building the company that carries it.
 
 Two views of the same data: **List** and **Timeline**.
 
@@ -13,11 +14,10 @@ Two views of the same data: **List** and **Timeline**.
 ## The MoUs sit here in full
 
 Unlike the [Board](../board/), which summarises them into a strip because seven
-cards buried the real work, the Plan keeps every MoU in its own table under its
-own heading. That was never the crowded surface.
+cards buried the two real ones, the Plan keeps every MoU in flight under its own
+heading. That was never the crowded surface.
 
-
-Every MoU in flight is also a **card**, in the workstream marked for it —
+Each sits in the workstream marked for it —
 *Legal & regulatory* by default, since an MoU is the instrument that carries
 rights and obligations. Mark a different workstream with `"mou": true` in
 [`workstreams.json`](../../data/plan/workstreams.json) to move them.
@@ -37,7 +37,7 @@ agreement, and inventing one would put a stage in the CRM that nobody chose.
 
 Clicking a card opens the partner record.
 
-## The nine workstreams
+## The ten workstreams
 
 Each maps onto a layer of the product stack, so the plan and the architecture
 stay legible against each other.
@@ -53,22 +53,29 @@ stay legible against each other.
 | WS7 | AI administration | Layer 6 — AI administration |
 | WS8 | Funding & partnerships | Cross-cutting |
 | WS9 | Narrative & materials | Cross-cutting |
+| WS10 | Company & governance | The company, not the facility |
 
-## The six milestones
+**WS10 is the odd one.** WS1–WS9 each map onto a layer of the product stack —
+they build the *facility*. The commercial model, the UK charity and who our
+advisors actually are build the *company*, and had nowhere to sit until this
+was added on 2026-08-11.
 
-1. **Operator MoU signed** — lead operator committed to co-design, telemetry access, candidate response commitments
-2. **Term sheet v1 issued** — risk, layers, capital, triggers and obligations described well enough to quote against
-3. **Capital indication received** — non-binding appetite from at least one risk carrier and one investor
-4. **Regulatory pathway confirmed** — wrapper and jurisdiction settled
-5. **Sponsor funding secured** — premium support or grant committed for the first period
-6. **Facility go-live decision** — bind or rebuild
+## Milestones — currently none
 
-Click a milestone to mark it hit. That writes to the [Activity](../activity/) log.
+Six seeded milestones were cleared on 2026-08-11. They described a later phase
+— term sheet, capital indication, regulatory pathway, go-live — while the work
+actually in front of the project is getting the MoUs signed. One of them,
+*Operator MoU signed*, already contradicted a signed MoU on the board. They
+remain in git history.
+
+Add one and it appears as a diamond on the timeline; click it to mark it hit,
+which writes to the [Activity](../activity/) log.
 
 ## List view
 
-Workstreams with a progress bar each. Click a status chip to cycle it
-`To do → Doing → Blocked → Done`; click a row to open the task editor.
+Workstreams with a progress bar each. Click a status chip to cycle it through
+the board's columns — `Backlog → Weekly → Focus → Review → Done` — and click a
+row to open the task editor.
 
 ## Timeline view
 
@@ -101,10 +108,11 @@ visible in both directions.
 
 ## The dates are a hypothesis
 
-The seeded plan runs from August 2026 to a go-live decision in June 2027. Those
-dates were derived from the sequence the work has to happen in, not from
-anyone's commitment. Drag them into shape as reality arrives — that is what the
-timeline is for.
+Only tasks with a due date appear on the timeline. Of the nine currently on the
+board, two have one: the Vodafone CTO meeting on 27 Aug and the ADB invite for
+Manila on 21 Sept. Both dates are the *event*, not a prep deadline — if the real
+deadline is earlier, drag the bar. The other seven carry no date because none
+was given, and none was invented for them.
 
 ---
 

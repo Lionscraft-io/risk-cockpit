@@ -8,9 +8,9 @@ history is the audit trail. There is no server to be up or down.
 | --- | --- |
 | [`data/meta.json`](../../data/meta.json) | Revision and facility metadata |
 | [`data/partners/partners.json`](../../data/partners/partners.json) | The CRM |
-| [`data/plan/workstreams.json`](../../data/plan/workstreams.json) | The nine workstreams |
+| [`data/plan/workstreams.json`](../../data/plan/workstreams.json) | The ten workstreams |
 | [`data/plan/tasks.json`](../../data/plan/tasks.json) | Every task |
-| [`data/plan/milestones.json`](../../data/plan/milestones.json) | The six milestones |
+| [`data/plan/milestones.json`](../../data/plan/milestones.json) | Milestones — currently empty |
 | [`data/activity/activity.json`](../../data/activity/activity.json) | The shared log |
 
 Each holds the bare array — no wrapper — so a file can be read on its own.

@@ -1,1 +1,101 @@
-[]
+[
+  {
+    "id": "t101",
+    "ws": "WS3",
+    "title": "Catch up on the MoUs",
+    "status": "focus",
+    "owner": "",
+    "start": "",
+    "due": "",
+    "partner": "",
+    "order": 0
+  },
+  {
+    "id": "t102",
+    "ws": "WS4",
+    "title": "Prepare the Vodafone CTO meeting (Scott Petty), 27–28 Aug",
+    "status": "weekly",
+    "owner": "",
+    "start": "",
+    "due": "2026-08-27",
+    "partner": "p08",
+    "order": 1
+  },
+  {
+    "id": "t103",
+    "ws": "WS8",
+    "title": "Align the ADB invite — Manila, 21–24 Sept",
+    "status": "weekly",
+    "owner": "",
+    "start": "",
+    "due": "2026-09-21",
+    "partner": "p06",
+    "order": 2
+  },
+  {
+    "id": "t104",
+    "ws": "WS9",
+    "title": "Update the pitch deck",
+    "status": "weekly",
+    "owner": "",
+    "start": "",
+    "due": "",
+    "partner": "",
+    "order": 3
+  },
+  {
+    "id": "t105",
+    "ws": "WS8",
+    "title": "Send Matthew Dawson (Ethereum Foundation) the pitch deck",
+    "status": "weekly",
+    "owner": "",
+    "start": "",
+    "due": "",
+    "partner": "",
+    "order": 4
+  },
+  {
+    "id": "t106",
+    "ws": "WS10",
+    "title": "Define the commercial model",
+    "status": "backlog",
+    "owner": "",
+    "start": "",
+    "due": "",
+    "partner": "",
+    "order": 5
+  },
+  {
+    "id": "t107",
+    "ws": "WS10",
+    "title": "Set up the UK charity",
+    "status": "backlog",
+    "owner": "",
+    "start": "",
+    "due": "",
+    "partner": "",
+    "order": 6
+  },
+  {
+    "id": "t108",
+    "ws": "WS10",
+    "title": "Confirm how Siva is involved in the project",
+    "status": "backlog",
+    "owner": "",
+    "start": "",
+    "due": "",
+    "partner": "p11",
+    "order": 7
+  },
+  {
+    "id": "t109",
+    "ws": "WS9",
+    "title": "Update the website",
+    "status": "backlog",
+    "owner": "",
+    "start": "",
+    "due": "",
+    "partner": "",
+    "order": 8
+  }
+]

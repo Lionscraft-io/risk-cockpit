@@ -203,5 +203,85 @@
     "refType": "board",
     "ref": "",
     "body": "Split the people types in two: Advisors and Network. Toni corrected an earlier lump-them-together call — Siva advises, Roland and Seena are network. The difference is what you ask for: an advisor tells you what is wrong with the thing, a network contact tells you who to show it to, and the outreach templates now differ accordingly. Roland and Seena were moved from advisor to network."
+  },
+  {
+    "id": "ek0gt23",
+    "at": "2026-08-11T10:32:47.164Z",
+    "actor": "unattributed",
+    "actorKind": "human",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p05",
+    "body": "Aligning MoU → MoU sent"
+  },
+  {
+    "id": "e_st01",
+    "at": "2026-08-11T10:44:28.446Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Put Toni's nine current items on the board, grouped by workstream. Focus holds one thing — catching up on the MoUs — because that is the stated headline problem. Weekly holds the four that are dated or feed something dated. The rest are in Backlog with no invented deadlines."
+  },
+  {
+    "id": "e_st02",
+    "at": "2026-08-11T10:44:28.446Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Added a tenth workstream, Company & governance. The nine that existed all build the facility; the commercial model, the UK charity and Siva's role build the company, and had nowhere to sit."
+  },
+  {
+    "id": "e_st03",
+    "at": "2026-08-11T10:44:28.446Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "task",
+    "ref": "t102",
+    "body": "Overlaps LC-013 on the workforce board, \"Create slides for Scott Petty VF CTO for Sri Lanka pilot\", which is in Focus there. Kept separate because this one carries the meeting dates and is broader than the slides, but they may want merging."
+  },
+  {
+    "id": "e_st04",
+    "at": "2026-08-11T10:44:28.446Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "task",
+    "ref": "t105",
+    "body": "Likely overlaps LC-014 on the workforce board, \"Send to Matthew pack\", which is already in Review there. Created because Toni listed it explicitly; delete whichever is the duplicate."
+  },
+  {
+    "id": "e_st05",
+    "at": "2026-08-11T10:44:28.446Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p12",
+    "body": "Added at Toni's request as \"ethereum institutional team\". Category guessed as digital-asset infrastructure — not stated. Entity, contact and the ask are all open."
+  },
+  {
+    "id": "e_st06",
+    "at": "2026-08-11T10:44:28.446Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p13",
+    "body": "Added at Toni's request. Filed as a donor since a donation fund is a philanthropic funder. Which of the two Ethereum records Matthew Dawson belongs to is open."
+  },
+  {
+    "id": "e_st07",
+    "at": "2026-08-11T10:44:28.446Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p14",
+    "body": "Added at Toni's request, network — the same role as Roland and Seena, as stated. Ex-Pairpoint recorded as given."
   }
 ]
