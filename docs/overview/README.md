@@ -2,52 +2,45 @@
 
 **[Open the tab →](https://lionscraft-io.github.io/risk-cockpit/#overview)**
 
-Where the first facility stands, on one screen. It answers one question: *is
-this moving, and what is stuck?*
+The current problem, stated plainly: **getting the MoUs signed, and the
+partners aligned.** This page exists to show exactly where that stands, and
+nothing else.
 
 ---
 
 ## What it shows
 
-**The stat strip** — partners in play, how many are past a first meeting, how
-many have signed an MoU, open tasks, overdue, blocked. Overdue and blocked turn
-red when they are non-zero, so the row reads at a glance rather than needing to
-be studied.
+**The stat strip** — partners in play, MoUs signed, MoUs sent and waiting on
+the other side, MoUs being negotiated. Four numbers, all about the same thing.
 
-**Partner pipeline** — the seven stages as a funnel, with counts. Stages from
-*Meeting held* onward are drawn stronger, because that is where the real work
-starts. Early on this is one long bar at *Identified*, which is an honest
-picture: a target list is not a pipeline.
+**Where each MoU stands** — every MoU in flight, grouped signed → sent →
+negotiating, with the partner's name as a clickable pill. Partners not yet in
+conversation sit in a quiet row underneath rather than being left off. This is
+the same grouping the [Plan](../plan/) and [Board](../board/) tabs use for MoU
+cards, just named instead of counted.
 
-**Coverage by partner type** — targets and engaged counts for each of the nine
-partner categories. This is the gap-finder: it shows the type of partner you
-have neglected, which is usually not the one you were worrying about.
-
-**Next moves on partners** — the eight most urgent next actions across the whole
-CRM, soonest first, overdue in red. Click a row to open that partner.
-
-**Tasks due next** — the eight nearest deadlines across all nine workstreams.
-
-**Milestones** — the six facility milestones with their dates, filled in when hit.
+**Next moves on partners** — the eight most urgent next actions across the
+whole CRM, soonest first, overdue in red. Click a row to open that partner.
 
 ## Nothing is stored here
 
-Every number on this page is derived from the partners, tasks and milestones
-you maintain in the other tabs. There is nothing to edit here and nothing that
-can drift out of date — change a partner's stage and the funnel moves with it.
+Every number and every pill is derived from the partner records you maintain
+on the [Partners](../partners/) tab. There is nothing to edit here and nothing
+that can drift out of date — move a partner's stage and this page moves with
+it.
 
-That is deliberate: a status page that has to be updated separately is a status
-page that lies.
+That is deliberate: a status page that has to be updated separately is a
+status page that lies.
 
-## Reading it honestly
+## What used to be here
 
-The counts describe **your record-keeping**, not reality. A partner sitting at
-*Approached* means someone marked it approached — if the follow-up happened in
-a phone call and never made it into the desk, the board does not know.
-
-The one number worth watching early is **past first meeting**. Everything
-before that is preparation; everything after it is a real conversation with a
-real counterparty, and that is what the first facility needs.
+Earlier versions of this page carried a nine-category "coverage by partner
+type" table, a generic seven-stage funnel, a task list and a milestone list.
+They were dropped because they answered questions the project is not actually
+asking right now — coverage breadth, not deal progress — and because the task
+and milestone panels had gone empty and untended. Once tasks and milestones
+are real again, decide deliberately whether they belong back here or stay on
+[Plan](../plan/), rather than restoring them by default.
 
 ---
 

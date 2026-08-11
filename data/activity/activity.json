@@ -143,5 +143,15 @@
     "refType": "board",
     "ref": "",
     "body": "Cleared all 7 tasks at your request. Every one of them was inferred by me from the partner records rather than written by you. The MoUs remain — they are derived from the partner stages, not invented. The removed list is in git history: Confirm the legal entity on the signed Hakuhodo Key3 MoU; Establish which Sumitomo entity the insurance MoU went to — Mitsui Sumitomo or Sumitomo Life; Confirm Sumitomo Web3 is the counterparty entity, not a group description; Establish which Sri Lankan body is the counterparty and can sign; Define what Hakuhodo Key3 actually does in the facility now the MoU is signed; Bring the MoU template to counsel — three are already out and one is signed; List what each MoU commits us to, signed and sent"
+  },
+  {
+    "id": "e_clrms",
+    "at": "2026-08-11T09:37:47.766767+00:00",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Cleared the six seeded milestones. They described a later phase - term sheet, capital indication, regulatory pathway, go-live - while the work in front of the project is getting the MoUs signed and the partners aligned. One of them, 'Operator MoU signed' dated 19 Dec, already contradicted a signed MoU on the board. In git history: Operator MoU signed (2026-12-19); Term sheet v1 issued (2027-01-16); Capital indication received (2027-02-27); Regulatory pathway confirmed (2027-03-27); Sponsor funding secured (2027-04-30); Facility go-live decision (2027-06-30)"
   }
 ]

@@ -190,15 +190,23 @@ td.num{white-space:nowrap}
 .stat.alert b{color:var(--danger)}
 .stat.go b{color:var(--accent)}
 
-/* ─── Funnel ─────────────────────────────────────────────────────────── */
-.funnel{display:flex; flex-direction:column; gap:7px; padding:15px}
-.frow{display:grid; grid-template-columns:120px 1fr 34px; align-items:center; gap:11px; font-size:12.5px}
-.frow .bar{height:20px; background:var(--surface-2); border-radius:3px; overflow:hidden; position:relative}
-.frow .bar i{display:block; height:100%; background:var(--accent); opacity:.28; border-radius:3px; transition:width .3s}
-.frow.hot .bar i{opacity:.75}
-.frow .n{text-align:right; font-family:var(--data); font-variant-numeric:tabular-nums; color:var(--ink-2)}
-.frow label{color:var(--ink-2); cursor:pointer}
-.frow:hover label{color:var(--ink)}
+/* ─── Where each MoU stands (Overview) ──────────────────────────────── */
+.mourows{display:flex; flex-direction:column}
+.mourow{
+  display:grid; grid-template-columns:184px minmax(0,1fr); gap:14px; align-items:baseline;
+  padding:11px 15px; border-bottom:1px solid var(--line); font-size:13px;
+}
+.mourow:last-child{border-bottom:0}
+.mourow.quiet{color:var(--ink-3)}
+.pnames{display:flex; flex-wrap:wrap; gap:6px}
+.pname{
+  background:var(--surface-2); border:1px solid var(--line); border-radius:20px;
+  padding:2px 10px; font-size:12.5px; color:var(--ink-2); cursor:pointer; white-space:nowrap;
+}
+.pname:hover{border-color:var(--ink-3); color:var(--ink); background:var(--surface)}
+@media (max-width:640px){
+  .mourow{grid-template-columns:1fr; gap:7px}
+}
 
 /* ─── Filters ────────────────────────────────────────────────────────── */
 .filters{display:flex; gap:7px; flex-wrap:wrap; align-items:center}
@@ -1558,120 +1566,62 @@ function render(){
 function viewOverview(){
   const ps = DB.partners;
   const live = ps.filter(p => stageRank(p.stage) >= 0);
-  const engaged = ps.filter(p => isEngaged(p.stage)).length;
-  const signed = ps.filter(p => isCommitted(p.stage)).length;
-  const openTasks = DB.tasks.filter(t => !isDone(t.status));
-  const overdue = openTasks.filter(t => isOverdue(t.due)).length;
-  const inFocus = openTasks.filter(t => t.status === "focus").length;
+  const mous = mouCards();
+  const mouSigned = mous.filter(m => m.status === "done");
+  const mouSent = mous.filter(m => m.status === "review");
+  const mouAligning = mous.filter(m => m.status === "focus");
+  const notTalking = live.filter(p => !isEngaged(p.stage));
 
   const actions = ps
     .filter(p => p.next && stageRank(p.stage) >= 0)
-    .sort((a, b) => (a.nextDate || "9999") .localeCompare(b.nextDate || "9999"))
+    .sort((a, b) => (a.nextDate || "9999").localeCompare(b.nextDate || "9999"))
     .slice(0, 8);
 
-  const soon = DB.tasks
-    .filter(t => !isDone(t.status))
-    .sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"))
-    .slice(0, 8);
-
-  const funnel = STAGES.map(s => {
-    const n = ps.filter(p => p.stage === s.id).length;
-    return {s, n};
-  });
-  const max = Math.max(1, ...funnel.map(f => f.n));
-
-  const byCat = Object.keys(CATEGORIES).map(c => {
-    const list = ps.filter(p => p.cat === c);
-    return {c, n:list.length, adv:list.filter(p => isEngaged(p.stage)).length};
-  });
+  const names = list => list.length
+    ? list.map(m => `<button class="pname" data-partner="${m.partnerId}">${esc(m.title.replace(/^MoU — /, ""))}</button>`).join("")
+    : '<span class="sub">None</span>';
 
   return `
   <div class="pagehead">
     <div>
       <div class="eyebrow">${esc(DB.meta.product)} · ${esc(DB.meta.facility)}</div>
-      <h1>Where the first facility stands</h1>
-      <p>Level 5 of the hierarchy. The pilot is the wedge, not the company — but nothing above it gets proved until this facility is real.</p>
+      <h1>Getting the MoUs signed, and the partners aligned</h1>
+      <p>That is the whole job right now. Everything else on this desk exists to support it.</p>
     </div>
   </div>
 
   <div class="grid" style="gap:16px">
     <div class="stats">
       <div class="stat"><b>${live.length}</b><small>Partners in play</small></div>
-      <div class="stat"><b>${engaged}</b><small>Past first meeting</small></div>
-      <div class="stat ${signed ? "go" : ""}"><b>${signed}</b><small>MoU signed or active</small></div>
-      <div class="stat"><b>${openTasks.length}</b><small>Open tasks</small></div>
-      <div class="stat ${overdue ? "alert" : ""}"><b>${overdue}</b><small>Overdue</small></div>
-      <div class="stat ${inFocus ? "go" : ""}"><b>${inFocus}</b><small>In focus</small></div>
-    </div>
-
-    <div class="grid pair" style="grid-template-columns:repeat(auto-fit,minmax(330px,1fr))">
-      <section class="card">
-        <header><h2>Partner pipeline</h2><span class="spacer"></span>
-          <button class="btn ghost" data-view="partners">Open ›</button></header>
-        <div class="funnel">
-          ${funnel.map(f => `
-            <div class="frow ${f.n && isEngaged(f.s.id) ? "hot" : ""}">
-              <label title="${esc(f.s.hint)}">${f.s.label}</label>
-              <div class="bar"><i style="width:${(f.n / max * 100).toFixed(1)}%"></i></div>
-              <span class="n">${f.n}</span>
-            </div>`).join("")}
-        </div>
-      </section>
-
-      <section class="card">
-        <header><h2>Coverage by partner type</h2></header>
-        <div class="tablewrap">
-          <table>
-            <thead><tr><th>Type</th><th>Targets</th><th>Engaged</th></tr></thead>
-            <tbody>
-              ${byCat.map(r => `<tr>
-                <td>${catLabel(r.c)}<span class="sub">${esc(CATEGORIES[r.c].blurb)}</span></td>
-                <td class="num">${r.n}</td>
-                <td class="num">${r.adv || "—"}</td>
-              </tr>`).join("")}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-
-    <div class="grid pair" style="grid-template-columns:repeat(auto-fit,minmax(330px,1fr))">
-      <section class="card">
-        <header><h2>Next moves on partners</h2></header>
-        <div class="tablewrap"><table><tbody>
-          ${actions.length ? actions.map(p => `
-            <tr class="clickable" data-partner="${p.id}">
-              <td style="width:38%">${esc(p.name)}<span class="sub">${catLabel(p.cat)}</span></td>
-              <td>${esc(p.next)}</td>
-              <td style="width:78px" class="num ${isOverdue(p.nextDate) ? "overdue" : ""}">${fmtDate(p.nextDate)}</td>
-            </tr>`).join("") : '<tr><td class="empty">Nothing queued. Open Partners and set a next move.</td></tr>'}
-        </tbody></table></div>
-      </section>
-
-      <section class="card">
-        <header><h2>Tasks due next</h2><span class="spacer"></span>
-          <button class="btn ghost" data-view="plan">Open ›</button></header>
-        <div class="tablewrap"><table><tbody>
-          ${soon.map(t => `
-            <tr>
-              <td style="width:46px"><span class="cat">${t.ws}</span></td>
-              <td>${esc(t.title)}</td>
-              <td style="width:78px" class="num ${isOverdue(t.due) ? "overdue" : ""}">${fmtDate(t.due)}</td>
-            </tr>`).join("")}
-        </tbody></table></div>
-      </section>
+      <div class="stat ${mouSigned.length ? "go" : ""}"><b>${mouSigned.length}</b><small>MoU signed</small></div>
+      <div class="stat"><b>${mouSent.length}</b><small>Sent — waiting on them</small></div>
+      <div class="stat ${mouAligning.length ? "go" : ""}"><b>${mouAligning.length}</b><small>Being negotiated</small></div>
     </div>
 
     <section class="card">
-      <header><h2>Milestones</h2></header>
-      <div class="ms">
-        ${DB.milestones.map(m => `
-          <div class="ms-item ${m.hit ? "hit" : ""}">
-            <span class="pip"></span>
-            <div><b>${esc(m.name)}</b><p>${esc(m.note)}</p></div>
-            <span class="num" style="color:var(--ink-3)">${fmtDate(m.date)}</span>
-          </div>`).join("")}
+      <header><h2>Where each MoU stands</h2><span class="spacer"></span>
+        <button class="btn ghost" data-view="plan">Plan ›</button></header>
+      <div class="mourows">
+        <div class="mourow"><b>Signed</b><span class="pnames">${names(mouSigned)}</span></div>
+        <div class="mourow"><b>Sent, waiting on them</b><span class="pnames">${names(mouSent)}</span></div>
+        <div class="mourow"><b>Being negotiated</b><span class="pnames">${names(mouAligning)}</span></div>
+        ${notTalking.length ? `<div class="mourow quiet"><b>Not yet in conversation</b><span class="pnames">${
+          notTalking.map(p => `<button class="pname" data-partner="${p.id}">${esc(p.name)}</button>`).join("")
+        }</span></div>` : ""}
       </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Next moves on partners</h2><span class="spacer"></span>
+        <button class="btn ghost" data-view="partners">Partners ›</button></header>
+      <div class="tablewrap"><table><tbody>
+        ${actions.length ? actions.map(p => `
+          <tr class="clickable" data-partner="${p.id}">
+            <td style="width:38%">${esc(p.name)}<span class="sub">${catLabel(p.cat)}</span></td>
+            <td>${esc(p.next)}</td>
+            <td style="width:78px" class="num ${isOverdue(p.nextDate) ? "overdue" : ""}">${fmtDate(p.nextDate)}</td>
+          </tr>`).join("") : '<tr><td class="empty">Nothing queued. Open Partners and set a next move.</td></tr>'}
+      </tbody></table></div>
     </section>
   </div>`;
 }
@@ -1784,14 +1734,23 @@ function viewPlan(){
   ${planMode === "gantt" ? planGantt() : planList()}
 
   <section class="card">
-    <header><h2>Milestones</h2><span class="spacer"></span><span class="cat">Click to mark hit</span></header>
+    <header>
+      <h2>Milestones</h2>
+      <span class="spacer"></span>
+      ${DB.milestones.length ? '<span class="cat">Click to mark hit</span>' : ""}
+      <button class="btn ghost" id="addMilestone">+ Milestone</button>
+    </header>
     <div class="ms">
-      ${DB.milestones.map((m, i) => `
+      ${DB.milestones.length ? DB.milestones
+        .slice().sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"))
+        .map((m, i) => `
         <div class="ms-item ${m.hit ? "hit" : ""}" data-ms="${m.id}" style="cursor:pointer">
           <span class="pip"></span>
-          <div><b>M${i + 1} · ${esc(m.name)}</b><p>${esc(m.note)}</p></div>
+          <div><b>M${i + 1} · ${esc(m.name)}</b>${m.note ? `<p>${esc(m.note)}</p>` : ""}</div>
           <span class="num" style="color:var(--ink-3)">${fmtDate(m.date)}</span>
-        </div>`).join("")}
+          <button class="colmenu" data-msmenu="${m.id}" title="Rename, redate or remove">⋯</button>
+        </div>`).join("")
+      : '<div class="empty">No milestones. Add the dates that actually matter.</div>'}
     </div>
   </section>`;
 }
@@ -1914,10 +1873,13 @@ function viewBoard(){
   }
 
   const owners = [...new Set(DB.tasks.map(t => t.owner).filter(Boolean))].sort();
-  const inFocus = list.filter(t => t.status === "focus").length;
-  const inReview = list.filter(t => t.status === "review").length;
-  const late = list.filter(t => isOverdue(t.due) && !isDone(t.status)).length;
-  const unassigned = list.filter(t => !t.owner && !isDone(t.status)).length;
+  /* Every card actually on the board, not just DB.tasks — otherwise the strip
+     reads 0 while the columns show MoUs and bridged cards sitting right there. */
+  const all = list.concat(mous, bridge);
+  const inFocus = all.filter(t => t.status === "focus").length;
+  const inReview = all.filter(t => t.status === "review").length;
+  const late = all.filter(t => isOverdue(t.due) && !isDone(t.status)).length;
+  const unassigned = list.concat(mous, bridge).filter(t => !t.owner && !isDone(t.status)).length;
 
   return `
   <div class="pagehead">
@@ -1931,7 +1893,7 @@ function viewBoard(){
 
   <div class="grid" style="gap:14px">
     <div class="stats">
-      <div class="stat"><b>${list.length}</b><small>In view</small></div>
+      <div class="stat"><b>${list.length + mous.length + bridge.length}</b><small>In view</small></div>
       <div class="stat ${inFocus ? "go" : ""}"><b>${inFocus}</b><small>Focus</small></div>
       <div class="stat"><b>${inReview}</b><small>Review</small></div>
       <div class="stat ${late ? "alert" : ""}"><b>${late}</b><small>Overdue</small></div>
@@ -3696,6 +3658,12 @@ document.getElementById("view").addEventListener("click", e => {
     return;
   }
 
+  /* Checked ahead of the row toggle below: the ⋯ button lives inside the row
+     it belongs to, which carries [data-ms] — closest() matches that ancestor
+     too, and the toggle used to win and fire instead of the menu. */
+  const msm = e.target.closest("[data-msmenu]");
+  if (msm){ e.stopPropagation(); milestoneMenu(msm.dataset.msmenu); return; }
+
   const ms = e.target.closest("[data-ms]");
   if (ms && current === "plan"){
     const m = DB.milestones.find(x => x.id === ms.dataset.ms);
@@ -3726,9 +3694,6 @@ document.getElementById("view").addEventListener("click", e => {
   if (e.target.id === "addTask"){ taskDrawer(null); return; }
   if (e.target.id === "newNote"){ noteDrawer(); return; }
   if (e.target.id === "addMilestone"){ addMilestone(); return; }
-
-  const msm = e.target.closest("[data-msmenu]");
-  if (msm){ e.stopPropagation(); milestoneMenu(msm.dataset.msmenu); return; }
   if (e.target.id === "fClear"){ filters = {stage:"", cat:"", q:""}; render(); return; }
 });
 
