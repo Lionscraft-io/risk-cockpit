@@ -115,12 +115,12 @@ The assembled document, across the files listed above:
 | Field | Notes |
 | --- | --- |
 | `id` | `p01`-style. Stable. Never reuse |
-| `name` | Organisation, not a person |
-| `cat` | One of `carrier` `capital` `donor` `dfi` `operator` `digital` `data` `verifier` `public` |
+| `name` | Organisation — except `advisor` and `network` records, which name a person |
+| `cat` | One of `carrier` `capital` `donor` `dfi` `operator` `digital` `data` `verifier` `public` `advisor` `network` |
 | `country` | ISO-ish short code |
 | `why` | One sentence: why this organisation specifically |
 | `ask` | What we want *from them* |
-| `stage` | `identified` → `researched` → `approached` → `meeting` → `mou_sent` → `mou_signed` → `active`, plus `parked` / `declined` |
+| `stage` | Read `data/partners/stages.json` — the stages are data, not a fixed list. Currently `identified` → `researched` → `approached` → `meeting` → `aligning` → `mou_sent` → `mou_signed` → `active`, plus `parked` / `declined` |
 | `owner` | Person on our side. May be empty |
 | `contact` | Person on their side. May be empty |
 | `next`, `nextDate` | The next move and when it is due |
@@ -130,7 +130,13 @@ The assembled document, across the files listed above:
 ### Task
 
 `id`, `ws` (workstream id), `title`, `owner`, `start`, `due` (both `YYYY-MM-DD`),
-`status` (`todo` `doing` `blocked` `done`), `partner` (partner id or `""`).
+`status`, `partner` (partner id or `""`).
+
+**`status` must be a column id from `data/plan/columns.json`** — the columns are
+data and can be renamed or added to from the UI. They are currently `backlog`
+`weekly` `focus` `review` `done`. The old `todo` / `doing` / `blocked` set is
+gone; writing one now produces a task that renders in no column and fails
+`scripts/validate.mjs`.
 
 `start` must not be after `due`. Both drive the timeline.
 
