@@ -8,7 +8,7 @@ conversation has got to.
 
 ---
 
-## The list is 14 real records
+## The list is 15 real records
 
 The 36 seeded research targets that used to sit here were removed on
 2026-08-10 — none had been contacted. They remain in git history.
@@ -18,9 +18,10 @@ The 36 seeded research targets that used to sit here were removed on
 | MoU signed | Hakuhodo Key3 |
 | MoU sent | Sumitomo Insurance · Sumitomo Web3 · Mobily · Aon |
 | Aligning MoU | Asian Development Bank · Vodafone |
-| Researched | Sri Lanka |
+| Researched | Colombo UrbanLab |
 | Identified | Roland Voggenhauer · Seena Foroutan · Siva Balasuriyar · David Palmer |
 | Identified | Ethereum Institutional Team · Ethereum Foundation Donation Fund |
+| Identified | World Bank with Fundschain |
 
 Some of these are people, not counterparties — see the two person types below.
 This table goes stale the moment a stage moves; the board's MoU strip is
@@ -28,8 +29,10 @@ derived from the data and cannot, so trust that over this.
 
 **Confirm the legal entity before approaching anyone.** Several hold a
 group name rather than the signing entity: *Sumitomo Insurance* could be Mitsui
-Sumitomo or Sumitomo Life; *Sri Lanka* is a placeholder until it is clear which
-body signs. Those questions are open in each partner's thread.
+Sumitomo or Sumitomo Life. *Sri Lanka* was such a placeholder until it was
+named as **Colombo UrbanLab** on 2026-08-11 — though that record's category,
+why and ask still describe the country rather than the organisation. The
+remaining questions are open in each partner's thread.
 
 ## The partner types
 

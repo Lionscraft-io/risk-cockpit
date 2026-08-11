@@ -343,5 +343,25 @@
     "refType": "board",
     "ref": "",
     "body": "Moved the pitch deck and the website into Outreach material at Toni's instruction. Used the existing WS11 rather than creating a second workstream of the same name."
+  },
+  {
+    "id": "e_lkname",
+    "at": "2026-08-11T17:46:06.356Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p04",
+    "body": "Renamed \"Sri Lanka\" to Colombo UrbanLab. This answers the open question on this record about which Sri Lankan body it stands for. Only the name was changed — the category, the why and the ask still describe the country placeholder and need rewriting to match the organisation."
+  },
+  {
+    "id": "e_wbfc",
+    "at": "2026-08-11T17:46:06.356Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p15",
+    "body": "Added at Toni's request as \"World Bank with Fundschain\", kept as one record in their own words rather than guessing at a split. Category inferred as development finance. Whether this is one joint approach or two counterparties is open."
   }
 ]

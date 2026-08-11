@@ -43,7 +43,7 @@
   },
   {
     "id": "p04",
-    "name": "Sri Lanka",
+    "name": "Colombo UrbanLab",
     "cat": "public",
     "country": "LK",
     "why": "Host country of the first facility; public-sector cooperation is a precondition.",
@@ -53,7 +53,7 @@
     "contact": "",
     "next": "Needs to be aligned — confirm the counterparty and the ask",
     "nextDate": "",
-    "notes": ""
+    "notes": "Renamed from the \"Sri Lanka\" placeholder. The category (Regulators & public bodies), the why and the ask still describe the country, not this organisation — they were written when this record stood for whichever Sri Lankan body would sign. Worth rewriting now that it names a real counterparty."
   },
   {
     "id": "p05",
@@ -194,5 +194,19 @@
     "next": "Confirm where their network reaches and what to ask for",
     "nextDate": "",
     "notes": "Ex-Pairpoint, as given. If that is Pairpoint by Vodafone, it may connect to the Scott Petty conversation — worth confirming."
+  },
+  {
+    "id": "p15",
+    "name": "World Bank with Fundschain",
+    "cat": "dfi",
+    "country": "",
+    "why": "Named by Toni as a partner to add. Why them specifically has not been recorded yet.",
+    "ask": "Not yet agreed.",
+    "stage": "identified",
+    "owner": "",
+    "contact": "",
+    "next": "Confirm the entity, the contact and what we want from them",
+    "nextDate": "",
+    "notes": "Entered as one record using Toni's own phrase. If the World Bank and Fundschain are two separate counterparties rather than one joint approach, split this in two. Category inferred as development finance from the World Bank half — not stated."
   }
 ]
