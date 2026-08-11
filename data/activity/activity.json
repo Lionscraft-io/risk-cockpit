@@ -283,5 +283,35 @@
     "refType": "partner",
     "ref": "p14",
     "body": "Added at Toni's request, network — the same role as Roland and Seena, as stated. Ex-Pairpoint recorded as given."
+  },
+  {
+    "id": "eotoutu",
+    "at": "2026-08-11T10:50:07.636Z",
+    "actor": "unattributed",
+    "actorKind": "human",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p12",
+    "body": "Identified → Approached"
+  },
+  {
+    "id": "e_ws11",
+    "at": "2026-08-11T11:02:20.114Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Added an Outreach material workstream at Toni's request. It overlaps WS9 Narrative & materials, which currently holds \"Update the pitch deck\" and \"Update the website\" — the deck in particular is outreach material by any reading. Left both where they are rather than moving someone else's work between groups unasked."
+  },
+  {
+    "id": "e_ws1213",
+    "at": "2026-08-11T11:04:16.709Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Added Manila invite and Charity setup as workstreams at Toni's request, and moved the two tasks named after them across: Align the ADB invite — Manila, 21–24 Sept: WS8 -> WS12; Set up the UK charity: WS10 -> WS13. Worth noting there are now thirteen workstreams for nine tasks — more groups than things grouped. That is fine while the streams are being sketched out, but if most stay empty the grouping stops carrying information."
   }
 ]

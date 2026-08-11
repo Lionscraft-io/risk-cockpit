@@ -17,8 +17,13 @@ Three parts inside `lionscraft-platform.html`:
 `prefers-color-scheme` and again for the explicit `data-theme` toggle. Style
 through the tokens, never inside the media query.
 
-**Markup** — a fixed shell: top bar, nav rail, `#view`, drawer, toast. The rail
+**Markup** — a fixed shell: top bar, nav, `#view`, drawer, toast. The nav
 renders itself from `ZONES` and `VIEWS`, so adding a tab is one array entry.
+
+The nav runs horizontally under the top bar at every width. It used to be a
+198px sidebar on desktop, which cost the board a column's worth of space for
+items that fit on one line. `#view` carries a `data-view` attribute so the
+board can be wider than the reading views, which keep a comfortable measure.
 
 **`<script>`** — reference data (stages, partner categories), the `SEED`
 fallback, the GitHub sync layer, and one render function per tab.

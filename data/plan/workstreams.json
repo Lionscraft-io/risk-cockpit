@@ -58,5 +58,23 @@
     "name": "Company & governance",
     "layer": "The company, not the facility",
     "lead": ""
+  },
+  {
+    "id": "WS11",
+    "name": "Outreach material",
+    "layer": "Cross-cutting",
+    "lead": ""
+  },
+  {
+    "id": "WS12",
+    "name": "Manila invite",
+    "layer": "Cross-cutting",
+    "lead": ""
+  },
+  {
+    "id": "WS13",
+    "name": "Charity setup",
+    "layer": "The company, not the facility",
+    "lead": ""
   }
 ]
