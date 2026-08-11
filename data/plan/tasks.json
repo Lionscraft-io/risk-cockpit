@@ -56,7 +56,7 @@
   },
   {
     "id": "t106",
-    "ws": "WS10",
+    "ws": "WS2",
     "title": "Define the commercial model",
     "status": "backlog",
     "owner": "",
@@ -78,7 +78,7 @@
   },
   {
     "id": "t108",
-    "ws": "WS10",
+    "ws": "WS8",
     "title": "Confirm how Siva is involved in the project",
     "status": "backlog",
     "owner": "",
