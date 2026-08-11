@@ -18,12 +18,17 @@ Three parts inside `lionscraft-platform.html`:
 through the tokens, never inside the media query.
 
 **Markup** — a fixed shell: top bar, nav, `#view`, drawer, toast. The nav
-renders itself from `ZONES` and `VIEWS`, so adding a tab is one array entry.
+renders itself from `VIEWS`, so adding a tab is one array entry.
 
-The nav runs horizontally under the top bar at every width. It used to be a
-198px sidebar on desktop, which cost the board a column's worth of space for
-items that fit on one line. `#view` carries a `data-view` attribute so the
-board can be wider than the reading views, which keep a comfortable measure.
+The nav is one flat row under the top bar at every width. It used to be a 198px
+sidebar on desktop, which cost the board a column's worth of space; it was then
+briefly split into CRM and Project halves, dropped once the CRM half held a
+single tab. `#view` carries a `data-view` attribute so the board can be wider
+than the reading views, which keep a comfortable measure.
+
+Page headers are a title and nothing else — the eyebrow lines and descriptions
+were stripped on 2026-08-11. A tool that explains itself on every screen is
+explaining itself to someone who already knows.
 
 **`<script>`** — reference data (stages, partner categories), the `SEED`
 fallback, the GitHub sync layer, and one render function per tab.

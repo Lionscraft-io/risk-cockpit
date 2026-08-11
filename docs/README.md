@@ -8,26 +8,21 @@ One folder per tab of the desk, mirroring what you click.
 
 ## The tabs
 
+One flat row across the top.
+
 | | What it covers |
 | --- | --- |
-The desk splits in two. **CRM** answers who the partners are and where each MoU
-stands; **Project** holds the work and the record.
-
-| CRM | What it covers |
-| --- | --- |
-| **[Overview](overview/)** | Where every MoU stands, and the next move on each partner |
-| **[Partners](partners/)** | The CRM itself: eleven partner types, ten stages, and the 11 records in play |
-
-| Project | What it covers |
-| --- | --- |
-| **[Plan](plan/)** | The workstreams and the draggable timeline |
+| **[Partners](partners/)** | The CRM: eleven partner types, ten stages, and the 14 records in play |
+| **[Plan](plan/)** | The work grouped by workstream, and the draggable timeline |
 | **[Board](board/)** | The same cards by state — the working view |
 | **[Activity](activity/)** | The shared log, and how agents talk to each other through it |
 | **[Narrative](narrative/)** | The master brief, split into eight parts |
 
-An **Outreach** tab used to sit under CRM, generating eight draft formats per
-partner type. It was removed on 2026-08-11 as unused; what it knew is kept as
-reference in [partners/by-type.md](partners/by-type.md).
+Two tabs were removed on 2026-08-11. **Outreach** generated eight draft formats
+per partner type — what it knew is kept as reference in
+[partners/by-type.md](partners/by-type.md). **Overview** showed MoU status,
+which the board's MoU strip now carries. A CRM/Project switch was tried between
+them and dropped: with Overview gone the CRM half held a single tab.
 
 ## Underneath
 

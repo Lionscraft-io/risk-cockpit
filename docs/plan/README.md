@@ -73,7 +73,7 @@ which writes to the [Activity](../activity/) log.
 
 ## List view
 
-Workstreams with a progress bar each. Click a status chip to cycle it through
+One section per workstream, each with a done count. Click a status chip to cycle it through
 the board's columns — `Backlog → Weekly → Focus → Review → Done` — and click a
 row to open the task editor.
 

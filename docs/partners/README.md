@@ -8,7 +8,7 @@ conversation has got to.
 
 ---
 
-## The list is 11 real records
+## The list is 14 real records
 
 The 36 seeded research targets that used to sit here were removed on
 2026-08-10 — none had been contacted. They remain in git history.
@@ -19,12 +19,12 @@ The 36 seeded research targets that used to sit here were removed on
 | MoU sent | Sumitomo Insurance · Sumitomo Web3 · Mobily · Aon |
 | Aligning MoU | Asian Development Bank · Vodafone |
 | Researched | Sri Lanka |
-| Identified | Roland Voggenhauer · Seena Foroutan · Siva Balasuriyar |
+| Identified | Roland Voggenhauer · Seena Foroutan · Siva Balasuriyar · David Palmer |
+| Identified | Ethereum Institutional Team · Ethereum Foundation Donation Fund |
 
-The last three are people, not counterparties — see the two person types
-below. This table goes stale the moment a stage moves; the
-[Overview](../overview/) is derived from the data and cannot, so trust it over
-this.
+Some of these are people, not counterparties — see the two person types below.
+This table goes stale the moment a stage moves; the board's MoU strip is
+derived from the data and cannot, so trust that over this.
 
 **Confirm the legal entity before approaching anyone.** Several hold a
 group name rather than the signing entity: *Sumitomo Insurance* could be Mitsui
@@ -93,7 +93,7 @@ flags carry the meaning the counts depend on:
 
 | Flag | What it means |
 | --- | --- |
-| `engaged` | From here on, a real conversation has started. Drives *Past first meeting* on the Overview and *Engaged* per partner type |
+| `engaged` | From here on, a real conversation has started |
 | `committed` | Something is signed. Drives *MoU signed or active* |
 | `terminal` | Out of the pipeline — not counted as in play, and drawn separately |
 
