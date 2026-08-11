@@ -116,6 +116,53 @@ button,input,select,textarea{font:inherit; color:inherit}
 /* MoU status, once it stopped being cards. */
 .pn{font-weight:650; color:var(--ink)}
 
+/* ─── Events ─────────────────────────────────────────────────────────
+   Deliberately few type treatments: the tile has two, everything else has
+   one each. The first pass mixed the monospace data font, the small-caps
+   label style and two body sizes inside a single row. */
+.evmonth{
+  display:flex; align-items:baseline; gap:10px; padding:16px 15px 7px;
+  font-family:var(--data); font-size:10.5px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--ink-3);
+}
+.evmonth::after{content:""; flex:1; border-bottom:1px solid var(--line)}
+.evrow{
+  display:grid; grid-template-columns:64px minmax(0,1fr) auto; gap:15px; align-items:center;
+  padding:12px 15px; border-top:1px solid var(--line); cursor:pointer;
+  transition:background .12s;
+}
+.evrow:hover{background:var(--surface-2)}
+.evtile{
+  text-align:center; padding:6px 2px; border-radius:var(--radius);
+  background:var(--surface-2); border:1px solid var(--line);
+}
+.evtile b{display:block; font-family:var(--display); font-size:19px; line-height:1.05; color:var(--ink); white-space:nowrap}
+/* A range has to fit the same tile on one line, or that row stands taller than
+   every single-day row beside it. */
+.evtile b.range{font-size:14px; letter-spacing:-.02em}
+.evtile span{
+  display:block; margin-top:2px; font-family:var(--data); font-size:9.5px;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3);
+}
+.evname{font-size:14px; font-weight:600; color:var(--ink)}
+.evmeta{margin-top:3px; font-size:12.5px; color:var(--ink-2); display:flex; align-items:center; gap:7px; flex-wrap:wrap}
+.evmeta .sep{color:var(--line-strong)}
+.evwhen{font-family:var(--data); font-size:11.5px; color:var(--ink-3); white-space:nowrap}
+
+/* The one that happens next, which is the only one anybody is asking about. */
+.evrow.isnext{background:var(--accent-soft)}
+.evrow.isnext .evtile{background:var(--paper); border-color:var(--accent)}
+.evrow.isnext .evwhen{color:var(--accent-ink); font-weight:600}
+:root[data-theme="dark"] .evrow.isnext .evwhen{color:var(--accent)}
+@media (prefers-color-scheme: dark){.evrow.isnext .evwhen{color:var(--accent)}}
+:root[data-theme="light"] .evrow.isnext .evwhen{color:var(--accent-ink)}
+.evrow.gone{opacity:.55}
+
+@media (max-width:640px){
+  .evrow{grid-template-columns:48px minmax(0,1fr); gap:12px}
+  .evwhen{grid-column:2; margin-top:2px}
+}
+
 /* Workstreams with nothing in them, named but not given a table each. */
 .wsempty{display:flex; align-items:center; gap:7px; flex-wrap:wrap; padding:2px 2px 4px}
 .wsempty .eyebrow{padding:0; margin-right:2px}
@@ -454,41 +501,6 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 .ms-item.hit .pip{background:var(--accent); border-color:var(--accent)}
 .ms-item b{font-weight:600; font-size:13.5px}
 .ms-item p{margin:3px 0 0; color:var(--ink-2); font-size:12.5px}
-
-/* ─── Narrative ──────────────────────────────────────────────────────── */
-.prose{max-width:none}
-.ladder{display:flex; flex-direction:column; gap:0; padding:4px 0}
-.rung{display:grid; grid-template-columns:104px minmax(0,1fr); gap:14px; padding:11px 15px; border-bottom:1px solid var(--line); align-items:baseline}
-.rung:last-child{border-bottom:0}
-.rung > b{
-  font-family:var(--data); font-size:10px; letter-spacing:.11em; text-transform:uppercase;
-  color:var(--ink-3); font-weight:500; overflow-wrap:anywhere;
-}
-.rung div b{font-size:14px; font-family:var(--display)}
-.rung p{margin:3px 0 0; color:var(--ink-2); font-size:12.5px}
-.pull{
-  font-family:var(--display); font-size:16px; line-height:1.45; color:var(--ink);
-  padding:13px 16px; border-left:2px solid var(--accent); background:var(--surface-2);
-  border-radius:0 var(--radius) var(--radius) 0; margin:0;
-}
-.bank{display:grid; grid-template-columns:repeat(auto-fill,minmax(266px,1fr)); gap:9px; padding:15px}
-.bank q{
-  display:block; quotes:none; font-family:var(--display); font-size:13.5px; line-height:1.45;
-  padding:11px 13px; background:var(--surface-2); border-radius:var(--radius); color:var(--ink);
-}
-.rules{display:grid; gap:1px; background:var(--line)}
-.rule{background:var(--surface); padding:12px 15px; display:grid; grid-template-columns:22px 1fr; gap:11px; align-items:start}
-.rule .glyph{font-family:var(--data); font-weight:600; font-size:13px; line-height:1.5}
-.rule.no .glyph{color:var(--danger)}
-.rule.yes .glyph{color:var(--accent)}
-.rule b{display:block; font-size:13px; font-weight:600}
-.rule p{margin:2px 0 0; color:var(--ink-2); font-size:12.5px}
-.six{display:grid; grid-template-columns:repeat(auto-fit,minmax(168px,1fr)); gap:1px; background:var(--line)}
-.layer{background:var(--surface); padding:14px 15px}
-.layer .eyebrow{color:var(--accent)}
-:root[data-theme="light"] .layer .eyebrow{color:var(--accent-ink)}
-.layer b{display:block; font-family:var(--display); font-size:15px; margin:5px 0 3px}
-.layer p{margin:0; font-size:12.5px; color:var(--ink-2)}
 
 /* ─── Drawer ─────────────────────────────────────────────────────────── */
 .scrim{position:fixed; inset:0; background:rgba(10,16,15,.42); z-index:60; opacity:0; pointer-events:none; transition:opacity .18s}
@@ -1235,7 +1247,6 @@ const VIEWS = [
   {id:"board",     label:"Board",     count:() => boardCards().filter(c => c.status === "focus" || c.status === "review").length},
   {id:"events",    label:"Events",    count:() => DB.events.filter(e => !isPastEvent(e)).length},
   {id:"activity",  label:"Activity",  count:() => DB.activity.length || ""},
-  {id:"narrative", label:"Narrative", count:() => ""}
 ];
 let current = "partners";
 let filters = {stage:"", cat:"", q:""};
@@ -1372,7 +1383,6 @@ function render(){
     board:     viewBoard,
     events:    viewEvents,
     activity:  viewActivity,
-    narrative: viewNarrative
   })[current]();
   if (current === "activity") wireActivity();
   if (current === "board") wireBoard();
@@ -2495,25 +2505,60 @@ function viewEvents(){
   const all = DB.events.slice().sort((a, b) => a.start.localeCompare(b.start));
   const upcoming = all.filter(e => !isPastEvent(e));
   const past = all.filter(isPastEvent).reverse();
+  const nextId = (upcoming[0] || {}).id;
+
+  /* The tile carries the days, the label under it carries the month. A
+     multi-day event inside one month shows its range in the tile; one that
+     crosses a month boundary cannot, so it says so on the meta line instead. */
+  const tile = e => {
+    const a = e.start.split("-"), b = (e.end || "").split("-");
+    const sameMonth = e.end && a[0] === b[0] && a[1] === b[1];
+    return `<div class="evtile">
+      <b class="${sameMonth ? "range" : ""}">${sameMonth ? +a[2] + "–" + +b[2] : +a[2]}</b>
+      <span>${MONTHS[+a[1] - 1]}</span>
+    </div>`;
+  };
 
   const row = e => {
     const p = DB.partners.find(x => x.id === e.partner);
     const n = daysUntil(e.start);
-    const when = isPastEvent(e) ? "" : n <= 0 ? "now" : n === 1 ? "tomorrow" : "in " + n + " days";
+    const gone = isPastEvent(e);
+    const when = gone ? fmtDate(e.start)
+      : n <= 0 ? "today" : n === 1 ? "tomorrow" : n + " days";
+    const spansMonths = e.end && e.end.slice(0, 7) !== e.start.slice(0, 7);
+    const bits = [
+      e.time,
+      spansMonths ? "until " + fmtDate(e.end) : "",
+      e.location
+    ].filter(Boolean).map(esc);
+
     return `
-    <tr class="clickable ${isPastEvent(e) ? "done" : ""}" data-event="${esc(e.id)}">
-      <td style="width:118px" class="num">${esc(eventDates(e))}</td>
-      <td><b class="pn">${esc(e.name)}</b>${
-        e.time ? `<span class="cat" style="margin-left:7px">${esc(e.time)}</span>` : ""}
-        <span class="sub">${esc(e.location) || "location not set"}${
-          p ? " · " + esc(p.name) : ""}</span></td>
-      <td style="width:96px" class="num" style="color:var(--ink-3)">${esc(when)}</td>
-    </tr>`;
+    <div class="evrow ${e.id === nextId ? "isnext" : ""} ${gone ? "gone" : ""}" data-event="${esc(e.id)}">
+      ${tile(e)}
+      <div>
+        <div class="evname">${esc(e.name)}</div>
+        <div class="evmeta">
+          ${bits.join('<span class="sep">·</span>')}
+          ${p ? `${bits.length ? '<span class="sep">·</span>' : ""}
+                <span class="chip ${stageClass(p.stage)}"><i class="dot"></i>${esc(p.name)}</span>` : ""}
+        </div>
+      </div>
+      <div class="evwhen">${esc(when)}</div>
+    </div>`;
   };
 
-  const table = (list, empty) => `<div class="tablewrap"><table><tbody>${
-    list.length ? list.map(row).join("") : `<tr><td class="empty">${empty}</td></tr>`
-  }</tbody></table></div>`;
+  /* Grouped by month so a long diary stays scannable, and so an empty month
+     between two events is visible as a gap rather than hidden by sorting. */
+  const grouped = list => {
+    let month = "";
+    return list.map(e => {
+      const k = e.start.slice(0, 7);
+      const head = k === month ? "" :
+        `<div class="evmonth">${MONTHS[+k.slice(5) - 1]} ${k.slice(2, 4)}</div>`;
+      month = k;
+      return head + row(e);
+    }).join("");
+  };
 
   return `
   <div class="pagehead">
@@ -2525,13 +2570,14 @@ function viewEvents(){
     <section class="card">
       <header><h2>Coming up</h2><span class="spacer"></span>
         <span class="cat">${upcoming.length}</span></header>
-      ${table(upcoming, "Nothing in the diary.")}
+      ${upcoming.length ? grouped(upcoming)
+        : '<div class="empty" style="padding:26px 15px">Nothing in the diary.</div>'}
     </section>
     ${past.length ? `
     <section class="card">
       <header><h2>Been and gone</h2><span class="spacer"></span>
         <span class="cat">${past.length}</span></header>
-      ${table(past, "")}
+      ${past.map(row).join("")}
     </section>` : ""}
   </div>`;
 }
@@ -2735,103 +2781,6 @@ function wireThread(refType, ref, after){
     if (after) after();
     toast("Posted");
   };
-}
-
-/* ── Narrative ────────────────────────────────────────────────────── */
-
-function viewNarrative(){
-  return `
-  <div class="pagehead">
-    <div>
-      <h1>Narrative</h1>
-    </div>
-  </div>
-
-  <div class="grid" style="gap:16px">
-    <p class="pull">We are building a programmable risk-transfer operating system that uses increasingly computational forms of capital to make risk more transferable, protection more expressive, and the purpose of risk transfer more intrinsic to the financial instrument itself.</p>
-
-    <section class="card">
-      <header><h2>The hierarchy — never invert it</h2></header>
-      <div class="ladder">
-        <div class="rung"><b>Architecture</b><div><b>Programmable risk transfer</b><p>A new architecture for representing, transferring, distributing, administering and responding to risk through capital. This is the company.</p></div></div>
-        <div class="rung"><b>Application</b><div><b>Disaster and resilience finance</b><p>The first domain — chosen because a disaster creates many kinds of harm at once and timing matters enormously.</p></div></div>
-        <div class="rung"><b>Product</b><div><b>Response-Linked ART</b><p>The first product expression: collateralised risk transfer plus programmed response, restoration and recovery.</p></div></div>
-        <div class="rung"><b>Sector</b><div><b>Critical infrastructure / telecoms</b><p>Measurable, instrumented, essential in an emergency, dependent on rapid restoration.</p></div></div>
-        <div class="rung"><b>Implementation</b><div><b>Sri Lanka telecom resilience facility</b><p>The first bounded build. The wedge, not the company. Amazon started with books.</p></div></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <header><h2>The six layers of a facility</h2></header>
-      <div class="six">
-        <div class="layer"><div class="eyebrow">Layer 1</div><b>Risk</b><p>What exposure is being transferred.</p></div>
-        <div class="layer"><div class="eyebrow">Layer 2</div><b>Capital</b><p>Who backs the protection, how much, on what terms.</p></div>
-        <div class="layer"><div class="eyebrow">Layer 3</div><b>Rights</b><p>Who has claims on that capital.</p></div>
-        <div class="layer"><div class="eyebrow">Layer 4</div><b>Purpose</b><p>What the protection is intended to achieve.</p></div>
-        <div class="layer"><div class="eyebrow">Layer 5</div><b>Execution</b><p>What payments, services or obligations activate when states change.</p></div>
-        <div class="layer"><div class="eyebrow">Layer 6</div><b>Evidence</b><p>What proves what happened, what was delivered, what resulted.</p></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <header><h2>Guardrails</h2><span class="spacer"></span><span class="cat">Check every draft against these</span></header>
-      <div class="rules">
-        <div class="rule no"><span class="glyph">✕</span><div><b>Do not lead with blockchain, crypto, tokenisation or "on-chain"</b><p>Lead with the financial function: programmable financial rights, digital capital states, traceable claims, machine-readable obligations. The technology follows the economic need.</p></div></div>
-        <div class="rule no"><span class="glyph">✕</span><div><b>Do not caricature insurance</b><p>Never say insurance only gives money. Some products already provide services, replacement and managed repair. The defensible distinction is how much of the downstream purpose becomes intrinsic to the instrument.</p></div></div>
-        <div class="rule no"><span class="glyph">✕</span><div><b>Do not claim AI makes contractual decisions</b><p>Contracts and accountable parties determine rights and decisions. AI helps humans administer, interpret and evidence increasingly complex structures. Do not depend on speculative autonomy.</p></div></div>
-        <div class="rule no"><span class="glyph">✕</span><div><b>Do not claim the future already exists</b><p>Always separate what is buildable now from what the architecture may ultimately enable.</p></div></div>
-        <div class="rule no"><span class="glyph">✕</span><div><b>Do not imply that turning all vulnerability into tradable instruments is good</b><p>The same technology could push risk toward vulnerability instead of capacity. The ethical architecture is part of the product, not a disclaimer.</p></div></div>
-        <div class="rule yes"><span class="glyph">✓</span><div><b>Use "suffering" deliberately</b><p>Right for why risk matters, the moral architecture, the vision. In technical sections prefer harm, loss, consequence, disruption, vulnerability, burden, recovery need.</p></div></div>
-        <div class="rule yes"><span class="glyph">✓</span><div><b>Always be able to say what becomes programmable</b><p>Rights, obligations, capital states, settlement, permitted uses, activation conditions, claims, evidence requirements. Never let "programmable" float free.</p></div></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <header><h2>Language that works</h2><span class="spacer"></span><span class="cat">Reuse verbatim</span></header>
-      <div class="bank">
-        <q>Risk is the possibility of future suffering.</q>
-        <q>Risk is transferred. Capital is the vehicle. Protection is the purpose.</q>
-        <q>The instrument itself can carry more of the purpose of protection.</q>
-        <q>The output is not an app. The output is a working risk-transfer facility.</q>
-        <q>Risk should tend to flow toward capacity.</q>
-        <q>Capital can become a richer computational object.</q>
-        <q>As life becomes more machine-legible, risk becomes more machine-legible too.</q>
-        <q>The minimum economically transferable unit of risk can fall.</q>
-        <q>Digital assets give intangible risk relationships financial form.</q>
-        <q>AI changes the economics of complexity.</q>
-        <q>Not another insurance app. A new operating system for risk-bearing capital.</q>
-        <q>risk → capital → rights → obligations → action → outcome</q>
-      </div>
-    </section>
-
-    <section class="card">
-      <header><h2>What we are not</h2></header>
-      <div style="padding:14px 16px; color:var(--ink-2); font-size:13px">
-        Not a disaster-response app · not an insurance dashboard · not a claims-management tool · not a blockchain settlement system · not a tokenisation vendor · not an AI reporting tool · not an ILS issuer · not an insurer · not a reinsurer · not a telco resilience product · not a Sri Lanka project.
-        <p style="margin:9px 0 0">Some of these capabilities exist inside particular implementations. None defines the architecture.</p>
-      </div>
-    </section>
-
-    <section class="card">
-      <header><h2>Storytelling failure modes</h2></header>
-      <div class="rules">
-        <div class="rule no"><span class="glyph">1</span><div><b>Starting with the pilot</b><p>Open with Sri Lanka and the reader assumes that is the company.</p></div></div>
-        <div class="rule no"><span class="glyph">2</span><div><b>Making technology the protagonist</b><p>"AI + blockchain + insurance" is not the story. Risk is the protagonist.</p></div></div>
-        <div class="rule no"><span class="glyph">3</span><div><b>Philosophy with no visible thing</b><p>Slides 7 and 8 must show the actual system.</p></div></div>
-        <div class="rule no"><span class="glyph">4</span><div><b>Too concrete too early</b><p>Opening on triggers, tranches and settlement loses why the architecture matters.</p></div></div>
-        <div class="rule no"><span class="glyph">5</span><div><b>Attacking traditional insurance</b><p>We extend the expressive capacity of risk transfer. We do not need centuries of it to be useless.</p></div></div>
-        <div class="rule no"><span class="glyph">6</span><div><b>Presenting AI only as administration</b><p>Makes it look bolted on. Administration is the current application of something with a longer trajectory.</p></div></div>
-        <div class="rule no"><span class="glyph">7</span><div><b>Presenting digital assets only as settlement</b><p>They matter because financial objects themselves can become stateful and granular.</p></div></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <header><h2>Open questions — deliberately unresolved</h2><span class="spacer"></span><span class="cat">Do not let these destabilise the narrative</span></header>
-      <div style="padding:14px 16px; color:var(--ink-2); font-size:13px">
-        Legal form of facilities · when an SPV is required · notes vs insurance vs reinsurance vs deposits vs tokenised claims · jurisdiction · custody model · investor eligibility · tranche structures · trigger design · regulatory treatment · how much sits on-chain · governance of automated state changes · the boundary between automated administration and human decision · outcome-verification standards · pricing methodology · basis-risk management · which functions ${esc(DB.meta.org)} performs directly versus through regulated partners.
-      </div>
-    </section>
-  </div>`;
 }
 
 /* ══ Drawer ═══════════════════════════════════════════════════════════ */

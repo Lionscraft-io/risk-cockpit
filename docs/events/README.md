@@ -8,9 +8,17 @@ Meetings, conferences and roundtables, with dates.
 
 ## What it holds
 
-Two lists: **Coming up**, soonest first with a countdown, and **Been and gone**
-underneath once the last day has passed. A two-day conference stays under
-*Coming up* on its second morning rather than dropping off at midnight.
+Two lists: **Coming up**, grouped by month with a countdown on each, and **Been
+and gone** underneath. An event is over once its *last* day has passed, so a
+two-day conference stays under *Coming up* on its second morning rather than
+dropping off at midnight. The next one up is highlighted — it is the only one
+anybody is actually asking about.
+
+Each row is a calendar tile, the name, one meta line, and the countdown. The
+meta line is deliberately one type treatment for everything on it — time,
+place, and the partner chip. The first version mixed the monospace data font,
+the small-caps label style and two body sizes inside a single row, which read
+as noise.
 
 | Field | Notes |
 | --- | --- |
