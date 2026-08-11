@@ -2,7 +2,7 @@
 
 **[Open the tab →](https://lionscraft-io.github.io/risk-cockpit/#overview)**
 
-One card per tab. The landing page.
+One card per working tab. The landing page.
 
 ---
 
@@ -14,7 +14,9 @@ One card per tab. The landing page.
 | **Board** | A count per column, an overdue count when there is one, and the cards actually in Focus and Review — including bridged ones |
 | **Plan** | Each workstream with work in it and its open count, plus how many sit empty |
 | **Events** | The next three, with a countdown |
-| **Activity** | The last three entries of the shared log |
+
+[Activity](../activity/) has no card — it briefly did, and came off at Toni's
+request on 2026-08-11. The log is one click away in the nav.
 
 **Nothing here is stored.** Every number and name is derived from the same
 data the tabs read, at render time — so this page cannot drift from the tabs

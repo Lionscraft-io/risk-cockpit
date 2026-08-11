@@ -1451,9 +1451,6 @@ function viewOverview(){
     </div>`;
   };
 
-  const recent = DB.activity.slice()
-    .sort((a, b) => (b.at || "").localeCompare(a.at || "")).slice(0, 3);
-
   const open = id => `<span class="spacer"></span><button class="btn ghost" data-view="${id}">Open ›</button>`;
 
   return `
@@ -1505,12 +1502,6 @@ function viewOverview(){
         : '<div class="empty" style="padding:22px 15px">Nothing in the diary.</div>'}
     </section>
 
-    <section class="card">
-      <header><h2>Activity</h2>${open("activity")}</header>
-      <div class="feed" style="padding:6px 15px 12px">
-        ${recent.length ? recent.map(e => eventRow(e, true)).join("") : '<div class="empty">Nothing yet.</div>'}
-      </div>
-    </section>
   </div>`;
 }
 
