@@ -1,7 +1,7 @@
 [
   {
     "id": "t101",
-    "ws": "WS3",
+    "ws": "WS14",
     "title": "Catch up on the MoUs",
     "status": "focus",
     "owner": "",
@@ -12,7 +12,7 @@
   },
   {
     "id": "t102",
-    "ws": "WS4",
+    "ws": "WS14",
     "title": "Prepare the Vodafone CTO meeting (Scott Petty), 27–28 Aug",
     "status": "weekly",
     "owner": "",
@@ -34,7 +34,7 @@
   },
   {
     "id": "t104",
-    "ws": "WS9",
+    "ws": "WS14",
     "title": "Update the pitch deck",
     "status": "weekly",
     "owner": "",
@@ -45,7 +45,7 @@
   },
   {
     "id": "t105",
-    "ws": "WS8",
+    "ws": "WS14",
     "title": "Send Matthew Dawson (Ethereum Foundation) the pitch deck",
     "status": "weekly",
     "owner": "",
@@ -56,7 +56,7 @@
   },
   {
     "id": "t106",
-    "ws": "WS2",
+    "ws": "WS14",
     "title": "Define the commercial model",
     "status": "backlog",
     "owner": "",
@@ -78,7 +78,7 @@
   },
   {
     "id": "t108",
-    "ws": "WS8",
+    "ws": "WS14",
     "title": "Confirm how Siva is involved in the project",
     "status": "backlog",
     "owner": "",
@@ -89,7 +89,7 @@
   },
   {
     "id": "t109",
-    "ws": "WS9",
+    "ws": "WS14",
     "title": "Update the website",
     "status": "backlog",
     "owner": "",

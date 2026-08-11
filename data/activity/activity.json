@@ -323,5 +323,15 @@
     "refType": "board",
     "ref": "",
     "body": "Removed WS10 Company & governance. Toni pointed out it was never asked for — I invented it while putting their nine items on the board because three of them did not fit the existing nine, which was my call to make and it was not mine. The two tasks left in it went back to workstreams that already existed: the commercial model to Capital & structure, Siva's role to Funding & partnerships. Both are my guesses at the least-wrong home, not decisions Toni made."
+  },
+  {
+    "id": "e_wstasks",
+    "at": "2026-08-11T11:32:49.541Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Added a workstream called Tasks and moved everything I had placed by guesswork into it. Toni named three workstreams — Outreach material, Manila invite, UK charity — and the only two placements they actually stated were the tasks those workstreams are named after. The other seven had been filed into WS1-WS9 on my judgement of where they fitted, which was not asked for. They now sit in Tasks until Toni says otherwise."
   }
 ]

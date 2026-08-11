@@ -8,7 +8,7 @@ commit. Git history is the audit trail.
 | --- | --- |
 | [`data/meta.json`](../../data/meta.json) | Revision and facility metadata |
 | [`data/partners/partners.json`](../../data/partners/partners.json) | The CRM |
-| [`data/plan/workstreams.json`](../../data/plan/workstreams.json) | The twelve workstreams |
+| [`data/plan/workstreams.json`](../../data/plan/workstreams.json) | The thirteen workstreams |
 | [`data/plan/tasks.json`](../../data/plan/tasks.json) | Every task |
 | [`data/plan/milestones.json`](../../data/plan/milestones.json) | Milestones — currently empty |
 | [`data/activity/activity.json`](../../data/activity/activity.json) | The shared log |

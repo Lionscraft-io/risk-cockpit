@@ -3,7 +3,7 @@
 **[Open the tab →](https://lionscraft-io.github.io/risk-cockpit/#plan)** ·
 **[Timeline →](https://lionscraft-io.github.io/risk-cockpit/#plan/gantt)**
 
-Twelve workstreams and the live task list — the work of getting the Sri Lanka
+Thirteen workstreams and the live task list — the work of getting the Sri Lanka
 telecom resilience facility from a narrative to a bound instrument, plus the
 work of building the company that carries it.
 
@@ -37,7 +37,7 @@ agreement, and inventing one would put a stage in the CRM that nobody chose.
 
 Clicking a card opens the partner record.
 
-## The twelve workstreams
+## The thirteen workstreams
 
 Each maps onto a layer of the product stack, so the plan and the architecture
 stay legible against each other.
@@ -56,9 +56,15 @@ stay legible against each other.
 | WS11 | Outreach material | Cross-cutting |
 | WS12 | Manila invite | Cross-cutting |
 | WS13 | UK charity | Cross-cutting |
+| WS14 | Tasks | — |
 
 WS1–WS9 each map onto a layer of the product stack. WS11–WS13 do not — they are
 named after specific pieces of work rather than layers.
+
+**WS14 Tasks is the holding pen.** Anything whose workstream has not actually
+been decided goes here rather than being filed somewhere on a guess. WS1–WS9
+are currently all empty for that reason: the work on the board was placed into
+them by inference, and it was moved out on 2026-08-11.
 
 WS10 is missing from the sequence because it existed briefly and was removed on
 2026-08-11: it was added without being asked for. Ids are not reused.
