@@ -121,6 +121,14 @@ button,input,select,textarea{font:inherit; color:inherit}
 .wsempty .eyebrow{padding:0; margin-right:2px}
 .wschip{padding:3px 9px; border:1px dashed var(--line-strong); border-radius:999px;
   color:var(--ink-3); font-size:12px}
+.wschip:focus{outline:2px solid var(--accent); outline-offset:1px; color:var(--ink)}
+/* Drag a task row onto a section or an empty chip to move it there. */
+.ws > header h2[contenteditable]{cursor:text; border-radius:4px; padding:0 3px; margin:0 -3px}
+.ws > header h2[contenteditable]:focus{outline:2px solid var(--accent); outline-offset:1px}
+tr[data-task]{cursor:grab}
+tr[data-task].dragging{opacity:.45}
+.ws.wsover{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft)}
+.wschip.wsover{border-style:solid; border-color:var(--accent); background:var(--accent-soft); color:var(--accent-ink)}
 
 .moustrip{display:flex; align-items:center; gap:8px; flex-wrap:wrap;
   padding:9px 13px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius)}
@@ -1351,6 +1359,7 @@ function render(){
   if (current === "activity") wireActivity();
   if (current === "board") wireBoard();
   if (current === "plan" && planMode === "gantt") wireGantt();
+  if (current === "plan" && planMode === "list") wirePlan();
 }
 
 /* ── Partners ─────────────────────────────────────────────────────── */
@@ -2315,8 +2324,12 @@ function planList(){
 
 /* One section per workstream. This used to be a single flat Tasks table, which
    meant the workstreams existed in the data and nowhere on screen — adding one
-   appeared to do nothing at all. Empty ones are folded into a line at the
-   bottom rather than drawn as a run of empty tables. */
+   appeared to do nothing at all.
+
+   Each section is a drop target and its name is editable in place. Empty ones
+   stay folded into a line of chips rather than a run of empty tables, but the
+   chips are drop targets too — otherwise a new workstream could be made and
+   never filled. */
 function wsSections(tasks){
   const byWs = {};
   for (const t of tasks) (byWs[t.ws] ??= []).push(t);
@@ -2329,7 +2342,7 @@ function wsSections(tasks){
 
   const rows = list => list.map(t => {
     const p = DB.partners.find(x => x.id === t.partner);
-    return `<tr class="clickable ${isDone(t.status) ? "done" : ""}" data-task="${t.id}">
+    return `<tr class="clickable ${isDone(t.status) ? "done" : ""}" data-task="${t.id}" draggable="true">
       <td style="width:88px"><button class="status" data-cycle="${t.id}" data-s="${t.status}">${statusLabel[t.status]}</button></td>
       <td>${esc(t.title)}${p ? `<span class="sub">${esc(p.name)}</span>` : ""}</td>
       <td style="width:130px" class="hide-sm">${esc(t.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
@@ -2337,10 +2350,11 @@ function wsSections(tasks){
     </tr>`;
   }).join("");
 
-  const section = (title, list) => `
-  <section class="card ws">
+  const section = (w, list) => `
+  <section class="card ws" ${w ? `data-ws="${esc(w.id)}"` : ""}>
     <header>
-      <h2>${esc(title)}</h2>
+      <h2 ${w ? `data-wsrename="${esc(w.id)}" contenteditable="true" spellcheck="false"` : ""}>${
+        esc(w ? w.name : "No workstream")}</h2>
       <span class="spacer"></span>
       <span class="num" style="color:var(--ink-3); font-size:11.5px">${
         list.filter(t => isDone(t.status)).length}/${list.length}</span>
@@ -2348,13 +2362,94 @@ function wsSections(tasks){
     <div class="tablewrap"><table><tbody>${rows(list)}</tbody></table></div>
   </section>`;
 
-  return used.map(w => section(w.name, byWs[w.id])).join("")
-    + (orphans.length ? section("No workstream", orphans) : "")
-    + (empty.length ? `
-      <div class="wsempty">
-        <span class="eyebrow">Nothing in yet</span>
-        ${empty.map(w => `<span class="wschip">${esc(w.name)}</span>`).join("")}
-      </div>` : "");
+  return used.map(w => section(w, byWs[w.id])).join("")
+    + (orphans.length ? section(null, orphans) : "")
+    + `<div class="wsempty">
+        ${empty.length ? `<span class="eyebrow">Nothing in yet</span>` : ""}
+        ${empty.map(w => `<span class="wschip" data-ws="${esc(w.id)}"
+           data-wsrename="${esc(w.id)}" contenteditable="true" spellcheck="false">${esc(w.name)}</span>`).join("")}
+        <button class="btn ghost" id="addWs">+ Workstream</button>
+      </div>`;
+}
+
+/* Rename in place and drag between workstreams. Same rename behaviour as the
+   board columns — saves as it is typed rather than on blur, because a blur can
+   be swallowed by a background tab or a stray click, and Escape puts it back. */
+function wirePlan(){
+  const add = document.getElementById("addWs");
+  if (add) add.onclick = addWorkstream;
+
+  document.querySelectorAll("[data-wsrename]").forEach(el => {
+    const id = el.dataset.wsrename;
+    const original = el.textContent.trim();
+    let settle;
+    /* Compared against the live record, not against the text this element had
+       when it was wired. Those diverge as soon as one rename saves without a
+       re-render, and then typing the old name back is silently ignored — the
+       data keeps the intermediate value. */
+    const commit = () => {
+      const name = el.textContent.trim();
+      if (!name) return;
+      const w = DB.workstreams.find(x => x.id === id);
+      if (!w || w.name === name) return;
+      const from = w.name;
+      w.name = name;
+      logEvent({kind:"change", refType:"board", ref:"",
+        body: 'Renamed the workstream "' + from + '" to "' + name + '"'});
+      save();
+    };
+    el.oninput = () => { clearTimeout(settle); settle = setTimeout(commit, 900); };
+    el.onkeydown = ev => {
+      if (ev.key === "Enter"){ ev.preventDefault(); clearTimeout(settle); commit(); el.blur(); }
+      if (ev.key === "Escape"){ clearTimeout(settle); el.textContent = original; el.blur(); }
+    };
+    el.onblur = () => { clearTimeout(settle); commit(); };
+  });
+
+  let dragId = null;
+  document.querySelectorAll("tr[data-task]").forEach(tr => {
+    tr.addEventListener("dragstart", e => {
+      dragId = tr.dataset.task;
+      tr.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", dragId);
+    });
+    tr.addEventListener("dragend", () => { dragId = null; tr.classList.remove("dragging"); });
+  });
+
+  document.querySelectorAll("[data-ws]").forEach(box => {
+    box.addEventListener("dragover", e => { e.preventDefault(); box.classList.add("wsover"); });
+    box.addEventListener("dragleave", e => {
+      if (!box.contains(e.relatedTarget)) box.classList.remove("wsover");
+    });
+    box.addEventListener("drop", e => {
+      e.preventDefault();
+      box.classList.remove("wsover");
+      const id = dragId || e.dataTransfer.getData("text/plain");
+      const ws = box.dataset.ws;
+      const t = DB.tasks.find(x => x.id === id);
+      if (!t || t.ws === ws) return;
+      const from = (DB.workstreams.find(w => w.id === t.ws) || {}).name || t.ws;
+      const to = (DB.workstreams.find(w => w.id === ws) || {}).name || ws;
+      t.ws = ws;
+      logEvent({kind:"change", refType:"task", ref:t.id, body: from + " → " + to});
+      save(); renderRail(); render(); toast("Moved to " + to);
+    });
+  });
+}
+
+const nextWsId = () => {
+  const n = DB.workstreams.map(w => +(String(w.id).match(/\d+/) || [0])[0]);
+  return "WS" + (Math.max(0, ...n) + 1);
+};
+
+function addWorkstream(){
+  const name = prompt("New workstream name:", "");
+  if (!name || !name.trim()) return;
+  const w = {id: nextWsId(), name: name.trim(), layer: "", lead: ""};
+  DB.workstreams.push(w);
+  logEvent({kind:"change", refType:"board", ref:"", body:"Added the workstream " + w.name});
+  save(); renderRail(); render();
 }
 
 /* ── Activity ─────────────────────────────────────────────────────── */
@@ -2735,9 +2830,14 @@ function taskDrawer(id){
     <header><h3>${isNew ? "New task" : "Task"}</h3><button class="btn ghost" data-close>Close</button></header>
     <div class="body">
       <label class="field"><span>Task</span><textarea name="title" rows="2">${esc(t.title)}</textarea></label>
-      <label class="field"><span>Status</span><select name="status">
-        ${STATUS_CYCLE.map(s => `<option value="${s}" ${t.status === s ? "selected" : ""}>${statusLabel[s]}</option>`).join("")}
-      </select></label>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <label class="field"><span>Status</span><select name="status">
+          ${STATUS_CYCLE.map(s => `<option value="${s}" ${t.status === s ? "selected" : ""}>${statusLabel[s]}</option>`).join("")}
+        </select></label>
+        <label class="field"><span>Workstream</span><select name="ws">
+          ${DB.workstreams.map(w => `<option value="${w.id}" ${t.ws === w.id ? "selected" : ""}>${esc(w.name)}</option>`).join("")}
+        </select></label>
+      </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
         ${field("Start", "start", t.start || "", "date")}
         ${field("Due", "due", t.due, "date")}
