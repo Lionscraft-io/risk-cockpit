@@ -1,8 +1,9 @@
 # Lionscraft — Partner & Facility Desk
 
-Working infrastructure for the **programmable risk transfer** project: partner
-CRM, facility plan, kanban board, shared activity log, outreach material, and
-the narrative reference that keeps everything on-message.
+Working infrastructure for the **programmable risk transfer** project. The desk
+splits in two: a **CRM** for partners and where each MoU stands, and a
+**Project** side holding the facility plan, the kanban board, the shared
+activity log and the narrative reference.
 
 ### **→ [Open the desk](https://lionscraft-io.github.io/risk-cockpit/)**
 
@@ -14,9 +15,9 @@ Reading needs nothing — no login, no setup.
 
 **[docs/](docs/)** — one folder per tab, mirroring what you click:
 
-[Overview](docs/overview/) · [Partners](docs/partners/) · [Plan](docs/plan/) ·
-[Board](docs/board/) · [Activity](docs/activity/) · [Outreach](docs/outreach/) ·
-[Narrative](docs/narrative/)
+**CRM** — [Overview](docs/overview/) · [Partners](docs/partners/)
+**Project** — [Plan](docs/plan/) · [Board](docs/board/) ·
+[Activity](docs/activity/) · [Narrative](docs/narrative/)
 
 Underneath: [Data and sync](docs/data/) · [Development](docs/development/) ·
 [AGENTS.md](AGENTS.md)
@@ -47,11 +48,12 @@ server/                     optional self-hosted API — nothing uses it by defa
 
 ## Two things to know before using it
 
-**The 8 partners are real, but the entities are not all confirmed.** Several
-records hold a group name — *Sumitomo Insurance*, *Sri Lanka* — rather than the
-entity that actually signs. Those open questions sit in each partner's thread on
-the [Activity](docs/activity/) tab. Confirm the entity before using a record in
-outreach.
+**The 11 records are real, but the entities are not all confirmed.** Several
+hold a group name — *Sumitomo Insurance*, *Sri Lanka* — rather than the entity
+that actually signs. Those open questions sit in each partner's thread on the
+[Activity](docs/activity/) tab. Confirm the entity before approaching anyone.
 
 **The repository is public.** The board, the narrative and every activity entry
-are world-readable and permanently in git history.
+are world-readable and permanently in git history — including the `advisor` and
+`network` records, which name **private individuals**. See
+[Partners](docs/partners/) before adding a person.

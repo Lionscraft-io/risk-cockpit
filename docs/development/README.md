@@ -17,11 +17,11 @@ Three parts inside `lionscraft-platform.html`:
 `prefers-color-scheme` and again for the explicit `data-theme` toggle. Style
 through the tokens, never inside the media query.
 
-**Markup** — a fixed shell: top bar, nav rail, `#view`, drawer, toast.
+**Markup** — a fixed shell: top bar, nav rail, `#view`, drawer, toast. The rail
+renders itself from `ZONES` and `VIEWS`, so adding a tab is one array entry.
 
-**`<script>`** — reference data (stages, partner categories, outreach
-templates), the `SEED` fallback, the GitHub sync layer, and one render function
-per tab.
+**`<script>`** — reference data (stages, partner categories), the `SEED`
+fallback, the GitHub sync layer, and one render function per tab.
 
 ## Conventions worth keeping
 

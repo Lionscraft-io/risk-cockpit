@@ -10,13 +10,24 @@ One folder per tab of the desk, mirroring what you click.
 
 | | What it covers |
 | --- | --- |
-| **[Overview](overview/)** | Where the first facility stands — funnel, coverage, what is due, milestones |
-| **[Partners](partners/)** | The CRM: nine partner types, seven stages, and the 8 partners currently in play |
-| **[Plan](plan/)** | Nine workstreams, the draggable timeline, six milestones |
-| **[Board](board/)** | The same tasks by state — the working view |
+The desk splits in two. **CRM** answers who the partners are and where each MoU
+stands; **Project** holds the work and the record.
+
+| CRM | What it covers |
+| --- | --- |
+| **[Overview](overview/)** | Where every MoU stands, and the next move on each partner |
+| **[Partners](partners/)** | The CRM itself: eleven partner types, ten stages, and the 11 records in play |
+
+| Project | What it covers |
+| --- | --- |
+| **[Plan](plan/)** | The workstreams and the draggable timeline |
+| **[Board](board/)** | The same cards by state — the working view |
 | **[Activity](activity/)** | The shared log, and how agents talk to each other through it |
-| **[Outreach](outreach/)** | Eight formats, tailored per partner type |
 | **[Narrative](narrative/)** | The master brief, split into eight parts |
+
+An **Outreach** tab used to sit under CRM, generating eight draft formats per
+partner type. It was removed on 2026-08-11 as unused; what it knew is kept as
+reference in [partners/by-type.md](partners/by-type.md).
 
 ## Underneath
 

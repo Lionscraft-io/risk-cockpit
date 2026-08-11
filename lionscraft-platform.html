@@ -108,6 +108,15 @@ button,input,select,textarea{font:inherit; color:inherit}
   background:var(--paper);
 }
 .rail .eyebrow{padding:14px 10px 6px}
+/* Two jobs, one desk. The switch is the first thing in the rail because it
+   decides what the rest of the rail means. */
+.zoneswitch{display:flex; gap:2px; padding:3px; margin-bottom:8px;
+  background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius)}
+.zonebtn{flex:1; padding:6px 9px; border:0; border-radius:calc(var(--radius) - 3px);
+  background:none; color:var(--ink-3); font:600 12.5px/1.3 var(--body);
+  cursor:pointer; transition:background .12s, color .12s, box-shadow .12s}
+.zonebtn:hover{color:var(--ink)}
+.zonebtn[aria-pressed="true"]{background:var(--paper); color:var(--ink); box-shadow:var(--shadow)}
 .navitem{
   display:flex; align-items:baseline; gap:9px; width:100%; text-align:left;
   background:none; border:0; padding:7px 10px; border-radius:var(--radius);
@@ -413,23 +422,6 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 .ms-item b{font-weight:600; font-size:13.5px}
 .ms-item p{margin:3px 0 0; color:var(--ink-2); font-size:12.5px}
 
-/* ─── Outreach ───────────────────────────────────────────────────────── */
-.outgrid{display:grid; grid-template-columns:270px minmax(0,1fr); gap:14px; align-items:start}
-.tpl{display:flex; flex-direction:column; gap:2px; padding:9px}
-.tplbtn{
-  text-align:left; background:none; border:0; padding:8px 10px; border-radius:var(--radius);
-  cursor:pointer; color:var(--ink-2); font-size:13px; transition:background .12s;
-}
-.tplbtn:hover{background:var(--surface-2); color:var(--ink)}
-.tplbtn[aria-current="true"]{background:var(--accent-soft); color:var(--accent-ink); font-weight:600}
-:root[data-theme="dark"] .tplbtn[aria-current="true"]{color:var(--accent)}
-@media (prefers-color-scheme: dark){.tplbtn[aria-current="true"]{color:var(--accent)}}
-:root[data-theme="light"] .tplbtn[aria-current="true"]{color:var(--accent-ink)}
-.tplbtn small{display:block; font-weight:400; color:var(--ink-3); font-size:11.5px; margin-top:1px}
-.out{padding:0}
-.out textarea{border:0; border-radius:0; min-height:520px; padding:17px 19px; background:var(--surface); font-size:12.5px}
-.out textarea:focus-visible{outline-offset:-2px}
-
 /* ─── Narrative ──────────────────────────────────────────────────────── */
 .prose{max-width:none}
 .ladder{display:flex; flex-direction:column; gap:0; padding:4px 0}
@@ -587,8 +579,11 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
   .rail .eyebrow{display:none}
   .navitem{width:auto; white-space:nowrap}
   .navitem em{display:none}
+  /* The rail turns into a horizontal scroller here; the switch rides along at
+     its head rather than stretching, and the divider becomes vertical. */
+  .zoneswitch{margin:0 6px 0 0; flex:0 0 auto; align-self:center}
+  .zonebtn{flex:0 0 auto; padding:5px 10px}
   main{padding:20px 16px 80px}
-  .outgrid{grid-template-columns:1fr}
 }
 
 /* ─── Phones ─────────────────────────────────────────────────────────── */
@@ -712,7 +707,7 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 const DEFAULT_STAGES = [
   {id:"identified", label:"Identified",   hint:"On the target list, no contact yet"},
   {id:"researched", label:"Researched",   hint:"Right person and angle worked out"},
-  {id:"approached", label:"Approached",   hint:"Outreach sent, awaiting reply"},
+  {id:"approached", label:"Approached",   hint:"First approach sent, awaiting reply"},
   {id:"meeting",    label:"Meeting held", hint:"First substantive conversation done", engaged:true},
   {id:"aligning",   label:"Aligning MoU", hint:"Talking, and agreeing what the MoU will say"},
   {id:"mou_sent",   label:"MoU sent",     hint:"Agreed text is with them to sign"},
@@ -740,167 +735,22 @@ const engagedFrom = () => { const i = STAGES.findIndex(s => s.engaged); return i
 const isEngaged = id => stageRank(id) >= engagedFrom();
 const isCommitted = id => !!(ALL_STAGES.find(s => s.id === id) || {}).committed;
 
+/* Only the label is read. This used to carry a hook, an ask, and discovery
+   questions per type, all of which fed the Outreach tab; that tab was removed
+   and the content moved to docs/partners/by-type.md rather than left here
+   looking like it still drives something. */
 const CATEGORIES = {
-  carrier: {
-    label:"Risk carriers",
-    blurb:"Insurers and reinsurers who can carry the catastrophe layer.",
-    hook:"you already price and carry catastrophe risk of exactly this shape — what we are adding is what the capital does after the trigger",
-    ask:"a technical read on our trigger design, and an indication of appetite for a small collateralised layer",
-    give:"a live test of response-linked structuring on a bounded, well-instrumented risk, with the modelling and evidence work done alongside you",
-    questions:[
-      "How do you currently see Sri Lanka / South Asia telecom exposure?",
-      "Where does a response-linked structure create problems for you — reserving, capital treatment, or rating?",
-      "What trigger types would you actually quote on: parametric, modelled loss, or hybrid?",
-      "What minimum size makes a layer worth your underwriting time?",
-      "Who inside your house owns public-sector and infrastructure risk?"
-    ]
-  },
-  capital: {
-    label:"Capital providers",
-    blurb:"ILS funds and investors who take collateralised risk positions.",
-    hook:"the structure is fully collateralised and the underlying peril is one your models already cover — the novelty is in what the contract obliges, not in the risk",
-    ask:"a view on investability, and what you would need to see before an indicative position",
-    give:"early sight of a new instrument class with a clean, bounded first implementation and real telemetry behind the trigger",
-    questions:[
-      "What is your minimum ticket and what wrapper do you need — note, cat bond lite, or private ILS?",
-      "Does a purpose-linked obligation on the capital break anything in your mandate?",
-      "What collateral and custody arrangement would you require?",
-      "How do you underwrite basis risk on a modelled or parametric trigger?",
-      "What would make this a portfolio diversifier rather than a curiosity?"
-    ]
-  },
-  donor: {
-    label:"Donors & foundations",
-    blurb:"Philanthropic and public funders who can sponsor protection.",
-    hook:"the people most exposed here are not the people who can pay to transfer the risk — sponsored premium is what closes that gap",
-    ask:"grant or premium-support funding for the first facility, and a view on which of your programmes it fits",
-    give:"a protection instrument where the money is tied to delivered response, restoration and recovery, with outcome evidence built into the contract rather than added as reporting",
-    questions:[
-      "Which of your windows funds premium support versus technical assistance?",
-      "What outcome evidence would you need to see to justify sponsoring a renewal?",
-      "Do you have an existing relationship with the Sri Lankan authorities we should route through?",
-      "What is your timeline from concept note to decision?",
-      "Would you co-fund with another donor or do you need to be sole sponsor?"
-    ]
-  },
-  dfi: {
-    label:"Development finance",
-    blurb:"Multilateral banks and development finance institutions.",
-    hook:"critical telecom is the dependency behind almost every other emergency function, and it is currently unfunded in most disaster risk financing frameworks",
-    ask:"technical partnership, and a route into your disaster risk financing programme for the country",
-    give:"a replicable facility design for an infrastructure class your existing DRF instruments do not reach",
-    questions:[
-      "Where does telecom sit in your current DRF work for Sri Lanka?",
-      "What is the path from concept to an instrument you could co-finance?",
-      "Do you need a sovereign counterparty, or can this sit with the operator?",
-      "What procurement or eligibility rules would we need to design around?",
-      "Which of your teams — DRF, digital infrastructure, or country office — should own this?"
-    ]
-  },
-  operator: {
-    label:"Infrastructure operators",
-    blurb:"Telecom operators whose network is the protected asset.",
-    hook:"you already carry the cost of emergency restoration and you already hold the telemetry that proves it — this turns both into a financed, contracted capability",
-    ask:"a working session on your restoration cost experience, and access to outage telemetry under NDA",
-    give:"pre-funded emergency response and restoration capacity, priced ahead of the event rather than absorbed on your balance sheet after it",
-    questions:[
-      "What did the last major event actually cost you in restoration, and over what period?",
-      "Which sites are the critical dependency for emergency services?",
-      "What outage and restoration telemetry do you hold, at what granularity, and who owns it?",
-      "What emergency commitments are you already obliged to meet by licence or regulation?",
-      "Who signs off on a risk transfer arrangement — treasury, network, or the board?"
-    ]
-  },
-  digital: {
-    label:"Digital-asset infrastructure",
-    blurb:"Regulated issuance, custody and settlement providers.",
-    hook:"we need capital states, claims and settlement to be machine-readable and auditable — not a token for its own sake",
-    ask:"an architecture conversation and a view on the regulated issuance path",
-    give:"a real financial instrument with genuine state complexity, rather than another tokenisation demo",
-    questions:[
-      "What regulated wrapper do you support for a collateralised risk instrument?",
-      "How do you handle conditional release of collateral against off-chain evidence?",
-      "What custody model applies, and under which regulator?",
-      "Can rights and obligations be represented natively, or only referenced?",
-      "What does the audit trail look like to an insurance regulator?"
-    ]
-  },
-  data: {
-    label:"AI & data partners",
-    blurb:"Hazard modelling, telemetry, and administration technology.",
-    hook:"the trigger is only as good as the data behind it, and the administration cost is what has historically killed granular structures",
-    ask:"data access or a modelling collaboration for the Sri Lanka peril set",
-    give:"a defined, fundable use case with a real counterparty rather than a research exercise",
-    questions:[
-      "What hazard and exposure data do you hold for Sri Lanka, and at what resolution?",
-      "What is your licensing model for use inside a financial trigger?",
-      "Could your data be referenced contractually as the settlement source?",
-      "What is your view on basis risk for this peril set?",
-      "What would a joint validation exercise look like?"
-    ]
-  },
-  verifier: {
-    label:"Verification & assurance",
-    blurb:"Independent parties who evidence what was delivered.",
-    hook:"if the capital is tied to delivered response, someone independent has to be able to say what was actually delivered",
-    ask:"a view on what an assurable evidence standard for emergency response would look like",
-    give:"a chance to define the verification standard for a new instrument class at the point it is being designed",
-    questions:[
-      "What would you need to attest that emergency connectivity was actually delivered?",
-      "Can telemetry alone carry an assurance opinion, or do you need field evidence?",
-      "What is your turnaround under emergency conditions?",
-      "Have you assured parametric or outcome-linked instruments before?",
-      "What would you refuse to attest to?"
-    ]
-  },
-  public: {
-    label:"Regulators & public bodies",
-    blurb:"Authorities whose approval or cooperation the facility needs.",
-    hook:"this is a protection arrangement for critical national infrastructure, and we would rather design it with you than present it to you",
-    ask:"an early, informal view on the regulatory pathway before we fix the structure",
-    give:"visibility of the design while it can still be shaped, and a facility that strengthens national resilience without public balance-sheet cost",
-    questions:[
-      "Which regime would this fall under — insurance, capital markets, or neither?",
-      "Is an admitted local wrapper required, or can risk be placed offshore?",
-      "What is your view on parametric settlement under local law?",
-      "Who else in government needs to be in the room?",
-      "What would a pre-approval or no-objection process look like?"
-    ]
-  },
-  /* The last two are people rather than institutions, and are kept last
-     because of that — everything above is an organisation with a balance
-     sheet, a mandate or a licence. The distinction between them is what you
-     want from them: an advisor tells you what is wrong with the thing, a
-     network contact tells you who to show it to. Asking one for the other is
-     how you waste both. */
-  advisor: {
-    label:"Advisors",
-    blurb:"Individuals who give us counsel — on the structure, the market, or how to run at this.",
-    hook:"you have built or judged things like this before, and you will tell us plainly what is wrong with it",
-    ask:"a periodic, honest read on the structure and the plan, and a straight answer when we are about to make a mistake",
-    give:"a real seat in how this gets built, while the decisions are still open, and the option to formalise the role if it works",
-    questions:[
-      "What is the weakest part of this as you see it?",
-      "Where have you seen structures like this fail?",
-      "What would you need to see before you would put your name to it?",
-      "How much time do you actually want to give this, and how often?",
-      "Should this become a formal advisory role, or stay informal?"
-    ]
-  },
-  network: {
-    label:"Network",
-    blurb:"Individuals who open a door — to capital, to a counterparty, to a room we cannot reach on our own.",
-    hook:"you know the people we need to reach, and you can tell in one conversation whether this is worth their time",
-    ask:"an introduction to the two or three names you think are genuinely right, and a straight read on what is weak in the story",
-    give:"early sight of the structure while it can still be shaped, and the option to be involved properly if it goes somewhere",
-    questions:[
-      "Who are the two or three people you would actually put this in front of?",
-      "What would make you hesitate to make that introduction?",
-      "What do those people need to see before a first meeting is worth their time?",
-      "How do you want to be kept in the loop once an introduction is made?",
-      "Is there a role here you would want for yourself if this progresses?"
-    ]
-  }
+  carrier: {label:"Risk carriers"},
+  capital: {label:"Capital providers"},
+  donor: {label:"Donors & foundations"},
+  dfi: {label:"Development finance"},
+  operator: {label:"Infrastructure operators"},
+  digital: {label:"Digital-asset infrastructure"},
+  data: {label:"AI & data partners"},
+  verifier: {label:"Verification & assurance"},
+  public: {label:"Regulators & public bodies"},
+  advisor: {label:"Advisors"},
+  network: {label:"Network"}
 };
 const catLabel = id => (CATEGORIES[id] || {label:id}).label;
 
@@ -1448,25 +1298,55 @@ function toast(msg){
 
 /* ══ Navigation ═══════════════════════════════════════════════════════ */
 
+/* The desk does two different jobs. Keeping the relationship work and the
+   delivery work in one flat list made every tab look equally relevant at every
+   moment, which is how a CRM tab gets opened when the question was about the
+   board. Zones split them. CRM is deliberately short — two tabs — because
+   the question it answers is short: who are they, and where is the MoU. */
+const ZONES = [
+  {id:"crm",  label:"CRM",     home:"overview", blurb:"Partners and where each MoU stands"},
+  {id:"work", label:"Project", home:"board",    blurb:"The plan, the board and the record"}
+];
+
 const VIEWS = [
-  {id:"overview",  label:"Overview",   count:() => ""},
-  {id:"partners",  label:"Partners",   count:() => DB.partners.length},
-  {id:"plan",      label:"Plan",       count:() => DB.tasks.filter(t => !isDone(t.status)).length},
-  {id:"board",     label:"Board",      count:() => DB.tasks.filter(t => t.status === "focus" || t.status === "review").length},
-  {id:"activity",  label:"Activity",   count:() => DB.activity.length || ""},
-  {id:"outreach",  label:"Outreach",   count:() => ""},
-  {id:"narrative", label:"Narrative",  count:() => ""}
+  {id:"overview",  label:"Overview",  zone:"crm",  count:() => ""},
+  {id:"partners",  label:"Partners",  zone:"crm",  count:() => DB.partners.length},
+  {id:"plan",      label:"Plan",      zone:"work", count:() => allCards().filter(c => !isDone(c.status)).length},
+  {id:"board",     label:"Board",     zone:"work", count:() => allCards().filter(c => c.status === "focus" || c.status === "review").length},
+  {id:"activity",  label:"Activity",  zone:"work", count:() => DB.activity.length || ""},
+  {id:"narrative", label:"Narrative", zone:"work", count:() => ""}
 ];
 let current = "overview";
+let zone = "crm";
+const ZONE_LAST = {crm:"overview", work:"board"};
 let filters = {stage:"", cat:"", q:""};
 
+/* The zone follows the open tab rather than living in the URL, so every
+   existing link and bookmark — #partners, #plan/gantt — still works and still
+   lands in the right half. Every view belongs to exactly one zone, so the open
+   tab always determines it and there is nothing to remember across a refresh. */
+function syncZone(){
+  const v = VIEWS.find(x => x.id === current);
+  if (v){ zone = v.zone; ZONE_LAST[zone] = current; }
+}
+
+function goZone(id){
+  if (id === zone) return;
+  zone = id;
+  go(ZONE_LAST[id] || (ZONES.find(z => z.id === id) || {}).home || "overview");
+}
+
 function renderRail(){
+  const item = v =>
+    `<button class="navitem" data-view="${v.id}" aria-current="${v.id === current}">
+       ${v.label}<em class="num">${v.count()}</em>
+     </button>`;
   document.getElementById("rail").innerHTML =
-    '<div class="eyebrow">Desk</div>' +
-    VIEWS.map(v =>
-      `<button class="navitem" data-view="${v.id}" aria-current="${v.id === current}">
-         ${v.label}<em class="num">${v.count()}</em>
-       </button>`).join("");
+    `<div class="zoneswitch" role="group" aria-label="Which half of the desk">${
+      ZONES.map(z => `<button class="zonebtn" data-zone="${z.id}" aria-pressed="${
+        z.id === zone}" title="${esc(z.blurb)}">${esc(z.label)}</button>`).join("")
+    }</div>` +
+    VIEWS.filter(v => v.zone === zone).map(item).join("");
 }
 
 /* The open tab lives in the URL hash, so a refresh keeps you where you were,
@@ -1515,6 +1395,7 @@ function applyRoute(replace){
 
 function go(id){
   current = id;
+  syncZone();
   applyRoute(false);
   renderRail(); render();
   window.scrollTo({top:0});
@@ -1524,6 +1405,7 @@ window.addEventListener("popstate", () => {
   const r = routeFromHash();
   current = r.view;
   if (r.mode) planMode = r.mode;
+  syncZone();
   renderRail(); render();
 });
 
@@ -1572,6 +1454,8 @@ function renderBanner(){
 }
 
 document.getElementById("rail").addEventListener("click", e => {
+  const z = e.target.closest("[data-zone]");
+  if (z){ goZone(z.dataset.zone); return; }
   const b = e.target.closest("[data-view]");
   if (b) go(b.dataset.view);
 });
@@ -1586,11 +1470,9 @@ function render(){
     plan:      viewPlan,
     board:     viewBoard,
     activity:  viewActivity,
-    outreach:  viewOutreach,
     narrative: viewNarrative
   })[current]();
   if (current === "activity") wireActivity();
-  if (current === "outreach") wireOutreach();
   if (current === "board") wireBoard();
   if (current === "plan" && planMode === "gantt") wireGantt();
 }
@@ -1726,7 +1608,7 @@ function viewPartners(){
     </div>
   </div>
 
-  <div class="note">Confirm the exact legal entity and the right entry point before you use anything here in outreach — several records still hold a group name rather than the signing entity. Open questions sit in each partner's thread.</div>`;
+  <div class="note">Confirm the exact legal entity and the right entry point before you approach anyone — several records still hold a group name rather than the signing entity. Open questions sit in each partner's thread.</div>`;
 }
 
 /* ── Plan ─────────────────────────────────────────────────────────── */
@@ -2336,6 +2218,14 @@ function mouWs(){
 const PEOPLE_CATS = new Set(["advisor", "network"]);
 const isCounterparty = p => !PEOPLE_CATS.has(p.cat);
 
+/* Everything actually sitting on the board: real tasks, the MoU cards derived
+   from partner stages, and whatever the workforce bridge is showing. The rail
+   badges used to count DB.tasks alone and read 0 while nine cards sat in the
+   columns. */
+function allCards(){
+  return DB.tasks.concat(mouCards(), bridged);
+}
+
 function mouCards(){
   return DB.partners
     .filter(isCounterparty)
@@ -2747,500 +2637,6 @@ function wireThread(refType, ref, after){
   };
 }
 
-/* ── Outreach ─────────────────────────────────────────────────────── */
-
-const TEMPLATES = [
-  {id:"cold",     name:"Cold intro email",        hint:"First contact, no warm route"},
-  {id:"warm",     name:"Warm intro request",      hint:"Asking a mutual contact to connect you"},
-  {id:"followup", name:"Post-meeting follow-up",  hint:"Sent within 24 hours, carries the MoU"},
-  {id:"mou",      name:"MoU outline",             hint:"Non-binding cooperation agreement"},
-  {id:"agenda",   name:"Meeting agenda & questions", hint:"What to actually ask them"},
-  {id:"onepager", name:"One-pager copy",          hint:"Tailored to the partner type"},
-  {id:"concept",  name:"Concept note",            hint:"For donors and DFIs"},
-  {id:"deck",     name:"Deck spine",              hint:"The 14-slide narrative order"}
-];
-let outState = {tpl:"cold", partner:""};
-
-const SENDER = "[your name]\n[title], Lionscraft\n[email] · [phone]";
-
-function buildOutreach(){
-  const p = DB.partners.find(x => x.id === outState.partner);
-  const c = p ? CATEGORIES[p.cat] : null;
-  const NAME = p ? p.name : "[Organisation]";
-  const WHO  = "[first name]";
-  const HOOK = c ? c.hook : "[why this partner specifically]";
-  const ASK  = p && p.ask ? p.ask : (c ? c.ask : "[what we are asking for]");
-  const GIVE = c ? c.give : "[what they get out of it]";
-  const F = DB.meta.facility, PROD = DB.meta.product, ORG = DB.meta.org;
-
-  switch (outState.tpl){
-
-  case "cold": return `Subject: ${p && p.cat === "operator" ? "Pre-funding emergency network restoration" : "Programmable risk transfer — " + F}
-
-Dear ${WHO},
-
-I am writing from ${ORG}. We are building a programmable risk-transfer operating system: infrastructure that creates and operates risk-transfer facilities in which the capital carries more of the purpose of the protection, not only the settlement of the loss.
-
-Our first product is ${PROD}, applied to catastrophe and critical-infrastructure risk. The first implementation is the ${F} — a bounded, well-instrumented facility covering emergency response, restoration and recovery for critical telecom infrastructure.
-
-I am contacting ${NAME} because ${HOOK}.
-
-What we would like from you: ${ASK}.
-
-What we think is in it for you: ${GIVE}.
-
-Would you have thirty minutes in the next two weeks? I am happy to send a short brief in advance so the time is spent on the substance rather than the introduction.
-
-With thanks,
-${SENDER}`;
-
-  case "warm": return `Subject: Introduction to ${NAME}?
-
-Hi [contact],
-
-A favour, if it is an easy one.
-
-We are building ${ORG} — a programmable risk-transfer operating system. The short version: risk transfer today mostly ends at a payout, and we are building the infrastructure for instruments where the capital also carries the rights, obligations and response that the protection was actually bought for. First implementation is the ${F}.
-
-I would like to reach ${NAME}. ${p ? "The reason is that " + HOOK + "." : ""}
-
-Specifically I am after: ${ASK}.
-
-If you know the right person and are comfortable making the introduction, I have drafted a forwardable paragraph below. If not, no obligation at all — a name would already help.
-
-— forwardable —
-
-${ORG} is building infrastructure for programmable risk transfer: risk-transfer facilities in which the capital carries more of the purpose of the protection, not only the settlement. Their first implementation is a resilience facility for critical telecom infrastructure in Sri Lanka, combining collateralised risk transfer with contracted emergency response and restoration commitments. They are looking for ${ASK.toLowerCase()}, and would value thirty minutes.
-
-— ends —
-
-Thank you either way,
-${SENDER}`;
-
-  case "followup": return `Subject: ${NAME} × ${ORG} — follow-up and next step
-
-Dear ${WHO},
-
-Thank you for the time today. Capturing what I took away so you can correct me where I have it wrong.
-
-What we heard from you
-  · [their situation in their words]
-  · [the constraint they named]
-  · [what they said would need to be true]
-
-What we said we would do
-  · [action] — by [date]
-  · [action] — by [date]
-
-What we would like from you
-  · ${ASK}
-  · [any data, introduction, or document they offered]
-
-Next step
-I have attached a short non-binding memorandum of understanding. It commits neither side to funding or capacity. It says that we intend to explore this together, how information passes between us, and who owns what we produce jointly. It is deliberately two pages.
-
-If the shape is right, I will send a version with your entity details filled in. If anything in it is uncomfortable, tell me which clause and I will change it rather than defend it.
-
-Proposed follow-up: [date].
-
-With thanks,
-${SENDER}`;
-
-  case "mou": return `MEMORANDUM OF UNDERSTANDING
-
-Between:   ${ORG} ("${ORG}")
-And:       ${NAME} ("the Partner")
-Subject:   ${F}
-Status:    Non-binding, save for clauses 6, 7 and 9
-
-1. PURPOSE
-   The parties intend to explore jointly the design and possible establishment of the ${F}: a risk-transfer facility applying ${PROD} to catastrophe and critical-infrastructure risk, combining collateralised risk transfer with contracted response, restoration and recovery commitments.
-
-2. BACKGROUND
-   ${ORG} is developing a programmable risk-transfer operating system through which risk-transfer facilities are configured, administered and executed, and in which rights, obligations, permitted uses and evidence requirements are expressed within the instrument itself.
-   ${p ? "The Partner " + HOOK.charAt(0).toUpperCase() + HOOK.slice(1) + "." : "[One sentence on the Partner's relevant role and capability.]"}
-
-3. INTENDED CONTRIBUTIONS
-   3.1  ${ORG} intends to contribute: facility design, structuring coordination, the administration and reporting platform, and coordination of the wider partner group.
-   3.2  The Partner intends to contribute: ${ASK}.
-   3.3  Neither party is obliged by this Memorandum to commit capital, capacity, personnel or funding.
-
-4. SCOPE OF COOPERATION
-   4.1  Joint technical work on risk definition, trigger design and the evidence standard.
-   4.2  Exchange of information reasonably required for that work, subject to clause 6.
-   4.3  Periodic review meetings, at least [monthly / quarterly].
-   4.4  Agreement of a written work plan within [30] days of signature.
-
-5. GOVERNANCE
-   5.1  Each party names a single point of contact.
-        For ${ORG}: [name, role]
-        For the Partner: [name, role]
-   5.2  Material decisions are taken jointly and recorded in writing.
-   5.3  Neither party may describe the other as committed to the facility without prior written consent.
-
-6. CONFIDENTIALITY (binding)
-   6.1  Each party shall keep confidential all non-public information disclosed by the other and use it solely for the purpose in clause 1.
-   6.2  This obligation survives for [three] years from the date of disclosure.
-   6.3  It does not apply to information that is or becomes public otherwise than by breach, was already lawfully held, or must be disclosed by law or regulator.
-
-7. INTELLECTUAL PROPERTY (binding)
-   7.1  Each party retains ownership of its pre-existing intellectual property.
-   7.2  Intellectual property created jointly under this Memorandum is owned [jointly / by the creating party], with the other granted a non-exclusive, royalty-free licence for the purpose in clause 1.
-   7.3  No licence is granted other than as expressly stated.
-
-8. COSTS
-   Each party bears its own costs unless separately agreed in writing.
-
-9. LEGAL EFFECT (binding)
-   9.1  Save for clauses 6, 7 and this clause 9, this Memorandum is not legally binding and creates no obligation to enter into any further agreement.
-   9.2  It is not exclusive. Either party may pursue similar arrangements with others.
-   9.3  It may be terminated by either party on [30] days' written notice.
-   9.4  It is governed by the laws of [jurisdiction], and the courts of [jurisdiction] have exclusive jurisdiction.
-
-10. TERM
-    From the date of last signature until [date], unless extended in writing or terminated under clause 9.3.
-
-
-Signed for ${ORG}                    Signed for ${NAME}
-
-_______________________              _______________________
-Name:                                Name:
-Title:                               Title:
-Date:                                Date:
-
-
-[Not legal advice. Have counsel in the governing-law jurisdiction review before you send this.]`;
-
-  case "agenda": return `MEETING — ${ORG} × ${NAME}
-Duration: 45 minutes
-Objective: ${ASK}
-
-00–03   Introductions. One sentence each. Do not spend the meeting here.
-
-03–08   What we are building
-        · Risk is transferred. Capital is the vehicle. Protection is the purpose.
-        · The dominant model runs risk → event → claim → payout. It works, and it stops at money.
-        · We are building the infrastructure for instruments that run
-          risk → capital → rights → obligations → action → outcome.
-        · The output is not an app. The output is a working risk-transfer facility.
-
-08–13   Where we are starting
-        · First application: disaster and resilience finance.
-        · First product: ${PROD}.
-        · First implementation: ${F}.
-        · Why telecom: measurable, instrumented, essential in an emergency, and fast restoration is worth paying for.
-
-13–30   Their world — listen, do not present
-${(c ? c.questions : ["[What is their situation?]"]).map(q => "        · " + q).join("\n")}
-
-30–40   The specific ask
-        · ${ASK}
-        · What we would give back: ${GIVE}
-        · What we would need from them to make it work: [data / capacity / introduction / time]
-
-40–45   Close
-        · Agree the single next step and its date.
-        · Ask who else internally needs to be in the room.
-        · Offer the MoU if the conversation earned it.
-
-AFTERWARDS — within 24 hours
-        · Follow-up email with what we heard, what we owe them, and the date.
-        · Update the partner record: stage, next move, next date.
-
-GUARDRAILS
-        · Do not lead with blockchain, tokenisation or AI. Lead with the financial function.
-        · Do not caricature insurance. It works. We are extending what it can express.
-        · Do not claim AI makes contractual decisions. Contracts and accountable parties decide; AI helps administer.
-        · Do not let them leave thinking we are a Sri Lanka disaster-finance startup.`;
-
-  case "onepager": return `${ORG.toUpperCase()}
-Programmable risk transfer
-
-FOR: ${NAME}${p ? "  ·  " + catLabel(p.cat) : ""}
-
-─────────────────────────────────────────────────────────────
-
-THE POSITION
-Risk is the possibility of future suffering. Humans invented capital-based
-risk transfer so those burdens would not have to stay with whoever was
-first exposed to them. Insurance, reinsurance, ILS and ART are all
-architectures for the same act.
-
-Most of them are built around one sequence: risk → event → claim → payout.
-That sequence is powerful. Money creates certainty and optionality. But
-what happens with the capital after settlement generally sits outside the
-instrument.
-
-WHAT IS CHANGING
-Capital is becoming programmable, divisible and stateful — able to carry
-machine-readable rights and obligations. At the same time, more human
-activity happens through computational systems, so the risks attached to
-that activity are becoming machine-legible too.
-
-As life becomes more machine-legible, risk becomes more machine-legible.
-
-WHAT WE ARE BUILDING
-A programmable risk-transfer operating system. It creates and operates
-risk-transfer facilities as connected financial objects: risks, capital
-pools, triggers, claims, obligations, evidence, settlement and outcomes.
-
-The output is not an app. The output is a working risk-transfer facility.
-
-EVERY FACILITY HAS SIX LAYERS
-  1  Risk       what exposure is being transferred
-  2  Capital    who backs it, how much, on what terms
-  3  Rights     who has claims on that capital
-  4  Purpose    what the protection is meant to achieve
-  5  Execution  what payments and obligations activate
-  6  Evidence   what proves what happened and what was delivered
-
-WHERE WE START
-  Application      Disaster and resilience finance
-  Product          ${PROD}
-  Sector           Critical infrastructure / telecommunications
-  Implementation   ${F}
-
-Sri Lanka telecom is the wedge. It is not the company.
-
-WHY YOU
-${p ? "Because " + HOOK + "." : "[Why this partner specifically.]"}
-
-THE ASK
-${ASK}
-
-WHAT YOU GET
-${GIVE}
-
-─────────────────────────────────────────────────────────────
-${SENDER}`;
-
-  case "concept": return `CONCEPT NOTE
-
-Title           ${F}
-Submitted by    ${ORG}
-Submitted to    ${NAME}
-Date            [date]
-Amount sought   [amount] over [period]
-
-1. PROBLEM
-When a catastrophe hits, telecommunications fail at exactly the moment
-every other emergency function depends on them. Emergency services,
-payments, health services, family contact and government coordination all
-degrade together. Restoration is slow because it is financed after the
-event, out of an operator's own stressed balance sheet, and because no
-party has been paid in advance to hold surge capacity ready.
-
-Existing disaster risk financing largely funds the state or the household.
-The infrastructure dependency behind both is generally unfunded.
-
-2. WHY A PAYOUT IS NOT ENOUGH
-A dollar before an event is not the same as a dollar three months after
-it. Connectivity now is not the same as reimbursement for connectivity
-later. Traditional instruments define the money well and the response
-hardly at all.
-
-3. PROPOSED SOLUTION
-A ${PROD} facility for critical telecom infrastructure in Sri Lanka,
-combining:
-   · fully collateralised risk transfer for the catastrophe layer;
-   · contracted operator response commitments — emergency connectivity,
-     temporary coverage, priority restoration of critical sites;
-   · a restoration tranche funding return to operation;
-   · flexible recovery liquidity for the longer tail;
-   · telemetry-based evidence of what was actually delivered;
-   · AI-assisted administration to make a structure of this granularity
-     economic to run.
-
-Protection is expressed in three phases: Respond, Restore, Recover.
-
-4. WHY SRI LANKA AND WHY TELECOM
-Telecom is measurable, operationally specific, essential during
-emergencies, connected to public outcomes, rich in telemetry, exposed to
-catastrophe risk, and dependent on rapid restoration. That makes it an
-unusually honest test: if the architecture does not work here, it does not
-work.
-
-5. USE OF FUNDS
-   [amount]   Risk modelling, trigger design and basis-risk assessment
-   [amount]   Legal, regulatory and structuring
-   [amount]   Evidence standard and telemetry integration
-   [amount]   Premium support for the first period
-   [amount]   Outcome measurement and independent verification
-
-6. OUTCOMES AND EVIDENCE
-   · Hours of emergency connectivity delivered, by district
-   · Time to restoration of critical sites versus counterfactual
-   · Population-hours of coverage protected
-   · Capital utilisation against each defined purpose
-   · Independent verification of delivery against commitments
-
-Because the obligations sit inside the instrument, outcome reporting is a
-by-product of settlement rather than a separate exercise.
-
-7. PARTNERS
-   Risk carriers, capital providers, the operator, digital-asset
-   infrastructure, hazard data providers, independent verifiers, and the
-   relevant Sri Lankan authorities. [Name those confirmed; do not imply
-   commitment where none exists.]
-
-8. RISKS AND MITIGATION
-   Basis risk               Hybrid trigger; validation against operator loss history
-   Regulatory uncertainty   Early informal engagement before the structure is fixed
-   Operator commitment      MoU before design freeze; commitments priced, not assumed
-   Verification             Evidence standard agreed with an independent assurer up front
-   Novelty                  Bounded first facility; conventional wrapper where possible
-
-9. WHY THIS MATTERS BEYOND THE PILOT
-Risk should tend to flow toward capacity, not vulnerability. The people
-most exposed to harm are usually the least able to pay to transfer their
-own risk. Sponsored protection, tied to delivered response, is one of the
-few mechanisms that changes that.
-
-10. REQUEST
-${ASK}
-
-Contact
-${SENDER}`;
-
-  case "deck": return `DECK SPINE — 14 slides
-Do not reorder. The hierarchy collapses if you start from the pilot.
-
- 1  Risk is the possibility of future suffering
-    Without possible suffering, risk is just uncertainty.
-    → Establish the human reason risk exists. Risk is the protagonist.
-
- 2  Risk transfer redistributes future burdens
-    Risk is transferred. Capital is the vehicle. Protection is the purpose.
-    → Introduce capital as the mechanism. Do not mention our product yet.
-
- 3  The old architecture mostly turns risk into money
-    risk → event → claim → payout
-    → State the limitation without attacking insurance.
-
- 4  The world is becoming code
-    As life becomes more machine-legible, risk becomes more machine-legible.
-    → The turning point. Not a feature slide.
-
- 5  This changes what risk transfer can become
-    What happened? Who bears it? What capital is attached? What should now happen?
-    → Convert the technological change into a financial possibility.
-
- 6  The new possibility
-    risk → capital → rights → obligations → action → outcome
-    → The memorable mental model.
-
- 7  What we are building
-    A programmable risk-transfer operating system.
-    The output is not an app. The output is a working risk-transfer facility.
-    → Answers "what are you actually building". No philosophy here.
-
- 8  What a facility contains
-    Risk · Capital · Rights · Purpose · Execution · Evidence
-    → Makes slide 7 concrete. Slides 7–8 are what you raise against.
-
- 9  What this changes about protection
-    Not "you suffered, here is money" but "this risk has materialised, this
-    capital is attached, these obligations activate, this protection begins".
-    → Back from machinery to human purpose.
-
-10  First application — disaster and resilience finance
-    → Must feel like an application, not the company definition.
-
-11  First product — ${PROD}
-    The capital does not only transfer risk. It is structured to deliver
-    the purpose of the transfer.
-
-12  First implementation — ${F}
-    Real risk, real infrastructure, real capital, real counterparties.
-    This is the first wedge, not the whole company.
-
-13  Why this becomes bigger
-    Corporate ILS, infrastructure, climate, cyber, supply chain, operational
-    resilience. The category is programmable risk transfer.
-
-14  How partners can help
-    ${p ? "For " + NAME + ": " + ASK : "Risk carriers, capital providers, donors, infrastructure operators, digital-asset partners, AI and data partners, verifiers, DFIs."}
-    Not another insurance app. A new operating system for risk-bearing capital.`;
-  }
-  return "";
-}
-
-function viewOutreach(){
-  const live = DB.partners.slice().sort((a, b) => a.name.localeCompare(b.name));
-  return `
-  <div class="pagehead">
-    <div>
-      <div class="eyebrow">Material, fast</div>
-      <h1>Outreach</h1>
-      <p>Pick a partner and a format. The copy is assembled from the master narrative and tailored to that partner type — edit in place, then copy out.</p>
-    </div>
-  </div>
-
-  <div class="outgrid">
-    <div class="grid" style="gap:14px">
-      <section class="card">
-        <header><h2>Partner</h2></header>
-        <div style="padding:12px">
-          <select id="outPartner" style="width:100%">
-            <option value="">— generic, no partner —</option>
-            ${Object.entries(CATEGORIES).map(([k, c]) => `
-              <optgroup label="${c.label}">
-                ${live.filter(p => p.cat === k).map(p =>
-                  `<option value="${p.id}" ${outState.partner === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}
-              </optgroup>`).join("")}
-          </select>
-        </div>
-      </section>
-      <section class="card">
-        <header><h2>Format</h2></header>
-        <div class="tpl">
-          ${TEMPLATES.map(t => `
-            <button class="tplbtn" data-tpl="${t.id}" aria-current="${outState.tpl === t.id}">
-              ${t.name}<small>${t.hint}</small>
-            </button>`).join("")}
-        </div>
-      </section>
-    </div>
-
-    <section class="card out">
-      <header>
-        <h2>${TEMPLATES.find(t => t.id === outState.tpl).name}</h2>
-        <span class="spacer"></span>
-        <button class="btn" id="copyOut">Copy</button>
-        <button class="btn" id="dlOut">Download</button>
-      </header>
-      <textarea id="outText" spellcheck="false">${esc(buildOutreach())}</textarea>
-    </section>
-  </div>`;
-}
-
-function wireOutreach(){
-  document.getElementById("outPartner").onchange = e => { outState.partner = e.target.value; render(); };
-  document.querySelectorAll("[data-tpl]").forEach(b =>
-    b.onclick = () => { outState.tpl = b.dataset.tpl; render(); });
-
-  document.getElementById("copyOut").onclick = async () => {
-    const ta = document.getElementById("outText");
-    try { await navigator.clipboard.writeText(ta.value); toast("Copied"); }
-    catch (e) { ta.select(); toast("Press ⌘C to copy"); }
-  };
-
-  document.getElementById("dlOut").onclick = async () => {
-    const p = DB.partners.find(x => x.id === outState.partner);
-    const name = (p ? p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" : "") + outState.tpl + ".txt";
-    const data = document.getElementById("outText").value;
-    if (!window.claude || !window.claude.downloads){ toast("Downloads unavailable here — use Copy"); return; }
-    try { await window.claude.downloads.save({filename:name, data}); toast("Saved"); }
-    catch (err){
-      const code = err && err.code;
-      if (code === "declined") return;
-      if (code === "rate_limited") toast("Too many prompts — try again in a moment");
-      else if (code === "too_large") toast("Too large to save");
-      else toast("Could not save — use Copy instead");
-    }
-  };
-}
-
 /* ── Narrative ────────────────────────────────────────────────────── */
 
 function viewNarrative(){
@@ -3407,7 +2803,6 @@ function partnerDrawer(id){
         ${field("Due", "nextDate", p.nextDate, "date")}
       </div>
       <label class="field"><span>Notes</span><textarea name="notes" rows="5">${esc(p.notes)}</textarea></label>
-      ${isNew ? "" : `<button class="btn" data-goout="${p.id}" style="align-self:flex-start">Write outreach for this partner ›</button>`}
       ${isNew ? "" : threadBlock("partner", p.id)}
     </div>
     <footer>
@@ -3437,8 +2832,6 @@ function partnerDrawer(id){
     DB.partners = DB.partners.filter(x => x.id !== p.id);
     save(); closeDrawer(); renderRail(); render(); toast("Deleted");
   };
-  const out = drawer.querySelector("[data-goout]");
-  if (out) out.onclick = () => { outState.partner = p.id; closeDrawer(); go("outreach"); };
 }
 
 function taskDrawer(id){
@@ -3773,6 +3166,7 @@ document.getElementById("syncChip").onclick = dataDrawer;
   const r = routeFromHash();
   current = r.view;
   if (r.mode) planMode = r.mode;
+  syncZone();
   applyRoute(true);
 
   if (arrivedWithToken) setTimeout(() => toast("This browser can now edit the board"), 400);
@@ -3786,6 +3180,9 @@ document.getElementById("syncChip").onclick = dataDrawer;
   render();
 
   /* Non-blocking: the board is useful without it. */
-  loadBridge().then(() => { if (current === "board") render(); });
+  /* The bridge lands after first paint and adds cards, so the rail badges have
+     to be recounted — not just the board redrawn — or Plan and Board sit on a
+     number that was already wrong by the time it was painted. */
+  loadBridge().then(() => { renderRail(); if (current === "board") render(); });
 })();
 </script>

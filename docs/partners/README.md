@@ -2,8 +2,9 @@
 
 **[Open the tab →](https://lionscraft-io.github.io/risk-cockpit/#partners)**
 
-The CRM. Every organisation needed to build the first facilities, what we want
-from each, and where the conversation has got to.
+The CRM. Every organisation needed to build the first facilities — plus the
+people helping us reach them — what we want from each, and where the
+conversation has got to.
 
 ---
 
@@ -25,15 +26,15 @@ below. This table goes stale the moment a stage moves; the
 [Overview](../overview/) is derived from the data and cannot, so trust it over
 this.
 
-**Confirm the legal entity before using a record in outreach.** Several hold a
+**Confirm the legal entity before approaching anyone.** Several hold a
 group name rather than the signing entity: *Sumitomo Insurance* could be Mitsui
 Sumitomo or Sumitomo Life; *Sri Lanka* is a placeholder until it is clear which
 body signs. Those questions are open in each partner's thread.
 
 ## The partner types
 
-Nine drawn from *How partners can help* in the narrative brief, plus one added
-later.
+Nine drawn from *How partners can help* in the narrative brief, plus two added
+later for people.
 
 | Type | Who they are |
 | --- | --- |
@@ -55,14 +56,17 @@ organisation in `name`. These hold a **person**.
 
 They are kept apart because **what you ask for is different**. An advisor
 tells you what is wrong with the thing; a network contact tells you who to
-show it to. Asking one for the other wastes both, so the
-[Outreach](../outreach/) templates diverge: the advisor draft asks *"what is
-the weakest part of this as you see it?"*, the network draft asks *"who are
+show it to. Asking one for the other wastes both. What to ask each type is
+written down in [by-type.md](by-type.md): the advisor entry opens with *"what
+is the weakest part of this as you see it?"*, the network entry with *"who are
 the two or three people you would actually put this in front of?"*
 
-The type is not decoration — it drives the [Outreach](../outreach/) tab. The
-hook, the ask, and the discovery questions for an operator are entirely
-different from those for a reinsurer.
+The type is not decoration. The hook, the ask and the discovery questions for
+an operator are entirely different from those for a reinsurer — see
+[by-type.md](by-type.md), which carries all eleven.
+
+It used to drive an **Outreach** tab that generated drafts from these. That tab
+was removed on 2026-08-11 as unused; only the label is read by the app now.
 
 ## The stages
 
@@ -99,7 +103,7 @@ flags carry the meaning the counts depend on:
 | Field | Notes |
 | --- | --- |
 | `name` | The organisation — except `advisor` and `network` records, which name a person |
-| `cat` | One of the nine types above |
+| `cat` | One of the eleven types above |
 | `country` | Short code |
 | `why` | One sentence: why *this* organisation specifically |
 | `ask` | What we want **from them** — the single most useful field on the record |
@@ -140,9 +144,6 @@ accumulates without anyone maintaining it.
 **Each partner has a thread** at the bottom of its editor — comments, findings,
 questions, visible to everyone including agents. This is where research belongs.
 
-**"Write outreach for this partner"** jumps to the Outreach tab with that
-partner loaded.
-
 ## Filling in the real list
 
 The fastest path is to say what you know and let it be written for you:
@@ -153,4 +154,4 @@ date, an owner, and a log entry.
 ---
 
 **Data:** [`data/partners/partners.json`](../../data/partners/partners.json) ·
-**See also:** [Outreach](../outreach/) · [Activity](../activity/) · [Data and sync](../data/)
+**See also:** [What to ask each type](by-type.md) · [Activity](../activity/) · [Data and sync](../data/)
