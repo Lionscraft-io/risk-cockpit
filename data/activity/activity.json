@@ -133,5 +133,15 @@
     "refType": "board",
     "ref": "",
     "body": "Removed six tasks that the MoU cards now track: the three MoU follow-ups (Sumitomo Insurance, Sumitomo Web3, Mobily) and the three approach tasks for ADB, Aon and Vodafone, all of whom are already in conversation. Seven tasks remain, none of which is an MoU state."
+  },
+  {
+    "id": "e_t013move",
+    "at": "2026-08-11T09:19:13.522977+00:00",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "task",
+    "ref": "t013",
+    "body": "Moved from Capital & structure to Legal & regulatory — what an MoU commits us to is obligations work, and it was the only task in WS2."
   }
 ]
