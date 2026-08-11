@@ -155,7 +155,7 @@ tr[data-task].dragging{opacity:.45}
 /* Reading views keep a comfortable measure; the board does not read, it lays
    things out side by side, so it gets the width the sidebar used to take. */
 main{padding:26px 28px 90px; min-width:0; max-width:1240px}
-main[data-view="board"]{max-width:1760px}
+main[data-tab="board"]{max-width:1760px}
 .pagehead{display:flex; align-items:flex-end; gap:18px; margin-bottom:22px; flex-wrap:wrap}
 .pagehead h1{font-size:25px}
 .pagehead p{margin:5px 0 0; color:var(--ink-2); max-width:64ch; font-size:13.5px}
@@ -1354,7 +1354,12 @@ document.getElementById("rail").addEventListener("click", e => {
 
 function render(){
   const v = document.getElementById("view");
-  v.dataset.view = current;   /* the board is allowed to be wider than the rest */
+  /* Deliberately NOT data-view: that attribute means "a button that navigates
+     to this view", and #view is the delegation root every click bubbles to.
+     Putting it here made closest("[data-view]") match the container itself, so
+     every click in the app re-rendered the current tab and returned before
+     anything else could run — nothing was clickable. */
+  v.dataset.tab = current;    /* the board is allowed to be wider than the rest */
   v.innerHTML = ({
     partners:  viewPartners,
     plan:      viewPlan,
@@ -3065,8 +3070,11 @@ function dataDrawer(){
 document.getElementById("dataBtn").onclick = dataDrawer;
 
 document.getElementById("view").addEventListener("click", e => {
+  /* closest() walks all the way up to the delegation root, so the root itself
+     must never be treated as a nav button — one stray attribute there takes
+     every click in the app. */
   const nav = e.target.closest("[data-view]");
-  if (nav){ go(nav.dataset.view); return; }
+  if (nav && nav !== e.currentTarget){ go(nav.dataset.view); return; }
 
   const cyc = e.target.closest("[data-cycle]");
   if (cyc){
