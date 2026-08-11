@@ -371,8 +371,8 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 .kcard .kmeta .num{font-variant-numeric:tabular-nums}
 .kcard .kws{font-family:var(--data); font-size:9.5px; letter-spacing:.06em; color:var(--accent); background:var(--accent-soft); padding:1px 5px; border-radius:3px}
 .kmouchip{
-  font-family:var(--data); font-size:9.5px; letter-spacing:.07em; color:var(--ink-2);
-  background:var(--surface-3); padding:1px 6px; border-radius:3px;
+  font-family:var(--data); font-size:9.5px; letter-spacing:.06em; color:var(--ink-2);
+  background:var(--surface-3); padding:1px 5px; border-radius:3px;
 }
 .kcard.mou{border-left-width:3px}
 :root[data-theme="light"] .kcard .kws{color:var(--accent-ink)}
@@ -1978,8 +1978,10 @@ function viewBoard(){
           ${(boardWs || boardOwner || boardQ) ? '<button class="btn ghost" id="boardClear">Clear</button>' : ""}
         </div>
         <span class="spacer"></span>
-        <span class="cat">Drag to reorder</span>
-        <button class="btn ghost" id="addColumn" title="Add a column">+ Column</button>
+        <span style="display:flex; align-items:center; gap:10px; white-space:nowrap">
+          <span class="cat">Drag to reorder</span>
+          <button class="btn ghost" id="addColumn" title="Add a column">+ Column</button>
+        </span>
       </header>
       <div style="padding:12px">
         <div class="board">
@@ -2006,7 +2008,6 @@ function viewBoard(){
                     <span class="kt">${esc(t.title)}</span>
                     <span class="kmeta">
                       <span class="kmouchip">MoU</span>
-                      <span class="chip ${stageClass(t.stage)}" style="font-size:10.5px"><i class="dot"></i>${esc(stageLabel(t.stage))}</span>
                       ${t.owner ? `<span>${esc(t.owner)}</span>` : "<span>unassigned</span>"}
                       <span class="num ${isOverdue(t.due) ? "overdue" : ""}" style="margin-left:auto">${fmtDate(t.due)}</span>
                     </span>
@@ -2016,10 +2017,9 @@ function viewBoard(){
                            title="Lives on the workforce board — drag to change its status there, click to open it">
                     <span class="kt">${esc(t.title)}</span>
                     <span class="kmeta">
-                      <span class="kbridge">workforce</span>
-                      <span>${esc(t.sourceId)}</span>
+                      <span class="kbridge">${esc(t.sourceId)}</span>
                       ${t.sourceStatus && t.sourceStatus !== t.status ? `<span>${esc(t.sourceStatus)}</span>` : ""}
-                      ${t.owner ? `<span>${esc(t.owner)}</span>` : ""}
+                      ${t.owner ? `<span>${esc(t.owner)}</span>` : "<span>unassigned</span>"}
                       <span class="num ${isOverdue(t.due) ? "overdue" : ""}" style="margin-left:auto">${fmtDate(t.due)}</span>
                     </span>
                   </article>`;
@@ -2626,8 +2626,8 @@ function planList(){
       <div class="tablewrap"><table><tbody>
         ${mine.map(m => `
           <tr class="clickable" data-mou="${esc(m.id)}">
-            <td style="width:88px"><span class="chip ${stageClass(m.stage)}"><i class="dot"></i>${esc(stageLabel(m.stage))}</span></td>
-            <td>${esc(m.title)}<span class="sub">Follows the partner record</span></td>
+            <td style="width:88px"><span class="status" data-s="${esc(m.status)}">${esc(statusLabel[m.status])}</span></td>
+            <td>${esc(m.title)}<span class="sub">${esc(stageLabel(m.stage))} — follows the partner record</span></td>
             <td style="width:130px" class="hide-sm">${esc(m.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
             <td style="width:82px" class="num">${fmtDate(m.due)}</td>
           </tr>`).join("")}

@@ -44,39 +44,6 @@
     "labels": []
   },
   {
-    "id": "t005",
-    "ws": "WS8",
-    "title": "Follow up the Sumitomo Insurance MoU",
-    "owner": "",
-    "start": "2026-08-11",
-    "due": "2026-08-17",
-    "status": "weekly",
-    "partner": "p02",
-    "labels": []
-  },
-  {
-    "id": "t006",
-    "ws": "WS8",
-    "title": "Follow up the Sumitomo Web3 MoU",
-    "owner": "",
-    "start": "2026-08-11",
-    "due": "2026-08-17",
-    "status": "weekly",
-    "partner": "p03",
-    "labels": []
-  },
-  {
-    "id": "t007",
-    "ws": "WS4",
-    "title": "Follow up the Mobily MoU",
-    "owner": "",
-    "start": "2026-08-11",
-    "due": "2026-08-17",
-    "status": "weekly",
-    "partner": "p05",
-    "labels": []
-  },
-  {
     "id": "t008",
     "ws": "WS8",
     "title": "Define what Hakuhodo Key3 actually does in the facility now the MoU is signed",
@@ -85,39 +52,6 @@
     "due": "2026-08-21",
     "status": "weekly",
     "partner": "p01",
-    "labels": []
-  },
-  {
-    "id": "t009",
-    "ws": "WS8",
-    "title": "Agree the approach to the Asian Development Bank and who makes it",
-    "owner": "",
-    "start": "2026-08-17",
-    "due": "2026-08-28",
-    "status": "backlog",
-    "partner": "p06",
-    "labels": []
-  },
-  {
-    "id": "t010",
-    "ws": "WS8",
-    "title": "Agree the approach to Aon and who makes it",
-    "owner": "",
-    "start": "2026-08-17",
-    "due": "2026-08-28",
-    "status": "backlog",
-    "partner": "p07",
-    "labels": []
-  },
-  {
-    "id": "t011",
-    "ws": "WS4",
-    "title": "Agree the approach to Vodafone and who makes it",
-    "owner": "",
-    "start": "2026-08-17",
-    "due": "2026-08-28",
-    "status": "backlog",
-    "partner": "p08",
     "labels": []
   },
   {

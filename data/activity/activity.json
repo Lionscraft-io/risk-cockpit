@@ -123,5 +123,15 @@
     "refType": "partner",
     "ref": "p08",
     "body": "Meeting held → Aligning MoU"
+  },
+  {
+    "id": "e_dedupe",
+    "at": "2026-08-11T09:09:46.443163+00:00",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Removed six tasks that the MoU cards now track: the three MoU follow-ups (Sumitomo Insurance, Sumitomo Web3, Mobily) and the three approach tasks for ADB, Aon and Vodafone, all of whom are already in conversation. Seven tasks remain, none of which is an MoU state."
   }
 ]
