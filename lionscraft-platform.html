@@ -397,12 +397,20 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 /* ─── MoU status ─────────────────────────────────────────────────────── */
 .moulist{display:flex; flex-direction:column}
 .mourow{
-  display:grid; grid-template-columns:132px 30px minmax(0,1fr); gap:12px; align-items:center;
-  padding:10px 15px; border-bottom:1px solid var(--line);
+  display:grid; grid-template-columns:184px minmax(0,1fr); gap:14px; align-items:baseline;
+  padding:11px 15px; border-bottom:1px solid var(--line);
 }
 .mourow:last-child{border-bottom:0}
-.mourow.quiet{background:var(--surface-2)}
-.mourow .mn{text-align:right; color:var(--ink-3); font-size:12.5px}
+.mourow.quiet .moustage{color:var(--ink-3); font-weight:400}
+/* The stage is a label, not a pill — the partner names are the pills, and two
+   rows of pills read as one undifferentiated field. */
+.moustage{
+  display:flex; align-items:baseline; gap:8px; font-size:13px; font-weight:600; color:var(--ink);
+}
+.moustage em{
+  font-style:normal; font-family:var(--data); font-variant-numeric:tabular-nums;
+  font-size:11.5px; font-weight:500; color:var(--ink-3);
+}
 .mounames{display:flex; flex-wrap:wrap; gap:6px}
 .mouname{
   background:var(--surface-2); border:1px solid var(--line); border-radius:20px;
@@ -410,8 +418,7 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 }
 .mouname:hover{border-color:var(--ink-3); color:var(--ink); background:var(--surface)}
 @media (max-width:640px){
-  .mourow{grid-template-columns:1fr auto; gap:6px 10px}
-  .mourow .mounames{grid-column:1 / -1}
+  .mourow{grid-template-columns:1fr; gap:7px}
 }
 
 /* ─── Milestones ─────────────────────────────────────────────────────── */
@@ -2367,20 +2374,17 @@ function mouStatus(){
     <div class="moulist">
       ${rows.reverse().map(r => `
         <div class="mourow">
-          <span class="chip ${stageClass(r.st.id)}"><i class="dot"></i>${esc(r.st.label)}</span>
-          <span class="num mn">${r.list.length}</span>
+          <span class="moustage">${esc(r.st.label)}<em>${r.list.length}</em></span>
           <span class="mounames">${names(r.list)}</span>
         </div>`).join("")}
       ${early.length ? `
         <div class="mourow quiet">
-          <span class="cat">Not yet in conversation</span>
-          <span class="num mn">${early.length}</span>
+          <span class="moustage">Not yet in conversation<em>${early.length}</em></span>
           <span class="mounames">${names(early)}</span>
         </div>` : ""}
       ${out.length ? `
         <div class="mourow quiet">
-          <span class="cat">Out</span>
-          <span class="num mn">${out.length}</span>
+          <span class="moustage">Out<em>${out.length}</em></span>
           <span class="mounames">${names(out)}</span>
         </div>` : ""}
     </div>
