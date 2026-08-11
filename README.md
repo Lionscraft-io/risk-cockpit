@@ -14,8 +14,8 @@ Reading needs nothing — no login, no setup.
 
 **[docs/](docs/)** — one folder per tab, mirroring what you click:
 
-[Partners](docs/partners/) · [Plan](docs/plan/) · [Board](docs/board/) ·
-[Events](docs/events/) · [Activity](docs/activity/)
+[Overview](docs/overview/) · [Partners](docs/partners/) · [Plan](docs/plan/) ·
+[Board](docs/board/) · [Events](docs/events/) · [Activity](docs/activity/)
 
 The master brief in [docs/narrative/](docs/narrative/) has no tab of its own —
 it is reference for anyone writing, and the guardrails agents work to.

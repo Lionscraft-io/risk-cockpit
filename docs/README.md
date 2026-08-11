@@ -12,7 +12,8 @@ One flat row across the top.
 
 | | What it covers |
 | --- | --- |
-| **[Partners](partners/)** | The CRM: eleven partner types, ten stages, and the 14 records in play |
+| **[Overview](overview/)** | One derived card per tab — the landing page |
+| **[Partners](partners/)** | The CRM: eleven partner types, ten stages, and the 15 records in play |
 | **[Plan](plan/)** | The work grouped by workstream, and the draggable timeline |
 | **[Board](board/)** | The same cards by state — the working view |
 | **[Events](events/)** | Meetings and conferences, with dates |
@@ -20,11 +21,11 @@ One flat row across the top.
 
 Three tabs were removed on 2026-08-11. **Outreach** generated eight draft
 formats per partner type — what it knew is kept as reference in
-[partners/by-type.md](partners/by-type.md). **Overview** showed MoU status,
-which the board's MoU strip now carries. **Narrative** rendered the master
+[partners/by-type.md](partners/by-type.md). **Narrative** rendered the master
 brief in the app; the brief itself is untouched and still lives in
-[narrative/](narrative/) — only the tab went. A CRM/Project switch was tried
-and dropped too: with Overview gone the CRM half held a single tab.
+[narrative/](narrative/) — only the tab went. The original **Overview** went
+too, along with a short-lived CRM/Project switch — and a new Overview came back
+the same day as the plain per-tab digest above.
 
 ## Underneath
 

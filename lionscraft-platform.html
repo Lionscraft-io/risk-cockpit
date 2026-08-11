@@ -1244,13 +1244,14 @@ function toast(msg){
    halves; with Overview gone the CRM half held a single tab, and a switch
    between "one thing" and "four things" is worse than no switch. */
 const VIEWS = [
+  {id:"overview",  label:"Overview",  count:() => ""},
   {id:"partners",  label:"Partners",  count:() => DB.partners.length},
   {id:"plan",      label:"Plan",      count:() => planCards().filter(c => !isDone(c.status)).length},
   {id:"board",     label:"Board",     count:() => boardCards().filter(c => c.status === "focus" || c.status === "review").length},
   {id:"events",    label:"Events",    count:() => DB.events.filter(e => !isPastEvent(e)).length},
   {id:"activity",  label:"Activity",  count:() => DB.activity.length || ""},
 ];
-let current = "partners";
+let current = "overview";
 let filters = {stage:"", cat:"", q:""};
 
 function renderRail(){
@@ -1293,7 +1294,7 @@ function setupLink(){
 function routeFromHash(){
   const [view, mode] = (location.hash || "").replace(/^#\/?/, "").split("&")[0].split("/");
   return {
-    view: VIEWS.some(v => v.id === view) ? view : "partners",
+    view: VIEWS.some(v => v.id === view) ? view : "overview",
     mode: ["list", "gantt"].includes(mode) ? mode : null
   };
 }
@@ -1380,6 +1381,7 @@ function render(){
      anything else could run — nothing was clickable. */
   v.dataset.tab = current;    /* the board is allowed to be wider than the rest */
   v.innerHTML = ({
+    overview:  viewOverview,
     partners:  viewPartners,
     plan:      viewPlan,
     board:     viewBoard,
@@ -1393,6 +1395,124 @@ function render(){
 }
 
 /* ── Partners ─────────────────────────────────────────────────────── */
+
+/* ── Overview ─────────────────────────────────────────────────────── */
+
+/* One card per tab, everything derived on the spot — nothing here is stored,
+   so nothing here can drift from the tabs it summarises. Every element reuses
+   an existing treatment and an existing click handler: partner pills open the
+   partner, task rows open the task, event rows open the event, "Open ›" goes
+   to the tab. */
+function viewOverview(){
+  const counterparties = DB.partners.filter(isCounterparty);
+  const people = DB.partners.filter(p => !isCounterparty(p));
+  const live = counterparties.filter(p => stageRank(p.stage) >= 0);
+  const mous = mouCards();
+  const group = st => mous.filter(m => m.status === st);
+  const notTalking = live.filter(p => !isEngaged(p.stage));
+
+  const pills = list => list.length
+    ? list.map(x => `<button class="pname" data-partner="${esc(x.partnerId || x.id)}">${
+        esc((x.title || x.name).replace(/^MoU — /, ""))}</button>`).join("")
+    : '<span class="sub">None</span>';
+
+  /* Work: real tasks plus the bridged cards — MoU mirrors are already counted
+     above, counting them again here would say the board is busier than it is. */
+  const work = DB.tasks.concat(bridged);
+  const cols = columns();
+  const colCount = c => work.filter(t => t.status === c.id).length;
+  const inFocus = work.filter(t => t.status === "focus" || t.status === "review");
+  const late = work.filter(t => isOverdue(t.due) && !isDone(t.status));
+
+  const workRow = t => `
+    <tr class="clickable" ${t.bridged ? `data-bridged="${esc(t.id)}"` : `data-task="${esc(t.id)}"`}>
+      <td style="width:88px"><span class="status" data-s="${esc(t.status)}">${esc(statusLabel[t.status] || t.status)}</span></td>
+      <td><span class="${t.bridged ? "kbridge" : "kid"}">${esc(t.bridged ? t.sourceId : t.id)}</span>
+          <span style="margin-left:7px">${esc(t.title)}</span></td>
+      <td style="width:82px" class="num ${isOverdue(t.due) && !isDone(t.status) ? "overdue" : ""}">${fmtDate(t.due)}</td>
+    </tr>`;
+
+  const byWs = {};
+  for (const t of DB.tasks) (byWs[t.ws] ??= []).push(t);
+  const usedWs = DB.workstreams.filter(w => byWs[w.id]);
+
+  const upcoming = DB.events.filter(e => !isPastEvent(e))
+    .sort((a, b) => a.start.localeCompare(b.start)).slice(0, 3);
+  const evRow = e => {
+    const n = daysUntil(e.start);
+    return `
+    <div class="evrow" data-event="${esc(e.id)}">
+      <div class="evtile"><b>${+e.start.slice(8)}</b></div>
+      <div>
+        <div class="evname">${esc(e.name)}</div>
+        <div class="evmeta">${esc(fmtDate(e.start))}${e.location ? '<span class="sep">·</span>' + esc(e.location) : ""}</div>
+      </div>
+      <div class="evwhen">${n <= 0 ? "today" : n === 1 ? "tomorrow" : n + " days"}</div>
+    </div>`;
+  };
+
+  const recent = DB.activity.slice()
+    .sort((a, b) => (b.at || "").localeCompare(a.at || "")).slice(0, 3);
+
+  const open = id => `<span class="spacer"></span><button class="btn ghost" data-view="${id}">Open ›</button>`;
+
+  return `
+  <div class="pagehead">
+    <div><h1>Overview</h1></div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(380px,1fr)); gap:16px; align-items:start">
+
+    <section class="card" style="grid-column:1/-1">
+      <header><h2>Partners</h2>${open("partners")}</header>
+      <div class="mourows">
+        <div class="mourow"><b>MoU signed</b><span class="pnames">${pills(group("done"))}</span></div>
+        <div class="mourow"><b>Sent — waiting on them</b><span class="pnames">${pills(group("review"))}</span></div>
+        <div class="mourow"><b>Being negotiated</b><span class="pnames">${pills(group("focus"))}</span></div>
+        ${notTalking.length ? `<div class="mourow quiet"><b>Not yet in conversation</b><span class="pnames">${pills(notTalking)}</span></div>` : ""}
+        ${people.length ? `<div class="mourow quiet"><b>Advisors &amp; network</b><span class="pnames">${pills(people)}</span></div>` : ""}
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Board</h2>${open("board")}</header>
+      <div style="padding:11px 15px; display:flex; gap:7px; flex-wrap:wrap">
+        ${cols.map(c => `<span class="moupill" ${colCount(c) ? "" : "data-zero"}><b>${colCount(c)}</b> ${esc(c.title)}</span>`).join("")}
+        ${late.length ? `<span class="moupill" style="border-color:var(--danger); color:var(--danger)"><b>${late.length}</b> overdue</span>` : ""}
+      </div>
+      ${inFocus.length ? `<div class="tablewrap"><table><tbody>${inFocus.map(workRow).join("")}</tbody></table></div>` : ""}
+    </section>
+
+    <section class="card">
+      <header><h2>Plan</h2>${open("plan")}</header>
+      <div class="tablewrap"><table><tbody>
+        ${usedWs.length ? usedWs.map(w => `
+          <tr class="clickable" data-view="plan">
+            <td>${esc(w.name)}</td>
+            <td style="width:82px" class="num">${byWs[w.id].filter(t => !isDone(t.status)).length} open</td>
+          </tr>`).join("") : '<tr><td class="empty">No tasks yet.</td></tr>'}
+        ${DB.workstreams.length > usedWs.length ? `
+          <tr class="clickable" data-view="plan">
+            <td class="sub" style="display:table-cell">${DB.workstreams.length - usedWs.length} more workstreams with nothing in them</td>
+            <td></td>
+          </tr>` : ""}
+      </tbody></table></div>
+    </section>
+
+    <section class="card">
+      <header><h2>Events</h2>${open("events")}</header>
+      ${upcoming.length ? upcoming.map(evRow).join("")
+        : '<div class="empty" style="padding:22px 15px">Nothing in the diary.</div>'}
+    </section>
+
+    <section class="card">
+      <header><h2>Activity</h2>${open("activity")}</header>
+      <div class="feed" style="padding:6px 15px 12px">
+        ${recent.length ? recent.map(e => eventRow(e, true)).join("") : '<div class="empty">Nothing yet.</div>'}
+      </div>
+    </section>
+  </div>`;
+}
 
 function viewPartners(){
   let rows = DB.partners.slice();
@@ -3275,6 +3395,6 @@ document.getElementById("syncChip").onclick = dataDrawer;
   /* The bridge lands after first paint and adds cards, so the rail badges have
      to be recounted — not just the board redrawn — or Plan and Board sit on a
      number that was already wrong by the time it was painted. */
-  loadBridge().then(() => { renderRail(); if (current === "board") render(); });
+  loadBridge().then(() => { renderRail(); if (current === "board" || current === "overview") render(); });
 })();
 </script>
