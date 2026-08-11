@@ -110,5 +110,47 @@
     "next": "Needs to be aligned — confirm market and entity",
     "nextDate": "",
     "notes": ""
+  },
+  {
+    "id": "p09",
+    "name": "Roland Voggenhauer",
+    "cat": "network",
+    "country": "",
+    "why": "Network — can open doors; which doors specifically has not been recorded yet.",
+    "ask": "Not yet agreed — confirm which rooms they can get us into.",
+    "stage": "identified",
+    "owner": "",
+    "contact": "linkedin.com/in/roland-voggenauer",
+    "next": "Confirm where their network reaches and what to ask for",
+    "nextDate": "",
+    "notes": "Surname spelling unconfirmed: entered as \"Voggenhauer\", LinkedIn URL reads \"voggenauer\". Confirm before any outreach goes out."
+  },
+  {
+    "id": "p10",
+    "name": "Seena Foroutan",
+    "cat": "network",
+    "country": "",
+    "why": "Route to investors — can help us get in front of the capital we need to raise.",
+    "ask": "Agree which investors are the right ones, and what to send ahead of an introduction.",
+    "stage": "identified",
+    "owner": "",
+    "contact": "linkedin.com/in/seenaforoutan",
+    "next": "Agree the investor list and the introduction ask",
+    "nextDate": "",
+    "notes": ""
+  },
+  {
+    "id": "p11",
+    "name": "Siva Balasuriyar",
+    "cat": "advisor",
+    "country": "",
+    "why": "Advising us — what they advise on has not been recorded yet.",
+    "ask": "Not yet agreed — confirm what we want their counsel on.",
+    "stage": "identified",
+    "owner": "",
+    "contact": "",
+    "next": "Confirm what they advise on and how often we should talk",
+    "nextDate": "",
+    "notes": "No contact detail or link on file yet."
   }
 ]

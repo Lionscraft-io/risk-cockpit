@@ -7,25 +7,33 @@ from each, and where the conversation has got to.
 
 ---
 
-## The list is 8 real partners
+## The list is 11 real records
 
 The 36 seeded research targets that used to sit here were removed on
 2026-08-10 — none had been contacted. They remain in git history.
 
-| Partner | Stage |
+| Stage | Who |
 | --- | --- |
-| Hakuhodo Key3 | MoU signed |
-| Sumitomo Insurance · Sumitomo Web3 · Mobily | MoU sent |
-| Sri Lanka · Asian Development Bank · Aon · Vodafone | Researched — need to be aligned |
+| MoU signed | Hakuhodo Key3 |
+| MoU sent | Sumitomo Insurance · Sumitomo Web3 · Aon |
+| Aligning MoU | Mobily · Asian Development Bank · Vodafone |
+| Researched | Sri Lanka |
+| Identified | Roland Voggenhauer · Seena Foroutan · Siva Balasuriyar |
+
+The last three are people, not counterparties — see the two person types
+below. This table goes stale the moment a stage moves; the
+[Overview](../overview/) is derived from the data and cannot, so trust it over
+this.
 
 **Confirm the legal entity before using a record in outreach.** Several hold a
 group name rather than the signing entity: *Sumitomo Insurance* could be Mitsui
 Sumitomo or Sumitomo Life; *Sri Lanka* is a placeholder until it is clear which
 body signs. Those questions are open in each partner's thread.
 
-## The nine partner types
+## The partner types
 
-Drawn from *How partners can help* in the narrative brief.
+Nine drawn from *How partners can help* in the narrative brief, plus one added
+later.
 
 | Type | Who they are |
 | --- | --- |
@@ -38,6 +46,19 @@ Drawn from *How partners can help* in the narrative brief.
 | `data` | Hazard modelling, telemetry and administration technology |
 | `verifier` | Independent parties who evidence what was delivered |
 | `public` | Regulators and public bodies whose cooperation the facility needs |
+| `advisor` | Individuals who give us counsel — on the structure, the market, or how to run at this |
+| `network` | Individuals who open a door — to capital, to a counterparty, to a room |
+
+The last two are the odd ones out, and deliberately last: every other type is
+an institution with a balance sheet, a mandate or a licence, and holds an
+organisation in `name`. These hold a **person**.
+
+They are kept apart because **what you ask for is different**. An advisor
+tells you what is wrong with the thing; a network contact tells you who to
+show it to. Asking one for the other wastes both, so the
+[Outreach](../outreach/) templates diverge: the advisor draft asks *"what is
+the weakest part of this as you see it?"*, the network draft asks *"who are
+the two or three people you would actually put this in front of?"*
 
 The type is not decoration — it drives the [Outreach](../outreach/) tab. The
 hook, the ask, and the discovery questions for an operator are entirely
@@ -77,7 +98,7 @@ flags carry the meaning the counts depend on:
 
 | Field | Notes |
 | --- | --- |
-| `name` | The organisation, never a person |
+| `name` | The organisation — except `advisor` and `network` records, which name a person |
 | `cat` | One of the nine types above |
 | `country` | Short code |
 | `why` | One sentence: why *this* organisation specifically |
@@ -87,6 +108,25 @@ flags carry the meaning the counts depend on:
 | `contact` | Who on their side, if known |
 | `next` / `nextDate` | The next move and when it is due |
 | `notes` | Free text. Agents are told to leave this alone and put findings in the thread instead |
+
+## This repository is public
+
+Anyone can read
+[`partners.json`](../../data/partners/partners.json) without logging in, and
+git keeps every version of it forever — deleting a record later does not
+remove it from history.
+
+For the organisations that is mostly fine: that Aon is being approached about
+a resilience facility is not a secret worth keeping. For `advisor` and
+`network` records it is a different question, because those name **private
+individuals** who never agreed to appear here, alongside a note about what
+they are expected to do for us. Before adding a person, decide deliberately
+whether it should be public.
+
+If it should not, the options are: hold the person in a private note and keep
+only a role on the board, make the repository private and accept that the
+hosted desk stops working, or keep the record but drop the characterising
+text.
 
 ## Working with it
 

@@ -62,7 +62,7 @@ const uniq = (list, what) => {
   return seen;
 };
 
-const CATS = ["carrier","capital","donor","dfi","operator","digital","data","verifier","public"];
+const CATS = ["carrier","capital","donor","dfi","operator","digital","data","verifier","public","advisor","network"];
 const STAGES = (db.stages || []).map(s => s.id);
 const STATUSES = (db.columns || []).map(c => c.id);
 const KINDS = ["comment","change","finding","question","handoff"];

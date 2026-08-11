@@ -153,5 +153,55 @@
     "refType": "board",
     "ref": "",
     "body": "Cleared the six seeded milestones. They described a later phase - term sheet, capital indication, regulatory pathway, go-live - while the work in front of the project is getting the MoUs signed and the partners aligned. One of them, 'Operator MoU signed' dated 19 Dec, already contradicted a signed MoU on the board. In git history: Operator MoU signed (2026-12-19); Term sheet v1 issued (2027-01-16); Capital indication received (2027-02-27); Regulatory pathway confirmed (2027-03-27); Sponsor funding secured (2027-04-30); Facility go-live decision (2027-06-30)"
+  },
+  {
+    "id": "e_adv01",
+    "at": "2026-08-11T10:11:55.107Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p09",
+    "body": "Added as an advisor / introducer at Toni's request. Role not recorded — named without a stated reason, and nothing has been invented to fill the gap. Surname spelling also unconfirmed. Both need answering before this record is used in outreach."
+  },
+  {
+    "id": "e_adv02",
+    "at": "2026-08-11T10:11:55.107Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p10",
+    "body": "Added as an advisor / introducer at Toni's request, to help reach investors. The specific investors and the introduction ask are still open."
+  },
+  {
+    "id": "e_adv03",
+    "at": "2026-08-11T10:11:55.107Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Added an 'Advisors & introducers' partner type. The nine existing types are all institutions — a carrier, a fund, a regulator. These two records are people, and putting a person under 'Capital providers' would have said something untrue about what they are. Note this is the first time the board holds named private individuals rather than organisations, in a public repository."
+  },
+  {
+    "id": "e_adv04",
+    "at": "2026-08-11T10:16:18.328Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p11",
+    "body": "Added as an advisor at Toni's request. What they advise on is not recorded, and has not been guessed at."
+  },
+  {
+    "id": "e_adv05",
+    "at": "2026-08-11T10:16:18.328Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Split the people types in two: Advisors and Network. Toni corrected an earlier lump-them-together call — Siva advises, Roland and Seena are network. The difference is what you ask for: an advisor tells you what is wrong with the thing, a network contact tells you who to show it to, and the outreach templates now differ accordingly. Roland and Seena were moved from advisor to network."
   }
 ]

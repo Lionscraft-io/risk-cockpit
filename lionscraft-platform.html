@@ -866,6 +866,40 @@ const CATEGORIES = {
       "Who else in government needs to be in the room?",
       "What would a pre-approval or no-objection process look like?"
     ]
+  },
+  /* The last two are people rather than institutions, and are kept last
+     because of that — everything above is an organisation with a balance
+     sheet, a mandate or a licence. The distinction between them is what you
+     want from them: an advisor tells you what is wrong with the thing, a
+     network contact tells you who to show it to. Asking one for the other is
+     how you waste both. */
+  advisor: {
+    label:"Advisors",
+    blurb:"Individuals who give us counsel — on the structure, the market, or how to run at this.",
+    hook:"you have built or judged things like this before, and you will tell us plainly what is wrong with it",
+    ask:"a periodic, honest read on the structure and the plan, and a straight answer when we are about to make a mistake",
+    give:"a real seat in how this gets built, while the decisions are still open, and the option to formalise the role if it works",
+    questions:[
+      "What is the weakest part of this as you see it?",
+      "Where have you seen structures like this fail?",
+      "What would you need to see before you would put your name to it?",
+      "How much time do you actually want to give this, and how often?",
+      "Should this become a formal advisory role, or stay informal?"
+    ]
+  },
+  network: {
+    label:"Network",
+    blurb:"Individuals who open a door — to capital, to a counterparty, to a room we cannot reach on our own.",
+    hook:"you know the people we need to reach, and you can tell in one conversation whether this is worth their time",
+    ask:"an introduction to the two or three names you think are genuinely right, and a straight read on what is weak in the story",
+    give:"early sight of the structure while it can still be shaped, and the option to be involved properly if it goes somewhere",
+    questions:[
+      "Who are the two or three people you would actually put this in front of?",
+      "What would make you hesitate to make that introduction?",
+      "What do those people need to see before a first meeting is worth their time?",
+      "How do you want to be kept in the loop once an introduction is made?",
+      "Is there a role here you would want for yourself if this progresses?"
+    ]
   }
 };
 const catLabel = id => (CATEGORIES[id] || {label:id}).label;
@@ -1565,7 +1599,12 @@ function render(){
 
 function viewOverview(){
   const ps = DB.partners;
-  const live = ps.filter(p => stageRank(p.stage) >= 0);
+  /* This page is about MoUs, so it counts and lists counterparties only.
+     Advisors are real and stay on the desk — they surface in Next moves
+     below, and in full on Partners — but an introducer sitting in a column
+     headed "Not yet in conversation" reads as an MoU that has not started,
+     which is not what they are. */
+  const live = ps.filter(p => isCounterparty(p) && stageRank(p.stage) >= 0);
   const mous = mouCards();
   const mouSigned = mous.filter(m => m.status === "done");
   const mouSent = mous.filter(m => m.status === "review");
@@ -1592,7 +1631,7 @@ function viewOverview(){
 
   <div class="grid" style="gap:16px">
     <div class="stats">
-      <div class="stat"><b>${live.length}</b><small>Partners in play</small></div>
+      <div class="stat"><b>${live.length}</b><small>Counterparties in play</small></div>
       <div class="stat ${mouSigned.length ? "go" : ""}"><b>${mouSigned.length}</b><small>MoU signed</small></div>
       <div class="stat"><b>${mouSent.length}</b><small>Sent — waiting on them</small></div>
       <div class="stat ${mouAligning.length ? "go" : ""}"><b>${mouAligning.length}</b><small>Being negotiated</small></div>
@@ -2290,8 +2329,16 @@ function mouWs(){
   return (w.find(x => x.mou) || w.find(x => x.id === "WS3") || w[0] || {id:"WS3", name:"Legal & regulatory"});
 }
 
+/* Advisors and network contacts are people, and people do not sign the MoU.
+   They move through the same stages because the stages describe a
+   conversation, but they must never turn into an MoU card or be counted as a
+   counterparty. */
+const PEOPLE_CATS = new Set(["advisor", "network"]);
+const isCounterparty = p => !PEOPLE_CATS.has(p.cat);
+
 function mouCards(){
   return DB.partners
+    .filter(isCounterparty)
     .filter(p => MOU_COLUMN[p.stage])
     .map(p => ({
       id: "mou:" + p.id,
