@@ -389,6 +389,26 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 .bridgenote{display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--ink-3); padding:2px 1px 0}
 .bridgenote i{width:9px; height:9px; border-radius:2px; background:var(--bridge); flex:none; font-style:normal}
 
+/* ─── MoU status ─────────────────────────────────────────────────────── */
+.moulist{display:flex; flex-direction:column}
+.mourow{
+  display:grid; grid-template-columns:132px 30px minmax(0,1fr); gap:12px; align-items:center;
+  padding:10px 15px; border-bottom:1px solid var(--line);
+}
+.mourow:last-child{border-bottom:0}
+.mourow.quiet{background:var(--surface-2)}
+.mourow .mn{text-align:right; color:var(--ink-3); font-size:12.5px}
+.mounames{display:flex; flex-wrap:wrap; gap:6px}
+.mouname{
+  background:var(--surface-2); border:1px solid var(--line); border-radius:20px;
+  padding:2px 10px; font-size:12.5px; color:var(--ink-2); cursor:pointer; white-space:nowrap;
+}
+.mouname:hover{border-color:var(--ink-3); color:var(--ink); background:var(--surface)}
+@media (max-width:640px){
+  .mourow{grid-template-columns:1fr auto; gap:6px 10px}
+  .mourow .mounames{grid-column:1 / -1}
+}
+
 /* ─── Milestones ─────────────────────────────────────────────────────── */
 .ms{display:flex; flex-direction:column}
 .ms-item{display:grid; grid-template-columns:16px 1fr auto; gap:13px; padding:11px 15px; border-bottom:1px solid var(--line); align-items:start}
@@ -1775,6 +1795,8 @@ function viewPlan(){
     </div>
   </div>
 
+  ${mouStatus()}
+
   ${planMode === "gantt" ? planGantt() : planList()}
 
   <section class="card">
@@ -2233,6 +2255,53 @@ function wireBoard(){
       if (moved) toast("Moved to " + statusLabel[status]);
     });
   });
+}
+
+/* Where the MoUs stand — derived from the partner records, never stored, so it
+   cannot drift from the CRM. Everything before a real conversation is one line;
+   the stages that matter get named partners. */
+function mouStatus(){
+  const from = engagedFrom();
+  const live = STAGES.slice(from);
+  const early = DB.partners.filter(p => stageRank(p.stage) >= 0 && stageRank(p.stage) < from);
+  const out = DB.partners.filter(p => stageRank(p.stage) < 0);
+
+  const rows = live.map(st => ({st, list: DB.partners.filter(p => p.stage === st.id)}))
+                   .filter(r => r.list.length);
+  if (!rows.length && !early.length) return "";
+
+  const names = list => list.map(p =>
+    `<button class="mouname" data-partner="${p.id}" title="${esc(p.why || "")}">${esc(p.name)}</button>`).join("");
+
+  return `
+  <section class="card" style="margin-bottom:14px">
+    <header>
+      <h2>Where the MoUs stand</h2>
+      <span class="cat">From the partner records</span>
+      <span class="spacer"></span>
+      <button class="btn ghost" data-view="partners">Partners ›</button>
+    </header>
+    <div class="moulist">
+      ${rows.reverse().map(r => `
+        <div class="mourow">
+          <span class="chip ${stageClass(r.st.id)}"><i class="dot"></i>${esc(r.st.label)}</span>
+          <span class="num mn">${r.list.length}</span>
+          <span class="mounames">${names(r.list)}</span>
+        </div>`).join("")}
+      ${early.length ? `
+        <div class="mourow quiet">
+          <span class="cat">Not yet in conversation</span>
+          <span class="num mn">${early.length}</span>
+          <span class="mounames">${names(early)}</span>
+        </div>` : ""}
+      ${out.length ? `
+        <div class="mourow quiet">
+          <span class="cat">Out</span>
+          <span class="num mn">${out.length}</span>
+          <span class="mounames">${names(out)}</span>
+        </div>` : ""}
+    </div>
+  </section>`;
 }
 
 /* ── Timeline ─────────────────────────────────────────────────────── */
