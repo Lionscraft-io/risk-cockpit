@@ -81,6 +81,16 @@ One column fills the screen and you swipe between them, with the next column
 peeking at the edge. Cards stay fully readable rather than being squeezed into
 four narrow columns.
 
+## MoU cards
+
+Every MoU in flight appears as a card, carrying an `MoU` chip and the partner's
+stage. They are derived from the partner records rather than stored, so the
+board and the CRM cannot disagree: *Aligning MoU* sits in **Focus**, *MoU sent*
+in **Review** — it is with them and you are waiting — and *signed* in **Done**.
+
+Dragging one moves the partner's stage. Columns that mean nothing for an
+agreement are refused rather than guessed at. Clicking opens the partner.
+
 ## Tasks bridged from the workforce board
 
 The [workforce board](https://github.com/toniilein/workforce) is the other

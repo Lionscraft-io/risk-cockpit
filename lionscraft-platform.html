@@ -370,6 +370,11 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 .kcard .kmeta{display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:11px; color:var(--ink-3)}
 .kcard .kmeta .num{font-variant-numeric:tabular-nums}
 .kcard .kws{font-family:var(--data); font-size:9.5px; letter-spacing:.06em; color:var(--accent); background:var(--accent-soft); padding:1px 5px; border-radius:3px}
+.kmouchip{
+  font-family:var(--data); font-size:9.5px; letter-spacing:.07em; color:var(--ink-2);
+  background:var(--surface-3); padding:1px 6px; border-radius:3px;
+}
+.kcard.mou{border-left-width:3px}
 :root[data-theme="light"] .kcard .kws{color:var(--accent-ink)}
 .kcard .kpartner{color:var(--ink-3); font-size:11px}
 .colempty{padding:16px 4px; text-align:center; color:var(--ink-3); font-size:11.5px}
@@ -1915,6 +1920,15 @@ function viewBoard(){
   const rankT = t => (typeof t.order === "number" ? t.order : Number.MAX_SAFE_INTEGER);
   list.sort((a, b) => (rankT(a) - rankT(b)) || (a.due || "9999").localeCompare(b.due || "9999"));
 
+  /* The MoUs, as cards. They carry a workstream, so the filter applies. */
+  let mous = mouCards();
+  if (boardWs) mous = mous.filter(t => t.ws === boardWs);
+  if (boardOwner) mous = mous.filter(t => (t.owner || "") === (boardOwner === "—" ? "" : boardOwner));
+  if (boardQ){
+    const q = boardQ.toLowerCase();
+    mous = mous.filter(t => t.title.toLowerCase().includes(q));
+  }
+
   /* Bridged tasks have no workstream, so a workstream filter hides them. */
   let bridge = boardWs ? [] : bridged.slice();
   if (boardOwner) bridge = bridge.filter(t => (t.owner || "") === (boardOwner === "—" ? "" : boardOwner));
@@ -1972,8 +1986,9 @@ function viewBoard(){
           ${columns().map(col => {
             const s = col.id;
             const mine = list.filter(t => t.status === s);
+            const agreements = mous.filter(t => t.status === s);
             const theirs = bridge.filter(t => t.status === s);
-            const cards = mine.concat(theirs);
+            const cards = agreements.concat(mine, theirs);
             return `
             <div class="col" data-col="${esc(s)}" style="--colcolor:${esc(col.color || "")}">
               <header>
@@ -1984,6 +1999,18 @@ function viewBoard(){
               </header>
               <div class="stack">
                 ${cards.length ? cards.map(t => {
+                  if (t.mou) return `
+                  <article class="kcard mou" draggable="true" data-mou="${esc(t.id)}"
+                           style="--cardcolor:${esc(columnColor(t.status))}"
+                           title="This is the partner record — moving it changes their stage">
+                    <span class="kt">${esc(t.title)}</span>
+                    <span class="kmeta">
+                      <span class="kmouchip">MoU</span>
+                      <span class="chip ${stageClass(t.stage)}" style="font-size:10.5px"><i class="dot"></i>${esc(stageLabel(t.stage))}</span>
+                      ${t.owner ? `<span>${esc(t.owner)}</span>` : "<span>unassigned</span>"}
+                      <span class="num ${isOverdue(t.due) ? "overdue" : ""}" style="margin-left:auto">${fmtDate(t.due)}</span>
+                    </span>
+                  </article>`;
                   if (t.bridged) return `
                   <article class="kcard bridged" draggable="true" data-bridged="${esc(t.id)}"
                            title="Lives on the workforce board — drag to change its status there, click to open it">
@@ -2092,6 +2119,27 @@ function addTaskTo(status){
   save(); renderRail(); render();
 }
 
+/* Moving an MoU card is moving the partner. Only the three columns that have a
+   clear meaning for an agreement are accepted — anything else would be inventing
+   a stage the CRM does not have. */
+function moveMou(id, status){
+  const p = DB.partners.find(x => x.id === id.slice(4));
+  if (!p) return;
+  const stage = MOU_STAGE[status];
+  if (!stage){
+    const allowed = Object.keys(MOU_STAGE).map(c => statusLabel[c]).join(", ");
+    toast("An MoU can move to " + allowed + " — the rest have no meaning for an agreement");
+    return;
+  }
+  if (p.stage === stage) return;
+  const was = p.stage;
+  p.stage = stage;
+  logEvent({kind:"change", refType:"partner", ref:p.id,
+    body: stageLabel(was) + " → " + stageLabel(stage) + " (moved on the board)"});
+  save(); renderRail(); render();
+  toast(p.name + " → " + stageLabel(stage));
+}
+
 /* Push a status change back to the other board. Optimistic, because the round
    trip is a commit — but it puts the card back if the write is refused. */
 async function moveBridged(id, status){
@@ -2183,7 +2231,7 @@ function wireBoard(){
   let dragId = null;
   document.querySelectorAll(".kcard").forEach(card => {
     card.addEventListener("dragstart", e => {
-      dragId = card.dataset.card || card.dataset.bridged;
+      dragId = card.dataset.card || card.dataset.bridged || card.dataset.mou;
       card.classList.add("dragging");
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", dragId);
@@ -2233,6 +2281,9 @@ function wireBoard(){
          the move has to go back there. */
       if (String(id).startsWith("wf:")) return moveBridged(id, status);
 
+      /* An MoU card has no state of its own — it is the partner's stage. */
+      if (String(id).startsWith("mou:")) return moveMou(id, status);
+
       const t = DB.tasks.find(x => x.id === id);
       if (!t) return;
       const moved = t.status !== status;
@@ -2255,6 +2306,38 @@ function wireBoard(){
       if (moved) toast("Moved to " + statusLabel[status]);
     });
   });
+}
+
+/* ── MoUs as work ─────────────────────────────────────────────────────
+   Each MoU in flight is a card, derived from its partner record rather than
+   stored, so the two can never disagree. The board vocabulary already fits:
+   negotiating is Focus, sent and waiting on them is Review, signed is Done.
+   Dragging one moves the partner's stage — the card has no state of its own. */
+const MOU_COLUMN = {aligning:"focus", mou_sent:"review", mou_signed:"done", active:"done"};
+const MOU_STAGE  = {focus:"aligning", review:"mou_sent", done:"mou_signed"};
+
+/* Which workstream MoUs belong to. Mark one with "mou": true in
+   workstreams.json to move them; Legal & regulatory is the sensible default,
+   since an MoU is the instrument that carries rights and obligations. */
+function mouWs(){
+  const w = DB.workstreams || [];
+  return (w.find(x => x.mou) || w.find(x => x.id === "WS3") || w[0] || {id:"WS3", name:"Legal & regulatory"});
+}
+
+function mouCards(){
+  return DB.partners
+    .filter(p => MOU_COLUMN[p.stage])
+    .map(p => ({
+      id: "mou:" + p.id,
+      partnerId: p.id,
+      title: "MoU — " + p.name,
+      ws: mouWs().id,
+      status: MOU_COLUMN[p.stage],
+      stage: p.stage,
+      owner: p.owner || "",
+      due: p.nextDate || "",
+      mou: true
+    }));
 }
 
 /* Where the MoUs stand — derived from the partner records, never stored, so it
@@ -2527,6 +2610,7 @@ function previewDates(d, days){
 function planList(){
   return DB.workstreams.map(ws => {
     const ts = DB.tasks.filter(t => t.ws === ws.id);
+    const mine = mouCards().filter(m => m.ws === ws.id);
     const done = ts.filter(t => isDone(t.status)).length;
     const pct = ts.length ? Math.round(done / ts.length * 100) : 0;
     return `
@@ -2540,6 +2624,13 @@ function planList(){
         <span class="progress"><i style="width:${pct}%"></i></span>
       </header>
       <div class="tablewrap"><table><tbody>
+        ${mine.map(m => `
+          <tr class="clickable" data-mou="${esc(m.id)}">
+            <td style="width:88px"><span class="chip ${stageClass(m.stage)}"><i class="dot"></i>${esc(stageLabel(m.stage))}</span></td>
+            <td>${esc(m.title)}<span class="sub">Follows the partner record</span></td>
+            <td style="width:130px" class="hide-sm">${esc(m.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
+            <td style="width:82px" class="num">${fmtDate(m.due)}</td>
+          </tr>`).join("")}
         ${ts.length ? ts.map(t => {
           const p = DB.partners.find(x => x.id === t.partner);
           return `<tr class="clickable ${isDone(t.status) ? "done" : ""}" data-task="${t.id}">
@@ -2548,7 +2639,7 @@ function planList(){
             <td style="width:130px" class="hide-sm">${esc(t.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
             <td style="width:82px" class="num ${isOverdue(t.due) && !isDone(t.status) ? "overdue" : ""}">${fmtDate(t.due)}</td>
           </tr>`;
-        }).join("") : '<tr><td class="empty">No tasks in this workstream yet.</td></tr>'}
+        }).join("") : (mine.length ? "" : '<tr><td class="empty">No tasks in this workstream yet.</td></tr>')}
       </tbody></table></div>
     </section>`;
   }).join("");
@@ -3679,6 +3770,9 @@ document.getElementById("view").addEventListener("click", e => {
 
   /* Timeline bars and diamonds are driven by pointer events, not clicks. */
   if (e.target.closest(".gbar, .gms")) return;
+
+  const mc = e.target.closest("[data-mou]");
+  if (mc){ partnerDrawer(mc.dataset.mou.slice(4)); return; }
 
   const bc = e.target.closest("[data-bridged]");
   if (bc){ window.open(BRIDGE.board, "_blank", "noopener"); return; }

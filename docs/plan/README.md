@@ -25,6 +25,28 @@ It reads the `engaged` flag in [`stages.json`](../../data/partners/stages.json)
 to decide where "in conversation" begins, so renaming or adding a stage keeps it
 correct.
 
+## The MoUs are work, not a summary
+
+Every MoU in flight is also a **card**, in the workstream marked for it —
+*Legal & regulatory* by default, since an MoU is the instrument that carries
+rights and obligations. Mark a different workstream with `"mou": true` in
+[`workstreams.json`](../../data/plan/workstreams.json) to move them.
+
+They are derived from the partner record, so they have no state of their own:
+
+| Partner stage | Board column |
+| --- | --- |
+| Aligning MoU | **Focus** — being negotiated |
+| MoU sent | **Review** — with them, waiting |
+| MoU signed · Active | **Done** |
+
+**Dragging an MoU card moves the partner.** Drop it in Review and that partner
+goes to *MoU sent*, logged like any other stage change. The other columns are
+refused rather than guessed at — Backlog and Weekly have no meaning for an
+agreement, and inventing one would put a stage in the CRM that nobody chose.
+
+Clicking a card opens the partner record.
+
 ## The nine workstreams
 
 Each maps onto a layer of the product stack, so the plan and the architecture
