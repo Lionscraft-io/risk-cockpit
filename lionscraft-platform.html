@@ -1718,18 +1718,18 @@ function viewPartners(){
     <div class="tablewrap">
       <table class="cardtable">
         <thead><tr>
-          <th>Organisation</th><th>Type</th><th>Stage</th><th>Owner</th><th>Next move</th><th>Due</th>
+          <th>Stage</th><th>Organisation</th><th>Owner</th><th>Due</th>
         </tr></thead>
         <tbody>
           ${rows.length ? rows.map(p => `
             <tr class="clickable" data-partner="${p.id}">
-              <td class="lead"><b>${esc(p.name)}</b><span class="sub">${esc(p.why)}</span></td>
-              <td data-label="Type"><span class="cat">${catLabel(p.cat)}</span><span class="sub">${esc(p.country)}</span></td>
-              <td data-label="Stage"><span class="chip ${stageClass(p.stage)}"><i class="dot"></i>${stageLabel(p.stage)}</span></td>
-              <td data-label="Owner">${esc(p.owner) || '<span style="color:var(--ink-3)">—</span>'}</td>
-              <td data-label="Next">${esc(p.next) || '<span style="color:var(--ink-3)">—</span>'}</td>
-              <td data-label="Due" class="num ${isOverdue(p.nextDate) ? "overdue" : ""}">${fmtDate(p.nextDate)}</td>
-            </tr>`).join("") : '<tr><td colspan="6" class="empty">No partners match those filters.</td></tr>'}
+              <td style="width:104px" data-label="Stage"><span class="chip ${stageClass(p.stage)}"><i class="dot"></i>${stageLabel(p.stage)}</span></td>
+              <td class="lead" title="${esc(p.why)}">${esc(p.name)}
+                <span class="cat" style="margin-left:7px">${catLabel(p.cat)}${p.country ? " · " + esc(p.country) : ""}</span>
+                <span class="sub">${esc(p.next) || "No next move set"}</span></td>
+              <td style="width:130px" class="hide-sm" data-label="Owner">${esc(p.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
+              <td style="width:82px" data-label="Due" class="num ${isOverdue(p.nextDate) ? "overdue" : ""}">${fmtDate(p.nextDate)}</td>
+            </tr>`).join("") : '<tr><td colspan="4" class="empty">No partners match those filters.</td></tr>'}
         </tbody>
       </table>
     </div>
@@ -1759,7 +1759,6 @@ const columnColor = id => (columns().find(c => c.id === id) || {}).color || "var
 const isDone = id => columns().length && columns()[columns().length - 1].id === id;
 
 let planMode = "list";
-const collapsed = new Set();
 
 function viewPlan(){
   return `
@@ -1768,8 +1767,8 @@ function viewPlan(){
       <div class="eyebrow">${esc(DB.meta.facility)}</div>
       <h1>Plan</h1>
       <p>${planMode === "gantt"
-        ? "The same tasks over time. Drag a bar to move it, drag its edges to change start or end, drag a diamond to move a milestone."
-        : "Nine workstreams mapped onto the product stack. Click a status to move it on; click a row to edit it."}</p>
+        ? "The tasks over time. Drag a bar to move it, drag its edges to change start or end, drag a diamond to move a milestone."
+        : "The MoUs follow the partner records; the tasks are the work around them. Click a status to move it on; click a row to edit."}</p>
     </div>
     <div class="tools">
       <div class="seg">
@@ -1883,11 +1882,10 @@ async function loadBridge(){
 
 /* ── Board ────────────────────────────────────────────────────────── */
 
-let boardWs = "", boardOwner = "", boardQ = "";
+let boardOwner = "", boardQ = "";
 
 function viewBoard(){
   let list = DB.tasks.slice();
-  if (boardWs) list = list.filter(t => t.ws === boardWs);
   if (boardOwner) list = list.filter(t => (t.owner || "") === (boardOwner === "—" ? "" : boardOwner));
   if (boardQ){
     const q = boardQ.toLowerCase();
@@ -1900,15 +1898,13 @@ function viewBoard(){
 
   /* The MoUs, as cards. They carry a workstream, so the filter applies. */
   let mous = mouCards();
-  if (boardWs) mous = mous.filter(t => t.ws === boardWs);
   if (boardOwner) mous = mous.filter(t => (t.owner || "") === (boardOwner === "—" ? "" : boardOwner));
   if (boardQ){
     const q = boardQ.toLowerCase();
     mous = mous.filter(t => t.title.toLowerCase().includes(q));
   }
 
-  /* Bridged tasks have no workstream, so a workstream filter hides them. */
-  let bridge = boardWs ? [] : bridged.slice();
+  let bridge = bridged.slice();
   if (boardOwner) bridge = bridge.filter(t => (t.owner || "") === (boardOwner === "—" ? "" : boardOwner));
   if (boardQ){
     const q = boardQ.toLowerCase();
@@ -1943,17 +1939,13 @@ function viewBoard(){
     <div class="card">
       <header>
         <div class="filters">
-          <select id="boardWs">
-            <option value="">All workstreams</option>
-            ${DB.workstreams.map(w => `<option value="${w.id}" ${boardWs === w.id ? "selected" : ""}>${w.id} — ${esc(w.name)}</option>`).join("")}
-          </select>
           <select id="boardOwner">
             <option value="">Anyone</option>
             <option value="—" ${boardOwner === "—" ? "selected" : ""}>Unassigned</option>
             ${owners.map(o => `<option value="${esc(o)}" ${boardOwner === o ? "selected" : ""}>${esc(o)}</option>`).join("")}
           </select>
           <input type="text" id="boardQ" placeholder="Search…" value="${esc(boardQ)}" style="width:170px">
-          ${(boardWs || boardOwner || boardQ) ? '<button class="btn ghost" id="boardClear">Clear</button>' : ""}
+          ${(boardOwner || boardQ) ? '<button class="btn ghost" id="boardClear">Clear</button>' : ""}
         </div>
         <span class="spacer"></span>
         <span style="display:flex; align-items:center; gap:10px; white-space:nowrap">
@@ -2008,7 +2000,6 @@ function viewBoard(){
                     <span class="kt">${esc(t.title)}</span>
                     ${p ? `<span class="kpartner">${esc(p.name)}</span>` : ""}
                     <span class="kmeta">
-                      <span class="kws" title="${esc((DB.workstreams.find(w => w.id === t.ws) || {}).name || "")}">${t.ws}</span>
                       ${t.owner ? `<span>${esc(t.owner)}</span>` : "<span>unassigned</span>"}
                       <span class="num ${isLate ? "overdue" : ""}" style="margin-left:auto">${fmtDate(t.due)}</span>
                     </span>
@@ -2191,8 +2182,6 @@ function wireBoard(){
     el.onblur = () => { clearTimeout(settle); commit(); };
   });
 
-  const ws = document.getElementById("boardWs");
-  if (ws) ws.onchange = e => { boardWs = e.target.value; render(); };
   const ow = document.getElementById("boardOwner");
   if (ow) ow.onchange = e => { boardOwner = e.target.value; render(); };
   const q = document.getElementById("boardQ");
@@ -2204,7 +2193,7 @@ function wireBoard(){
     if (el){ el.focus(); el.setSelectionRange(pos, pos); }
   };
   const cl = document.getElementById("boardClear");
-  if (cl) cl.onclick = () => { boardWs = boardOwner = boardQ = ""; render(); };
+  if (cl) cl.onclick = () => { boardOwner = boardQ = ""; render(); };
 
   let dragId = null;
   document.querySelectorAll(".kcard").forEach(card => {
@@ -2321,7 +2310,11 @@ function mouCards(){
 /* ── Timeline ─────────────────────────────────────────────────────── */
 
 function planGantt(){
-  const ts = DB.tasks.filter(t => t.due);
+  /* MoUs belong on the timeline too, but only once they have a date to sit on;
+     the legend says how many are missing rather than leaving them out silently. */
+  const mous = mouCards();
+  const ts = DB.tasks.filter(t => t.due).concat(mous.filter(m => m.due));
+  const undatedMous = mous.length - mous.filter(m => m.due).length;
   if (!ts.length) return '<div class="card"><div class="empty">No dated tasks to plot yet.</div></div>';
 
   const starts = ts.map(t => t.start || shiftDays(t.due, -21));
@@ -2343,58 +2336,33 @@ function planGantt(){
   const todayLine = pct(TODAY) >= 0 && pct(TODAY) <= 100
     ? `<div class="today" style="left:${pct(TODAY).toFixed(3)}%"></div>` : "";
 
-  const rows = DB.workstreams.map(ws => {
-    const list = ts.filter(t => t.ws === ws.id);
-    if (!list.length) return "";
-    const done = list.filter(t => isDone(t.status)).length;
-    const wsStart = list.map(t => t.start || shiftDays(t.due, -21)).sort()[0];
-    const wsEnd = list.map(t => t.due).sort()[list.length - 1];
-    const isOpen = !collapsed.has(ws.id);
-
-    const head = `
-      <div class="grow wsrow">
-        <div class="glabel" data-collapse="${ws.id}" title="${isOpen ? "Collapse" : "Expand"} ${esc(ws.name)}">
-          <span class="gcaret">${isOpen ? "▾" : "▸"}</span>
-          <span class="gcode">${ws.id}</span>
-          <span class="t">${esc(ws.name)}</span>
-          <span class="gcode" style="margin-left:auto">${done}/${list.length}</span>
-        </div>
-        <div class="gtrack">
-          ${todayLine}
-          <div class="gsum" style="${bar(wsStart, wsEnd)}" title="${fmtDate(wsStart)} → ${fmtDate(wsEnd)}">
-            <i style="width:${Math.round(done / list.length * 100)}%"></i>
-          </div>
-        </div>
-      </div>`;
-
-    if (!isOpen) return head;
-
-    return head + list.map(t => {
-      const s = t.start || shiftDays(t.due, -21);
+  const rows = ts.slice()
+    .sort((a, b) => (a.start || shiftDays(a.due, -21)).localeCompare(b.start || shiftDays(b.due, -21)))
+    .map(t => {
+      const st = t.start || shiftDays(t.due, -21);
       const late = isOverdue(t.due) && !isDone(t.status);
       return `
       <div class="grow">
-        <div class="glabel" data-task="${t.id}" style="cursor:pointer; padding-left:31px">
+        <div class="glabel" data-task="${t.id}" style="cursor:pointer">
           <span class="t" title="${esc(t.title)}">${esc(t.title)}</span>
           ${t.owner ? `<span class="gcode" style="margin-left:auto">${esc(t.owner)}</span>` : ""}
         </div>
         <div class="gtrack">
           ${todayLine}
           <div class="gbar ${t.status} ${late ? "late" : ""}" data-task="${t.id}" data-drag="task"
-               style="${bar(s, t.due)}"
-               title="${esc(t.title)} — ${fmtDate(s)} → ${fmtDate(t.due)}${late ? " (overdue)" : ""}"
+               style="${bar(st, t.due)}"
+               title="${esc(t.title)} — ${fmtDate(st)} → ${fmtDate(t.due)}${late ? " (overdue)" : ""}"
             ><i class="grip l"></i><i class="grip r"></i></div>
         </div>
       </div>`;
     }).join("");
-  }).join("");
 
   return `
   <section class="card ws" style="margin-bottom:14px">
     <div class="gantt" style="--n:${months.length}" data-t0="${monthStart(months[0])}" data-t1="${shiftDays(monthEnd(months[months.length - 1]), 1)}">
       <div class="inner">
         <div class="ghead">
-          <div class="glabel"><span class="eyebrow">Workstream / task</span></div>
+          <div class="glabel"><span class="eyebrow">Task</span></div>
           <div class="gmonths" style="grid-template-columns:repeat(${months.length},1fr)">
             ${months.map(mo => `<span class="${[1,4,7,10].includes(mo.m) ? "q" : ""}">${MONTHS[mo.m - 1]}${mo.m === 1 || mo === months[0] ? " " + String(mo.y).slice(2) : ""}</span>`).join("")}
           </div>
@@ -2422,6 +2390,8 @@ function planGantt(){
       <span><b class="done"></b>Done</span>
       <span><b class="today"></b>Today, ${fmtDate(TODAY)}</span>
       <span style="margin-left:auto">Drag to reschedule · dashed outline = past its due date</span>
+      ${undatedMous ? `<span style="width:100%; margin-left:0!important; color:var(--ochre)">
+        ${undatedMous} MoU${undatedMous === 1 ? " is" : "s are"} not plotted — give the partner a next-move date and it appears here.</span>` : ""}
     </div>
   </section>`;
 }
@@ -2539,41 +2509,49 @@ function previewDates(d, days){
 /* ── List ─────────────────────────────────────────────────────────── */
 
 function planList(){
-  return DB.workstreams.map(ws => {
-    const ts = DB.tasks.filter(t => t.ws === ws.id);
-    const mine = mouCards().filter(m => m.ws === ws.id);
-    const done = ts.filter(t => isDone(t.status)).length;
-    const pct = ts.length ? Math.round(done / ts.length * 100) : 0;
-    return `
-    <section class="card ws">
-      <header>
-        <code>${ws.id}</code>
-        <h2>${esc(ws.name)}</h2>
-        <span class="cat">${esc(ws.layer)}</span>
-        <span class="spacer"></span>
-        <span class="num" style="color:var(--ink-3); font-size:11.5px">${done}/${ts.length}</span>
-        <span class="progress"><i style="width:${pct}%"></i></span>
-      </header>
-      <div class="tablewrap"><table><tbody>
-        ${mine.map(m => `
-          <tr class="clickable" data-mou="${esc(m.id)}">
-            <td style="width:88px"><span class="status" data-s="${esc(m.status)}">${esc(statusLabel[m.status])}</span></td>
-            <td>${esc(m.title)}<span class="sub">${esc(stageLabel(m.stage))} — follows the partner record</span></td>
-            <td style="width:130px" class="hide-sm">${esc(m.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
-            <td style="width:82px" class="num">${fmtDate(m.due)}</td>
-          </tr>`).join("")}
-        ${ts.length ? ts.map(t => {
-          const p = DB.partners.find(x => x.id === t.partner);
-          return `<tr class="clickable ${isDone(t.status) ? "done" : ""}" data-task="${t.id}">
-            <td style="width:88px"><button class="status" data-cycle="${t.id}" data-s="${t.status}">${statusLabel[t.status]}</button></td>
-            <td>${esc(t.title)}${p ? `<span class="sub">${esc(p.name)}</span>` : ""}</td>
-            <td style="width:130px" class="hide-sm">${esc(t.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
-            <td style="width:82px" class="num ${isOverdue(t.due) && !isDone(t.status) ? "overdue" : ""}">${fmtDate(t.due)}</td>
-          </tr>`;
-        }).join("") : (mine.length ? "" : '<tr><td class="empty">No tasks in this workstream yet.</td></tr>')}
-      </tbody></table></div>
-    </section>`;
-  }).join("");
+  const order = Object.fromEntries(STATUS_CYCLE.map((id, i) => [id, i]));
+  const tasks = DB.tasks.slice().sort((a, b) =>
+    (order[a.status] - order[b.status]) || ((a.due || "9999") < (b.due || "9999") ? -1 : 1));
+  const mous = mouCards().sort((a, b) =>
+    (order[a.status] - order[b.status]) || a.title.localeCompare(b.title));
+
+  return `
+  <section class="card ws">
+    <header>
+      <h2>MoUs</h2>
+      <span class="cat">Follow the partner records</span>
+      <span class="spacer"></span>
+      <button class="btn ghost" data-view="partners">Partners ›</button>
+    </header>
+    <div class="tablewrap"><table><tbody>
+      ${mous.length ? mous.map(m => `
+        <tr class="clickable" data-mou="${esc(m.id)}">
+          <td style="width:88px"><span class="status" data-s="${esc(m.status)}">${esc(statusLabel[m.status])}</span></td>
+          <td>${esc(m.title)}<span class="sub">${esc(stageLabel(m.stage))}</span></td>
+          <td style="width:130px" class="hide-sm">${esc(m.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
+          <td style="width:82px" class="num">${fmtDate(m.due)}</td>
+        </tr>`).join("") : '<tr><td class="empty">No MoUs in flight.</td></tr>'}
+    </tbody></table></div>
+  </section>
+
+  <section class="card ws">
+    <header>
+      <h2>Tasks</h2>
+      <span class="spacer"></span>
+      <span class="num" style="color:var(--ink-3); font-size:11.5px">${tasks.filter(t => isDone(t.status)).length}/${tasks.length} done</span>
+    </header>
+    <div class="tablewrap"><table><tbody>
+      ${tasks.length ? tasks.map(t => {
+        const p = DB.partners.find(x => x.id === t.partner);
+        return `<tr class="clickable ${isDone(t.status) ? "done" : ""}" data-task="${t.id}">
+          <td style="width:88px"><button class="status" data-cycle="${t.id}" data-s="${t.status}">${statusLabel[t.status]}</button></td>
+          <td>${esc(t.title)}${p ? `<span class="sub">${esc(p.name)}</span>` : ""}</td>
+          <td style="width:130px" class="hide-sm">${esc(t.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
+          <td style="width:82px" class="num ${isOverdue(t.due) && !isDone(t.status) ? "overdue" : ""}">${fmtDate(t.due)}</td>
+        </tr>`;
+      }).join("") : '<tr><td class="empty">No tasks yet — add one, or from the board.</td></tr>'}
+    </tbody></table></div>
+  </section>`;
 }
 
 /* ── Activity ─────────────────────────────────────────────────────── */
@@ -3428,9 +3406,6 @@ function taskDrawer(id){
     <header><h3>${isNew ? "New task" : "Task"}</h3><button class="btn ghost" data-close>Close</button></header>
     <div class="body">
       <label class="field"><span>Task</span><textarea name="title" rows="2">${esc(t.title)}</textarea></label>
-      <label class="field"><span>Workstream</span><select name="ws">
-        ${DB.workstreams.map(w => `<option value="${w.id}" ${t.ws === w.id ? "selected" : ""}>${w.id} — ${esc(w.name)}</option>`).join("")}
-      </select></label>
       <label class="field"><span>Status</span><select name="status">
         ${STATUS_CYCLE.map(s => `<option value="${s}" ${t.status === s ? "selected" : ""}>${statusLabel[s]}</option>`).join("")}
       </select></label>
@@ -3675,13 +3650,6 @@ document.getElementById("view").addEventListener("click", e => {
 
   const mode = e.target.closest("[data-mode]");
   if (mode){ planMode = mode.dataset.mode; applyRoute(true); render(); return; }
-
-  const col = e.target.closest("[data-collapse]");
-  if (col){
-    const id = col.dataset.collapse;
-    collapsed.has(id) ? collapsed.delete(id) : collapsed.add(id);
-    render(); return;
-  }
 
   const ref = e.target.closest("[data-goref]");
   if (ref){
