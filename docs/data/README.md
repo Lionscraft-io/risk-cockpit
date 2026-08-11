@@ -1,8 +1,8 @@
 # Data and sync
 
 **This repository is the database.** The board lives under
-[`data/`](../../data/), one file per section, and every change is a commit. Git
-history is the audit trail. There is no server to be up or down.
+[`data/`](../../data/), one file per section, and every change is a single
+commit. Git history is the audit trail.
 
 | File | Holds |
 | --- | --- |
@@ -17,16 +17,30 @@ Each holds the bare array — no wrapper — so a file can be read on its own.
 
 ---
 
+## One store, one door
+
+There is exactly **one source of truth** (the files above on `main`) and
+exactly **one write path**: the desk's backend, `server/proxy.mjs`, running at
+the desk's Replit address. It holds the GitHub token server-side and turns
+every save — from a browser or from an agent — into a single atomic commit.
+
+Anything served anywhere else (the GitHub Pages copy) is **read-only**. It
+still shows the board, but edits stay in that browser. This is deliberate:
+earlier versions let browsers commit directly with their own GitHub tokens and
+ran a second backend with its own store. Two write paths and two stores meant
+the board could silently fork depending on where you looked — so now there is
+one door, and everything goes through it.
+
 ## How a save works
 
-1. The desk reads all six files on load and assembles them
+1. The desk reads the board through the backend on load
 2. Your edits are held in the browser and batched — a burst of edits becomes
    **one commit**, not one per keystroke
 3. It is **one commit touching only what changed** — editing a partner writes
    `partners.json`, `activity.json` and `meta.json`, and leaves the plan files
-   alone. This goes through git's blob → tree → commit → ref API rather than
-   file-by-file writes, because several separate writes would leave the board
-   briefly inconsistent
+   alone. The backend goes through git's blob → tree → commit → ref API rather
+   than file-by-file writes, because several separate writes would leave the
+   board briefly inconsistent
 4. Moving the branch is the **compare-and-swap**: it only succeeds if nobody
    committed in between. On rejection the desk re-reads, merges, and retries once
 
@@ -42,25 +56,26 @@ never overwrites your work without asking.
 | Chip | Meaning |
 | --- | --- |
 | `live · rev N` | Reading the board; saves commit automatically |
-| `token needed` | You have edits but no GitHub token — set one under **Data** |
+| `password needed` | You have edits but no team password — set it under **Data** |
+| `read-only` | This copy has no backend (e.g. the Pages copy) — edits stay local |
 | `saving…` | Your edits are being committed |
 | `update available` | The board moved on since your copy. The banner offers **Load the board** or **Push mine anyway** |
-| `offline` | GitHub unreachable; working from this browser's copy and reconnecting on its own |
+| `offline` | Backend unreachable; working from this browser's copy and reconnecting on its own |
 
 Offline is a working state, not an error: edits are kept and pushed when the
 connection returns.
 
 ## Writing from the browser
 
-Reading is public. To commit from the desk you need a GitHub token:
+Reading is public. To change the board you need the **team password**:
 
-1. **https://github.com/settings/personal-access-tokens/new**
-2. **Resource owner:** `Lionscraft-io` *(the repo belongs to the org, not to you
-   personally — if this is wrong, the repository will not appear in the list)*
-3. **Repository access:** Only select repositories → `risk-cockpit`
-4. **Permissions → Repository permissions → Contents: Read and write.** Nothing else
-5. Generate, copy the value — GitHub shows it once
-6. Desk → **Data** → paste into **Access token**, reload
+1. Open the desk at its Replit address (the backend's own origin — the desk
+   auto-detects it)
+2. Desk → **Data** → paste the password into **Password**
+
+That is the whole setup. No GitHub token ever touches a browser: it lives only
+on the server, so a leaked password lets someone edit the board but never touch
+the repository directly.
 
 **You enter it once per browser.** It is kept in that browser's local storage
 and survives reloads and restarts, so it is prefilled next time you open
@@ -68,34 +83,22 @@ and survives reloads and restarts, so it is prefilled next time you open
 
 ### Setting up another browser or phone without retyping it
 
-Open **Data → Copy setup link**. That produces a link with the token in its
+Open **Data → Copy setup link**. That produces a link with the password in its
 fragment. Open it once on the other device — phone, laptop, another browser —
-and that browser is configured permanently. The desk absorbs the token and
+and that browser is configured permanently. The desk absorbs the password and
 **wipes it out of the address bar immediately**, so it does not sit in the tab
 or show up in a screenshot.
 
 Two things to understand about that link:
 
 - **It is the credential.** Anyone who opens it can edit the board. Send it to
-  yourself, or to someone you would hand the token to — not into a group chat
-- The fragment (everything after `#`) is **never sent to any server**, so the
-  token does not appear in GitHub's logs. It does land in that browser's
-  history, which is why it gets wiped from the bar on arrival
+  yourself, or to someone you would hand the password to — not into a group chat
+- The fragment (everything after `#`) is **never sent to any server**. It does
+  land in that browser's history, which is why it gets wiped from the bar on
+  arrival
 
-Storing the link, or the token itself, in a password manager is the tidiest
+Storing the link, or the password itself, in a password manager is the tidiest
 way to keep it to hand.
-
-Choosing **No expiration** on GitHub makes it permanent; a dated expiry means
-re-entering it when it lapses. No expiration is reasonable here given the token
-is scoped to one repository's contents, but it is a real trade-off: a leaked
-token stays valid until you revoke it.
-
-The token is never committed. Scope it exactly as above so its blast radius is
-one repository's files, and revoke it on GitHub if it leaks — git history means
-any damage is recoverable.
-
-Fine-grained tokens on an org repo may show as `Pending` until an org owner
-approves them.
 
 ## The shape of the data
 
@@ -132,38 +135,33 @@ the board moved.
 | --- | --- |
 | The files under `data/` | **The database.** One live copy |
 | Your browser's storage | Your cache plus any unpushed edits |
-| `server/desk-local.json` | Throwaway file from running the optional local server. Gitignored |
+| `server/desk-local.json` | Throwaway file from running the local dev server. Gitignored |
 
 ## Agents
 
-Agents read and write the same file, with the same discipline — through
-GitHub's hosted MCP server, the Contents API, or plain git. The contract is
-[AGENTS.md](../AGENTS.md).
+Agents use the same two doors as everyone else — the backend's `PUT /api/board`
+with the app password, or plain git — under the same discipline. The contract
+is [AGENTS.md](../AGENTS.md).
 
 ---
 
-## Optional: the write proxy
+## Running the backend
 
-`server/proxy.mjs` removes GitHub tokens from browsers entirely. It holds the
-GitHub token itself and makes commits on people's behalf; the browser sends only
-a short app password.
-
-| | Without the proxy | With the proxy |
-| --- | --- | --- |
-| What the browser holds | A GitHub PAT | A short app password |
-| If that leaks | Repo write access until revoked | Someone can edit the board; the repo is untouched |
-| Setup per person | Create a PAT, or use a setup link | Type the team password, or use a setup link |
-| If it goes down | — | Reads keep working from Pages; writes wait |
-
-Run it with three environment variables:
+`server/proxy.mjs` has zero dependencies. Three environment variables:
 
 ```bash
 GITHUB_TOKEN=github_pat_…  APP_PASSWORD=some-phrase  node server/proxy.mjs
 ```
 
-Then point the desk at it once — **Data → Repository** field's sibling setting,
-or `localStorage['lionscraft-desk-proxy'] = "https://your-proxy-url"`. From then
-on that browser reads and writes through the proxy.
+The token is a fine-grained PAT scoped to this one repository with
+**Contents: read and write** — nothing else. The password is what people and
+agents send instead of a token.
 
-The proxy is stateless: it stores nothing, and the repo remains the only
-database. It is genuinely optional — the desk works without it.
+The backend is stateless: it stores nothing, and the repo remains the only
+database. If it goes down, reads keep working from Pages and writes simply
+wait.
+
+**Without `GITHUB_TOKEN` it is a development server**: saves are written to the
+`data/` files in your checkout and nothing reaches GitHub — edit the board
+freely, then read the diff. The desk says so: the chip reads `working copy`,
+in amber rather than green.

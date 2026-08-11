@@ -25,10 +25,12 @@ Underneath: [Data and sync](docs/data/) · [Development](docs/development/) ·
 The desk is a **single self-contained HTML file** — no build step, no
 dependencies, no framework. **This repository is the database**: the board lives
 under [`data/`](data/) — one file per section — every change is a commit, and git history
-is the audit trail. Nothing is hosted beyond GitHub Pages serving static files.
+is the audit trail. One small backend (`server/`, zero dependencies) holds the
+GitHub token and turns every save into a single commit; it serves the desk on
+Replit. The GitHub Pages copy is read-only.
 
-Agents read and write the same file through GitHub's own hosted MCP server, its
-Contents API, or plain git — nothing to deploy. See [AGENTS.md](AGENTS.md).
+Agents read and write through the desk's backend or plain git — one atomic
+commit per change, nothing else to deploy. See [AGENTS.md](AGENTS.md).
 
 ```
 lionscraft-platform.html    the entire application
@@ -41,7 +43,8 @@ data/schema.json            the assembled shape
 scripts/validate.mjs        validator (node scripts/validate.mjs)
 AGENTS.md                   contract for agents working on the board
 docs/                       documentation, one folder per tab
-server/                     optional self-hosted API — nothing uses it by default
+server/                     the backend: holds the GitHub token, turns each
+                            save into one commit, serves the desk on Replit
 ```
 
 ## Two things to know before using it

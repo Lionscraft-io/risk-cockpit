@@ -1,15 +1,12 @@
 {
-  "name": "risk-cockpit-api",
+  "name": "risk-cockpit-proxy",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Live backend for the Lionscraft Partner & Facility Desk — one JSON document over REST. Contract in ../AGENTS.md.",
-  "main": "index.mjs",
+  "description": "The desk's one backend: serves the UI and turns each save into a single commit on the repo. Contract in ../AGENTS.md.",
+  "main": "proxy.mjs",
   "scripts": {
-    "start": "node index.mjs"
+    "start": "node proxy.mjs"
   },
-  "engines": { "node": ">=20" },
-  "dependencies": {
-    "pg": "^8.13.0"
-  }
+  "engines": { "node": ">=20" }
 }
