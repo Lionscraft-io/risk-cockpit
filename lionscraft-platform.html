@@ -396,7 +396,9 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
 
 /* ─── Milestones ─────────────────────────────────────────────────────── */
 .ms{display:flex; flex-direction:column}
-.ms-item{display:grid; grid-template-columns:16px 1fr auto; gap:13px; padding:11px 15px; border-bottom:1px solid var(--line); align-items:start}
+.ms-item{display:grid; grid-template-columns:16px 1fr auto auto; gap:13px; padding:11px 15px; border-bottom:1px solid var(--line); align-items:start}
+.ms-item .colmenu{align-self:center}
+.ms-item:hover .colmenu{opacity:1}
 .ms-item:last-child{border-bottom:0}
 .ms-item .pip{width:11px; height:11px; border-radius:50%; border:2px solid var(--line-strong); margin-top:4px; background:var(--surface)}
 .ms-item.hit .pip{background:var(--accent); border-color:var(--accent)}
@@ -2027,6 +2029,41 @@ function ensureColumns(){
   if (!Array.isArray(DB.columns) || !DB.columns.length) DB.columns = structuredClone(DEFAULT_COLUMNS);
 }
 const slug = t => (t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "col") ;
+
+function addMilestone(){
+  const name = prompt("Milestone:", "");
+  if (!name || !name.trim()) return;
+  const date = prompt("Date it is due (YYYY-MM-DD):", "");
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date.trim())){ if (date) toast("Needs a date like 2026-12-19"); return; }
+  const m = {id:uid("m"), name:name.trim(), date:date.trim(), hit:false, note:""};
+  DB.milestones.push(m);
+  logEvent({kind:"change", refType:"milestone", ref:m.id, body:"Added — due " + fmtDate(m.date)});
+  save(); render();
+}
+
+function milestoneMenu(id){
+  const i = DB.milestones.findIndex(m => m.id === id);
+  if (i < 0) return;
+  const m = DB.milestones[i];
+  const choice = prompt('"' + m.name + '" — due ' + fmtDate(m.date) + "\n\n" +
+    "  rename   change its name\n  date     change the date\n  note     what it means\n  remove   delete it\n\nType one:", "date");
+  if (!choice) return;
+  const c = choice.trim().toLowerCase();
+  if (c === "rename"){
+    const v = prompt("Name:", m.name); if (!v || !v.trim()) return; m.name = v.trim();
+  } else if (c === "date"){
+    const v = prompt("Date (YYYY-MM-DD):", m.date);
+    if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v.trim())){ if (v) toast("Needs a date like 2026-12-19"); return; }
+    m.date = v.trim();
+  } else if (c === "note"){
+    const v = prompt("What it means:", m.note || ""); if (v === null) return; m.note = v.trim();
+  } else if (c === "remove"){
+    if (!confirm('Remove "' + m.name + '"?')) return;
+    DB.milestones.splice(i, 1);
+    logEvent({kind:"change", refType:"board", ref:"", body:"Removed the milestone " + m.name});
+  } else { toast("Type rename, date, note or remove"); return; }
+  save(); render();
+}
 
 function addColumn(){
   const title = prompt("New column name:", "");
@@ -3688,6 +3725,10 @@ document.getElementById("view").addEventListener("click", e => {
   if (e.target.id === "addPartner"){ partnerDrawer(null); return; }
   if (e.target.id === "addTask"){ taskDrawer(null); return; }
   if (e.target.id === "newNote"){ noteDrawer(); return; }
+  if (e.target.id === "addMilestone"){ addMilestone(); return; }
+
+  const msm = e.target.closest("[data-msmenu]");
+  if (msm){ e.stopPropagation(); milestoneMenu(msm.dataset.msmenu); return; }
   if (e.target.id === "fClear"){ filters = {stage:"", cat:"", q:""}; render(); return; }
 });
 
