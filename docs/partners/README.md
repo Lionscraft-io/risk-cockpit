@@ -16,8 +16,8 @@ The 36 seeded research targets that used to sit here were removed on
 | Stage | Who |
 | --- | --- |
 | MoU signed | Hakuhodo Key3 |
-| MoU sent | Sumitomo Insurance · Sumitomo Web3 · Aon |
-| Aligning MoU | Mobily · Asian Development Bank · Vodafone |
+| MoU sent | Sumitomo Insurance · Sumitomo Web3 · Mobily · Aon |
+| Aligning MoU | Asian Development Bank · Vodafone |
 | Researched | Sri Lanka |
 | Identified | Roland Voggenhauer · Seena Foroutan · Siva Balasuriyar |
 

@@ -81,15 +81,35 @@ One column fills the screen and you swipe between them, with the next column
 peeking at the edge. Cards stay fully readable rather than being squeezed into
 four narrow columns.
 
-## MoU cards
+## MoUs are a strip, not cards
 
-Every MoU in flight appears as a card, carrying an `MoU` chip and the partner's
-stage. They are derived from the partner records rather than stored, so the
-board and the CRM cannot disagree: *Aligning MoU* sits in **Focus**, *MoU sent*
-in **Review** — it is with them and you are waiting — and *signed* in **Done**.
+A line above the columns: **signed · sent · aligning · not started**. Click any
+of them to open the CRM filtered to that stage.
 
-Dragging one moves the partner's stage. Columns that mean nothing for an
-agreement are refused rather than guessed at. Clicking opens the partner.
+They used to be cards, one per partner. With seven MoUs in flight and two real
+tasks, the board was 78% status mirror — and an MoU card is not work. Nothing
+can be done to *MoU — Sumitomo Insurance* except wait for a countersignature,
+so it sits in **Review** until they sign, taking up a slot that a real task
+could use. Status and work were being drawn as the same kind of object.
+
+**Show as cards** puts them back if you want to drag them. The setting sticks
+per browser. As cards they behave as before: derived from the partner records
+rather than stored, so board and CRM cannot disagree — *Aligning MoU* in
+**Focus**, *MoU sent* in **Review**, *signed* in **Done**. Dragging one moves
+the partner's stage; columns that mean nothing for an agreement are refused
+rather than guessed at; clicking opens the partner.
+
+The [Plan](../plan/) keeps MoUs either way — there they sit in their own table
+under their own heading, which was never the problem.
+
+## Getting real tasks onto the board
+
+Every partner already carries a next move — *"Chase countersignature"*,
+*"Confirm market and entity"*. Those **are** the tasks, already written down.
+
+Open a partner and use **Put this next move on the board ›**. It lands in the
+first column, linked to the partner, carrying their owner and due date. Doing
+it twice is refused rather than duplicated.
 
 ## Tasks bridged from the workforce board
 

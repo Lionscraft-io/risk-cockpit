@@ -117,6 +117,18 @@ button,input,select,textarea{font:inherit; color:inherit}
   cursor:pointer; transition:background .12s, color .12s, box-shadow .12s}
 .zonebtn:hover{color:var(--ink)}
 .zonebtn[aria-pressed="true"]{background:var(--paper); color:var(--ink); box-shadow:var(--shadow)}
+
+/* MoU status, once it stopped being cards. */
+.moustrip{display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding:9px 13px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius)}
+.moustrip .eyebrow{padding:0; margin-right:2px}
+.moupill{display:inline-flex; align-items:baseline; gap:5px; padding:4px 10px;
+  background:var(--paper); border:1px solid var(--line); border-radius:999px;
+  color:var(--ink-2); font-size:12.5px; cursor:pointer; transition:border-color .12s, color .12s}
+.moupill:hover{border-color:var(--line-strong); color:var(--ink)}
+.moupill b{font-family:var(--data); font-size:13px; color:var(--ink)}
+.moupill[data-zero]{opacity:.5}
+.moupill[data-zero] b{color:var(--ink-3)}
 .navitem{
   display:flex; align-items:baseline; gap:9px; width:100%; text-align:left;
   background:none; border:0; padding:7px 10px; border-radius:var(--radius);
@@ -1311,8 +1323,8 @@ const ZONES = [
 const VIEWS = [
   {id:"overview",  label:"Overview",  zone:"crm",  count:() => ""},
   {id:"partners",  label:"Partners",  zone:"crm",  count:() => DB.partners.length},
-  {id:"plan",      label:"Plan",      zone:"work", count:() => allCards().filter(c => !isDone(c.status)).length},
-  {id:"board",     label:"Board",     zone:"work", count:() => allCards().filter(c => c.status === "focus" || c.status === "review").length},
+  {id:"plan",      label:"Plan",      zone:"work", count:() => planCards().filter(c => !isDone(c.status)).length},
+  {id:"board",     label:"Board",     zone:"work", count:() => boardCards().filter(c => c.status === "focus" || c.status === "review").length},
   {id:"activity",  label:"Activity",  zone:"work", count:() => DB.activity.length || ""},
   {id:"narrative", label:"Narrative", zone:"work", count:() => ""}
 ];
@@ -1778,8 +1790,9 @@ function viewBoard(){
   const rankT = t => (typeof t.order === "number" ? t.order : Number.MAX_SAFE_INTEGER);
   list.sort((a, b) => (rankT(a) - rankT(b)) || (a.due || "9999").localeCompare(b.due || "9999"));
 
-  /* The MoUs, as cards. They carry a workstream, so the filter applies. */
-  let mous = mouCards();
+  /* The MoUs, as cards — only when asked for. They carry a workstream, so the
+     filter applies. */
+  let mous = showMou ? mouCards() : [];
   if (boardOwner) mous = mous.filter(t => (t.owner || "") === (boardOwner === "—" ? "" : boardOwner));
   if (boardQ){
     const q = boardQ.toLowerCase();
@@ -1813,6 +1826,7 @@ function viewBoard(){
   </div>
 
   <div class="grid" style="gap:14px">
+    ${mouStrip()}
     <div class="stats">
       <div class="stat"><b>${list.length + mous.length + bridge.length}</b><small>In view</small></div>
       <div class="stat ${inFocus ? "go" : ""}"><b>${inFocus}</b><small>Focus</small></div>
@@ -2071,6 +2085,11 @@ async function moveBridged(id, status){
 function wireBoard(){
   const addCol = document.getElementById("addColumn");
   if (addCol) addCol.onclick = addColumn;
+
+  const mt = document.getElementById("mouToggle");
+  if (mt) mt.onclick = () => setShowMou(!showMou);
+  document.querySelectorAll("[data-mstage]").forEach(b =>
+    b.onclick = () => { filters = {stage:b.dataset.mstage, cat:"", q:""}; go("partners"); });
   document.querySelectorAll("[data-colmenu]").forEach(b =>
     b.onclick = e => { e.stopPropagation(); columnMenu(b.dataset.colmenu); });
   document.querySelectorAll("[data-addto]").forEach(b =>
@@ -2206,6 +2225,30 @@ const MOU_STAGE  = {focus:"aligning", review:"mou_sent", done:"mou_signed"};
 /* Which workstream MoUs belong to. Mark one with "mou": true in
    workstreams.json to move them; Legal & regulatory is the sensible default,
    since an MoU is the instrument that carries rights and obligations. */
+/* Taking the MoU cards off the board must not take the information with them.
+   One line, four numbers, each one a way into the CRM filtered to that stage. */
+function mouStrip(){
+  const all = mouCards();
+  const waiting = DB.partners.filter(p => isCounterparty(p) && stageRank(p.stage) >= 0 && !MOU_COLUMN[p.stage]);
+  const groups = [
+    {n: all.filter(m => m.status === "done").length,   label: "signed",    stage: "mou_signed"},
+    {n: all.filter(m => m.status === "review").length, label: "sent",      stage: "mou_sent"},
+    {n: all.filter(m => m.status === "focus").length,  label: "aligning",  stage: "aligning"},
+    {n: waiting.length,                                label: "not started", stage: ""}
+  ];
+  return `
+  <div class="moustrip">
+    <span class="eyebrow">MoUs</span>
+    ${groups.map(g => `
+      <button class="moupill" data-mstage="${esc(g.stage)}" ${g.n ? "" : "data-zero"}
+              title="Open the CRM${g.stage ? " filtered to this stage" : ""}">
+        <b>${g.n}</b> ${g.label}
+      </button>`).join("")}
+    <span class="spacer"></span>
+    <button class="btn ghost" id="mouToggle">${showMou ? "Hide MoU cards" : "Show as cards"}</button>
+  </div>`;
+}
+
 function mouWs(){
   const w = DB.workstreams || [];
   return (w.find(x => x.mou) || w.find(x => x.id === "WS3") || w[0] || {id:"WS3", name:"Legal & regulatory"});
@@ -2218,13 +2261,25 @@ function mouWs(){
 const PEOPLE_CATS = new Set(["advisor", "network"]);
 const isCounterparty = p => !PEOPLE_CATS.has(p.cat);
 
-/* Everything actually sitting on the board: real tasks, the MoU cards derived
-   from partner stages, and whatever the workforce bridge is showing. The rail
-   badges used to count DB.tasks alone and read 0 while nine cards sat in the
-   columns. */
-function allCards(){
-  return DB.tasks.concat(mouCards(), bridged);
+/* An MoU card mirrors a partner's stage. That is status, not work: nothing can
+   be done to "MoU — Sumitomo Insurance" except wait for them to countersign,
+   and it will sit in Review until they do. Seven of them buried the two real
+   cards on the board, so they are summarised in a strip instead and only drawn
+   as cards on request. The Plan keeps them either way — there they sit in
+   their own table under their own heading, which was never the problem. */
+let showMou = false;
+const MOU_KEY = "lc.showmou";
+try { showMou = localStorage.getItem(MOU_KEY) === "1"; } catch (e) {}
+
+function setShowMou(v){
+  showMou = v;
+  try { localStorage.setItem(MOU_KEY, v ? "1" : "0"); } catch (e) {}
+  renderRail(); render();
 }
+
+/* The rail badges have to match what the tab actually draws, or they lie. */
+function boardCards(){ return DB.tasks.concat(showMou ? mouCards() : [], bridged); }
+function planCards(){  return DB.tasks.concat(mouCards()); }
 
 function mouCards(){
   return DB.partners
@@ -2802,6 +2857,7 @@ function partnerDrawer(id){
         ${field("Next move", "next", p.next)}
         ${field("Due", "nextDate", p.nextDate, "date")}
       </div>
+      ${isNew ? "" : `<button class="btn" data-mktask style="align-self:flex-start">Put this next move on the board ›</button>`}
       <label class="field"><span>Notes</span><textarea name="notes" rows="5">${esc(p.notes)}</textarea></label>
       ${isNew ? "" : threadBlock("partner", p.id)}
     </div>
@@ -2813,6 +2869,28 @@ function partnerDrawer(id){
     </footer>`);
 
   wireThread("partner", p.id, () => partnerDrawer(p.id));
+
+  /* The next move is already the real task — "Chase countersignature",
+     "Confirm market and entity". This copies it onto the board rather than
+     making anyone retype it, and reads the live field so a move typed but not
+     yet saved is the one that lands. */
+  const mk = drawer.querySelector("[data-mktask]");
+  if (mk) mk.onclick = () => {
+    const val = n => { const el = drawer.querySelector(`[name="${n}"]`); return (el ? el.value : p[n] || "").trim(); };
+    const title = val("next");
+    if (!title){ toast("Write a next move first"); return; }
+    const already = DB.tasks.find(t => t.partner === p.id && t.title === title && !isDone(t.status));
+    if (already){ toast("Already on the board"); return; }
+    DB.tasks.push({
+      id: uid("t"), ws: mouWs().id, title,
+      owner: val("owner"), start: "", due: val("nextDate"),
+      status: columns()[0].id, partner: p.id
+    });
+    logEvent({kind:"change", refType:"partner", ref:p.id,
+      body:"Next move put on the board as a task: " + title});
+    save(); renderRail(); render();
+    toast("On the board, in " + columns()[0].title);
+  };
 
   drawer.querySelector("[data-save]").onclick = () => {
     const wasStage = p.stage;
@@ -2837,7 +2915,12 @@ function partnerDrawer(id){
 function taskDrawer(id){
   const isNew = !id;
   const t = isNew
-    ? {id:uid("t"), ws:DB.workstreams[0].id, title:"", owner:"", start:"", due:"", status:"todo", partner:""}
+    /* Status must be a real column id. This said "todo", which has not been a
+       column since the board took the workforce vocabulary — the drawer's
+       select quietly fell back to the first option, but anything created
+       without going through that select was invalid and the validator
+       rejected it. */
+    ? {id:uid("t"), ws:DB.workstreams[0].id, title:"", owner:"", start:"", due:"", status:columns()[0].id, partner:""}
     : DB.tasks.find(x => x.id === id);
   if (!t) return;
 

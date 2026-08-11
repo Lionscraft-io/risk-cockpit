@@ -10,7 +10,12 @@ Two views of the same data: **List** and **Timeline**.
 
 ---
 
-## The MoUs are work, not a summary
+## The MoUs sit here in full
+
+Unlike the [Board](../board/), which summarises them into a strip because seven
+cards buried the real work, the Plan keeps every MoU in its own table under its
+own heading. That was never the crowded surface.
+
 
 Every MoU in flight is also a **card**, in the workstream marked for it —
 *Legal & regulatory* by default, since an MoU is the instrument that carries
