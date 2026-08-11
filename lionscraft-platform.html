@@ -434,6 +434,12 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
   font-family:var(--data); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase;
   color:var(--bridge); background:var(--bridge-soft); padding:1px 5px; border-radius:3px;
 }
+/* The task's own id, so a card can be named out loud or in a message. Quiet on
+   purpose — it is a handle, not information about the work. */
+.kid{
+  font-family:var(--data); font-size:9.5px; letter-spacing:.04em;
+  color:var(--ink-3); background:var(--surface-2); padding:1px 5px; border-radius:3px;
+}
 .kcard.bridged .kmeta .num{color:var(--ink-3)}
 .bridgenote{display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--ink-3); padding:2px 1px 0}
 .bridgenote i{width:9px; height:9px; border-radius:2px; background:var(--bridge); flex:none; font-style:normal}
@@ -1693,6 +1699,7 @@ function viewBoard(){
                     <span class="kt">${esc(t.title)}</span>
                     ${p ? `<span class="kpartner">${esc(p.name)}</span>` : ""}
                     <span class="kmeta">
+                      <span class="kid">${esc(t.id)}</span>
                       ${t.owner ? `<span>${esc(t.owner)}</span>` : "<span>unassigned</span>"}
                       <span class="num ${isLate ? "overdue" : ""}" style="margin-left:auto">${fmtDate(t.due)}</span>
                     </span>
@@ -2344,6 +2351,7 @@ function wsSections(tasks){
     const p = DB.partners.find(x => x.id === t.partner);
     return `<tr class="clickable ${isDone(t.status) ? "done" : ""}" data-task="${t.id}" draggable="true">
       <td style="width:88px"><button class="status" data-cycle="${t.id}" data-s="${t.status}">${statusLabel[t.status]}</button></td>
+      <td style="width:52px"><span class="kid">${esc(t.id)}</span></td>
       <td>${esc(t.title)}${p ? `<span class="sub">${esc(p.name)}</span>` : ""}</td>
       <td style="width:130px" class="hide-sm">${esc(t.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
       <td style="width:82px" class="num ${isOverdue(t.due) && !isDone(t.status) ? "overdue" : ""}">${fmtDate(t.due)}</td>
