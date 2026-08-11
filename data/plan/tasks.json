@@ -34,7 +34,7 @@
   },
   {
     "id": "t104",
-    "ws": "WS14",
+    "ws": "WS11",
     "title": "Update the pitch deck",
     "status": "weekly",
     "owner": "",
@@ -89,7 +89,7 @@
   },
   {
     "id": "t109",
-    "ws": "WS14",
+    "ws": "WS11",
     "title": "Update the website",
     "status": "backlog",
     "owner": "",

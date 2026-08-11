@@ -333,5 +333,15 @@
     "refType": "board",
     "ref": "",
     "body": "Added a workstream called Tasks and moved everything I had placed by guesswork into it. Toni named three workstreams — Outreach material, Manila invite, UK charity — and the only two placements they actually stated were the tasks those workstreams are named after. The other seven had been filed into WS1-WS9 on my judgement of where they fitted, which was not asked for. They now sit in Tasks until Toni says otherwise."
+  },
+  {
+    "id": "e_ws11fill",
+    "at": "2026-08-11T11:34:12.045Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Moved the pitch deck and the website into Outreach material at Toni's instruction. Used the existing WS11 rather than creating a second workstream of the same name."
   }
 ]
