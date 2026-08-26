@@ -92,6 +92,7 @@ for (const p of db.partners){
   if (!STAGES.includes(p.stage))
     err("partner " + p.id + " is at stage '" + p.stage + "', which does not exist (have: " + STAGES.join(", ") + ")");
   if (!isDateOrEmpty(p.nextDate)) err("partner " + p.id + " nextDate is not YYYY-MM-DD or empty");
+  if (!isDateOrEmpty(p.lastDate)) err("partner " + p.id + " lastDate is not YYYY-MM-DD or empty");
 }
 
 for (const t of db.tasks){

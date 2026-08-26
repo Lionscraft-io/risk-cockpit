@@ -11,6 +11,7 @@
     "contact": "",
     "next": "Define scope and first deliverable under the MoU",
     "nextDate": "",
+    "lastDate": "2026-08-25",
     "notes": ""
   },
   {
@@ -25,6 +26,7 @@
     "contact": "",
     "next": "Chase countersignature",
     "nextDate": "",
+    "lastDate": "2026-08-25",
     "notes": ""
   },
   {
@@ -39,6 +41,7 @@
     "contact": "",
     "next": "Chase countersignature",
     "nextDate": "",
+    "lastDate": "2026-08-12",
     "notes": ""
   },
   {
@@ -48,11 +51,12 @@
     "country": "LK",
     "why": "Host country of the first facility; public-sector cooperation is a precondition.",
     "ask": "Align on scope and the counterparty on the government side.",
-    "stage": "researched",
+    "stage": "approached",
     "owner": "",
     "contact": "",
-    "next": "Needs to be aligned — confirm the counterparty and the ask",
-    "nextDate": "",
+    "next": "Second meeting — confirm the counterparty and the ask",
+    "nextDate": "2026-09-02",
+    "lastDate": "2026-08-26",
     "notes": "Renamed from the \"Sri Lanka\" placeholder. The category (Regulators & public bodies), the why and the ask still describe the country, not this organisation — they were written when this record stood for whichever Sri Lankan body would sign. Worth rewriting now that it names a real counterparty."
   },
   {
@@ -67,6 +71,7 @@
     "contact": "",
     "next": "Chase countersignature",
     "nextDate": "",
+    "lastDate": "2026-08-19",
     "notes": ""
   },
   {
@@ -81,6 +86,7 @@
     "contact": "",
     "next": "Needs to be aligned — agree the ask before approaching",
     "nextDate": "",
+    "lastDate": "2026-08-21",
     "notes": ""
   },
   {
@@ -95,6 +101,7 @@
     "contact": "",
     "next": "Needs to be aligned — agree the ask before approaching",
     "nextDate": "",
+    "lastDate": "2026-08-24",
     "notes": ""
   },
   {
@@ -109,6 +116,7 @@
     "contact": "",
     "next": "Needs to be aligned — confirm market and entity",
     "nextDate": "",
+    "lastDate": "2026-08-25",
     "notes": ""
   },
   {
@@ -123,6 +131,7 @@
     "contact": "linkedin.com/in/roland-voggenauer",
     "next": "Confirm where their network reaches and what to ask for",
     "nextDate": "",
+    "lastDate": "",
     "notes": "Surname spelling unconfirmed: entered as \"Voggenhauer\", LinkedIn URL reads \"voggenauer\". Confirm before any outreach goes out."
   },
   {
@@ -137,6 +146,7 @@
     "contact": "linkedin.com/in/seenaforoutan",
     "next": "Agree the investor list and the introduction ask",
     "nextDate": "",
+    "lastDate": "",
     "notes": ""
   },
   {
@@ -151,6 +161,7 @@
     "contact": "",
     "next": "Confirm what they advise on and how often we should talk",
     "nextDate": "",
+    "lastDate": "",
     "notes": "No contact detail or link on file yet."
   },
   {
@@ -165,6 +176,7 @@
     "contact": "",
     "next": "Confirm the entity, the contact and what we want from them",
     "nextDate": "",
+    "lastDate": "",
     "notes": "Entity unconfirmed — recorded from \"ethereum institutional team\". Confirm the exact team, and whether Matthew Dawson sits here or with the donation fund."
   },
   {
@@ -179,6 +191,7 @@
     "contact": "",
     "next": "Confirm the fund's scope and what we would ask it to fund",
     "nextDate": "",
+    "lastDate": "",
     "notes": "Entity unconfirmed. Confirm whether Matthew Dawson is the contact here or on the institutional team."
   },
   {
@@ -193,6 +206,7 @@
     "contact": "",
     "next": "Confirm where their network reaches and what to ask for",
     "nextDate": "",
+    "lastDate": "",
     "notes": "Ex-Pairpoint, as given. If that is Pairpoint by Vodafone, it may connect to the Scott Petty conversation — worth confirming."
   },
   {
@@ -207,6 +221,22 @@
     "contact": "",
     "next": "Confirm the entity, the contact and what we want from them",
     "nextDate": "",
+    "lastDate": "",
     "notes": "Entered as one record using Toni's own phrase. If the World Bank and Fundschain are two separate counterparties rather than one joint approach, split this in two. Category inferred as development finance from the World Bank half — not stated."
+  },
+  {
+    "id": "p16",
+    "name": "Vodafone Foundation",
+    "cat": "donor",
+    "country": "UK",
+    "why": "Corporate foundation of the Vodafone group. Why them specifically has not been recorded yet.",
+    "ask": "Not yet agreed.",
+    "stage": "identified",
+    "owner": "",
+    "contact": "",
+    "next": "Confirm the contact and what we want from them",
+    "nextDate": "",
+    "lastDate": "",
+    "notes": "Added alongside the Vodafone operator record at Toni's request. Whether this runs through the same relationship or is a separate approach has not been recorded, and has not been guessed at."
   }
 ]

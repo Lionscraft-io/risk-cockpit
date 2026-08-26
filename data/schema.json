@@ -103,6 +103,9 @@
           "nextDate": {
             "$ref": "#/definitions/dateOrEmpty"
           },
+          "lastDate": {
+            "$ref": "#/definitions/dateOrEmpty"
+          },
           "notes": {
             "type": "string"
           },

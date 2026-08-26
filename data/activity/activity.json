@@ -383,5 +383,115 @@
     "refType": "task",
     "ref": "t102",
     "body": "Moved to 24 August on Toni's word, from \"Prepare the Vodafone CTO meeting (Scott Petty), 27–28 Aug\" due 2026-08-27. That settles the contradiction flagged when the event was added — the task and the event now agree. Still outstanding: LC-013 on the workforce board reads \"27 Aug 26\" and lives in the other repository, so it was not touched from here."
+  },
+  {
+    "id": "e_lc01",
+    "at": "2026-08-26T09:00:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p01",
+    "body": "Last contact 25 Aug: update received from them. Recorded from Toni's account, wording his."
+  },
+  {
+    "id": "e_lc02",
+    "at": "2026-08-26T09:00:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p02",
+    "body": "Last contact 25 Aug: meeting on Tuesday. Stage left at MoU sent — a meeting while the MoU is out does not move it on its own."
+  },
+  {
+    "id": "e_lc03",
+    "at": "2026-08-26T09:00:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p03",
+    "body": "Last contact 12 Aug. Two weeks quiet with the MoU out — the oldest of the three sent."
+  },
+  {
+    "id": "e_lc04",
+    "at": "2026-08-26T09:00:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p05",
+    "body": "Last contact 19 Aug, with the MoU out."
+  },
+  {
+    "id": "e_lc05",
+    "at": "2026-08-26T09:00:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p06",
+    "body": "Last contact Friday 21 Aug."
+  },
+  {
+    "id": "e_lc06",
+    "at": "2026-08-26T09:00:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p07",
+    "body": "Last contact Monday 24 Aug — talked at the beginning of the week."
+  },
+  {
+    "id": "e_lc07",
+    "at": "2026-08-26T09:00:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p08",
+    "body": "Last contact 25 Aug."
+  },
+  {
+    "id": "e_lc08",
+    "at": "2026-08-26T09:00:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p04",
+    "body": "Approached today, 26 Aug. Second meeting booked for 2 September, now the due date on the record."
+  },
+  {
+    "id": "e_lc09",
+    "at": "2026-08-26T09:00:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p04",
+    "body": "Researched → Approached"
+  },
+  {
+    "id": "e_lc10",
+    "at": "2026-08-26T09:00:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p16",
+    "body": "Added at Toni's request alongside the Vodafone operator record. Recorded as a foundation, so Donors & foundations rather than Infrastructure operators. Why them, who the contact is, and whether it runs through the same relationship as the operator conversation are all still open — none of it has been invented."
+  },
+  {
+    "id": "e_lc11",
+    "at": "2026-08-26T09:00:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Partners table now shows Last contact where it showed Owner. Owner was unassigned on every one of the sixteen records, so the column carried nothing; when a conversation was last touched is the thing you actually scan for. The owner field is untouched and still in the editor. Eight dates entered from Toni's account; the other eight records have no last contact recorded and show a dash rather than a guess."
   }
 ]

@@ -928,6 +928,7 @@ async function headCommit(){
 function normaliseBoard(doc){
   if (!Array.isArray(doc.activity)) doc.activity = [];
   if (!Array.isArray(doc.events)) doc.events = [];
+  for (const p of doc.partners || []) if (typeof p.lastDate !== "string") p.lastDate = "";
   return doc;
 }
 
@@ -1122,6 +1123,8 @@ if (!Array.isArray(DB.activity)) DB.activity = [];
 /* Events arrived after this file shipped, so a browser holding an older copy
    has no such key. */
 if (!Array.isArray(DB.events)) DB.events = [];
+/* Last contact arrived later still, so records saved before it have no key. */
+for (const p of DB.partners) if (typeof p.lastDate !== "string") p.lastDate = "";
 
 /* `quiet` is used by the sync machinery, which manages the dirty flag itself.
    Every other caller is a user edit, so it marks the copy as unpublished. */
@@ -1553,7 +1556,7 @@ function viewPartners(){
     <div class="tablewrap">
       <table class="cardtable">
         <thead><tr>
-          <th>Stage</th><th>Organisation</th><th>Owner</th><th>Due</th>
+          <th>Stage</th><th>Organisation</th><th>Last contact</th><th>Due</th>
         </tr></thead>
         <tbody>
           ${rows.length ? rows.map(p => `
@@ -1562,7 +1565,7 @@ function viewPartners(){
               <td class="lead" title="${esc(p.why)}"><b class="pn">${esc(p.name)}</b>
                 <span class="cat" style="margin-left:7px">${catLabel(p.cat)}${p.country ? " · " + esc(p.country) : ""}</span>
                 <span class="sub">${esc(p.next) || "No next move set"}</span></td>
-              <td style="width:130px" class="hide-sm" data-label="Owner">${esc(p.owner) || '<span style="color:var(--ink-3)">unassigned</span>'}</td>
+              <td style="width:96px" data-label="Last contact" class="num">${fmtDate(p.lastDate)}</td>
               <td style="width:82px" data-label="Due" class="num ${isOverdue(p.nextDate) ? "overdue" : ""}">${fmtDate(p.nextDate)}</td>
             </tr>`).join("") : '<tr><td colspan="4" class="empty">No partners match those filters.</td></tr>'}
         </tbody>
@@ -2947,7 +2950,7 @@ function partnerDrawer(id){
   const isNew = !id;
   const p = isNew
     ? {id:uid("p"), name:"", cat:"carrier", country:"", why:"", ask:"", stage:"identified",
-       owner:"", contact:"", next:"", nextDate:"", notes:""}
+       owner:"", contact:"", next:"", nextDate:"", lastDate:"", notes:""}
     : DB.partners.find(x => x.id === id);
   if (!p) return;
 
@@ -2972,6 +2975,10 @@ function partnerDrawer(id){
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
         ${field("Owner (us)", "owner", p.owner)}
         ${field("Contact (them)", "contact", p.contact)}
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 130px; gap:10px">
+        ${field("Last contact", "lastDate", p.lastDate, "date")}
+        <span></span>
       </div>
       <div style="display:grid; grid-template-columns:1fr 130px; gap:10px">
         ${field("Next move", "next", p.next)}
