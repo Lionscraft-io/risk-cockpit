@@ -921,6 +921,16 @@ async function headCommit(){
    request and immediate after a commit; served from anywhere else (GitHub
    Pages) it reads the copies sitting beside this page — read-only, but it
    costs no rate limit and needs no credential. */
+/* Arrays that arrived after earlier versions of this file shipped. A backend
+   running older code serves a board without them, and every reader here
+   assumes an array — so normalise what comes in off the wire, not just the
+   copy held at boot. */
+function normaliseBoard(doc){
+  if (!Array.isArray(doc.activity)) doc.activity = [];
+  if (!Array.isArray(doc.events)) doc.events = [];
+  return doc;
+}
+
 async function fetchBoard(){
   if (useProxy){
     const ctrl = new AbortController();
@@ -930,8 +940,7 @@ async function fetchBoard(){
       if (!res.ok) throw new Error("proxy read: HTTP " + res.status);
       const out = await res.json();
       headSha = out.head;
-      if (!Array.isArray(out.desk.activity)) out.desk.activity = [];
-      return out.desk;
+      return normaliseBoard(out.desk);
     } finally { clearTimeout(t); }
   }
   const parts = await Promise.all(FILES.map(async f => {
@@ -945,8 +954,7 @@ async function fetchBoard(){
     if (f.wrap) Object.assign(doc, parts[i]);
     else doc[f.key] = parts[i];
   });
-  if (!Array.isArray(doc.activity)) doc.activity = [];
-  return doc;
+  return normaliseBoard(doc);
 }
 
 /* Commit the board — through the proxy, the only write path. Re-reads first
