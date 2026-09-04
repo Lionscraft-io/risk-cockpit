@@ -298,6 +298,8 @@ td.num{white-space:nowrap}
 .cardtable td.why,.cardtable td.evd{font-size:13px; line-height:1.5}
 .iprof section{display:flex; flex-direction:column; gap:3px}
 .iprof p{margin:0; font-size:15px; line-height:1.6}
+th[data-sort]{cursor:pointer; user-select:none; white-space:nowrap}
+th[data-sort]:hover{color:var(--accent-ink)}
 select, input[type=text], input[type=date], textarea{
   background:var(--surface); border:1px solid var(--line-strong); border-radius:var(--radius);
   padding:5px 8px; font-size:12.5px; max-width:100%;
@@ -1322,7 +1324,7 @@ const VIEWS = [
 ];
 let current = "overview";
 let filters = {stage:"", cat:"", q:""};
-let ifilters = {tier:"", type:"", stage:"", q:""};
+let ifilters = {tier:"", type:"", stage:"", q:"", sort:"rank", dir:1};
 
 function renderRail(){
   document.getElementById("rail").innerHTML = VIEWS.map(v =>
@@ -2858,7 +2860,16 @@ function viewInvestors(){
   }
   /* Rank is set by hand against the rule in the note; anything unranked
      sinks to the bottom of its tier rather than landing somewhere plausible. */
-  const byRank = (a, b) => ((a.rank || 99) - (b.rank || 99)) || a.name.localeCompare(b.name);
+  const sorter = (a, b) => {
+    const k = ifilters.sort || "rank", d = ifilters.dir || 1;
+    /* Undated years sink to the bottom whichever way the column is sorted. */
+    const ya = a.year || (d > 0 ? 9999 : -1), yb = b.year || (d > 0 ? 9999 : -1);
+    const v = k === "year" ? ya - yb
+            : k === "name" ? a.name.localeCompare(b.name)
+            : ((a.rank || 99) - (b.rank || 99));
+    return (v * d) || ((a.rank || 99) - (b.rank || 99)) || a.name.localeCompare(b.name);
+  };
+  const arrow = k => ifilters.sort === k ? (ifilters.dir > 0 ? " ↑" : " ↓") : "";
   const tierCount = t => DB.investors.filter(i => i.tier === t).length;
 
   /* A decision table: the evidence sits in the row, dated and linked, so the
@@ -2881,13 +2892,15 @@ function viewInvestors(){
     </tr>`;
 
   const head = `<thead><tr>
-      <th style="width:34px">#</th><th style="width:210px">Investor</th><th style="width:27%">Why</th><th>Evidence</th>
-      <th style="width:52px">Year</th><th style="width:150px">Source</th>
+      <th style="width:34px" data-sort="rank" title="Sort by rank">#${arrow("rank")}</th>
+      <th style="width:210px" data-sort="name" title="Sort by name">Investor${arrow("name")}</th>
+      <th style="width:27%">Why</th><th>Evidence</th>
+      <th style="width:60px" data-sort="year" title="Sort by year">Year${arrow("year")}</th><th style="width:150px">Source</th>
     </tr></thead>`;
 
   const section = t => {
     if (ifilters.tier && ifilters.tier !== t) return "";
-    const list = rows.filter(i => i.tier === t).sort(t === "X" ? (a, b) => a.name.localeCompare(b.name) : byRank);
+    const list = rows.filter(i => i.tier === t).sort(sorter);
     const table = `<div class="tablewrap"><table class="cardtable">${head}<tbody>${
         list.length ? list.map(row).join("") : '<tr><td colspan="6" class="empty">Nothing in this tier matches.</td></tr>'
       }</tbody></table></div>`;
@@ -2924,6 +2937,7 @@ function viewInvestors(){
   <div class="card" style="margin-bottom:14px">
     <header>
       <div class="filters">
+        <input type="text" id="iQ" placeholder="Search ${DB.investors.length} funds — name, why, evidence, precedents…" value="${esc(ifilters.q)}" style="width:300px">
         <select id="iTier">
           <option value="">All tiers</option>
           ${Object.entries(ITIERS).map(([k, t]) => `<option value="${k}" ${ifilters.tier === k ? "selected" : ""}>${t.short ? "Checked, no fit" : "Tier " + t.label + " — " + t.hint} (${tierCount(k)})</option>`).join("")}
@@ -2936,8 +2950,7 @@ function viewInvestors(){
           <option value="">All stages</option>
           ${ISTAGES.map(st => `<option value="${st.id}" ${ifilters.stage === st.id ? "selected" : ""}>${st.label}</option>`).join("")}
         </select>
-        <input type="text" id="iQ" placeholder="Search…" value="${esc(ifilters.q)}" style="width:180px">
-        ${(ifilters.tier || ifilters.type || ifilters.stage || ifilters.q) ? '<button class="btn ghost" id="iClear">Clear</button>' : ""}
+        ${(ifilters.tier || ifilters.type || ifilters.stage || ifilters.q || ifilters.sort !== "rank") ? '<button class="btn ghost" id="iClear">Clear</button>' : ""}
       </div>
       <span class="spacer"></span>
       <span class="cat">${rows.length} of ${DB.investors.length}</span>
@@ -3653,6 +3666,14 @@ document.getElementById("view").addEventListener("click", e => {
   const ev = e.target.closest("[data-event]");
   if (ev){ eventDrawer(ev.dataset.event); return; }
 
+  const th = e.target.closest("th[data-sort]");
+  if (th){
+    const k = th.dataset.sort;
+    if (ifilters.sort === k) ifilters.dir = -ifilters.dir;
+    else { ifilters.sort = k; ifilters.dir = k === "year" ? -1 : 1; }
+    render(); return;
+  }
+
   const inv = e.target.closest("[data-investor]");
   if (inv){ investorDrawer(inv.dataset.investor); return; }
 
@@ -3663,7 +3684,7 @@ document.getElementById("view").addEventListener("click", e => {
   if (e.target.id === "newNote"){ noteDrawer(); return; }
   if (e.target.id === "addMilestone"){ addMilestone(); return; }
   if (e.target.id === "fClear"){ filters = {stage:"", cat:"", q:""}; render(); return; }
-  if (e.target.id === "iClear"){ ifilters = {tier:"", type:"", stage:"", q:""}; render(); return; }
+  if (e.target.id === "iClear"){ ifilters = {tier:"", type:"", stage:"", q:"", sort:"rank", dir:1}; render(); return; }
 });
 
 document.getElementById("view").addEventListener("change", e => {

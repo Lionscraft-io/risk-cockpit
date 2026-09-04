@@ -105,6 +105,19 @@ There used to be a second backend (`server/index.mjs`, Postgres) that kept its
 own copy of the board — a fork of the truth. It was removed; git history has it
 if anyone ever needs the reference.
 
+## A standalone copy
+
+```bash
+node scripts/build-local.mjs            # → lionscraft-desk-local.html
+node scripts/build-local.mjs ~/Desktop/desk.html
+```
+
+Bakes the current board into the page's `SEED` and gives the copy its own
+storage key, so it opens from disk with no server and no GitHub, and a newer
+build never shows an older build's edits. It is a snapshot: the board as it
+was at build time, and anything edited in it stays in that browser. The output
+is git-ignored — regenerate it, do not commit it.
+
 ## Publishing
 
 Push to `main`. GitHub Pages rebuilds in about a minute.

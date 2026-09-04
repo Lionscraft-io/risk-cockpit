@@ -19,3 +19,6 @@ desk*.json
 server/desk-local.json
 # The proxy has zero dependencies — no install step, nothing to vendor.
 server/node_modules/
+
+# Standalone builds from scripts/build-local.mjs — regenerate, do not commit
+lionscraft-desk-local*.html

@@ -45,6 +45,7 @@ data/                       the board, one file per section
   activity/activity.json    the shared log
 data/schema.json            the assembled shape
 scripts/validate.mjs        validator (node scripts/validate.mjs)
+scripts/build-local.mjs     standalone copy with the board baked in, opens from disk
 AGENTS.md                   contract for agents working on the board
 docs/                       documentation, one folder per tab
 server/                     the backend: holds the GitHub token, turns each
