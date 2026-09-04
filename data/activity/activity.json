@@ -603,5 +603,35 @@
     "refType": "board",
     "ref": "",
     "body": "Investors list restructured as a decision table at Toni's request: #, Investor with its website, the Evidence in full, the Year of its latest dated deal, and the Source link — so funds can be compared in the list without opening anything. Year is a new field, derived once from the dates already in each evidence line (67 records; 8 undated, all workbook entries marked 'not verified'), editable beside rank. The why, precedents, path in and ask stay in the profile."
+  },
+  {
+    "id": "e_inv08",
+    "at": "2026-09-04T21:30:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Universe pass at Toni's request — 'a proper deep web research of what's matching and what not'. Every firm in the 256-name third-party sheet (the 43 private individuals were neither researched nor imported) plus ~60 notable omissions: 242 firms in eight parallel batches, at most two searches each, verdict strong / adjacent / none / unknown, never a URL that was not actually loaded. Result: 64 strong, 44 adjacent, 115 none, 15 unknown. Every strong verdict was tiered and ranked by hand against the published rule; the list now holds 301 records — 36 A, 77 B, 58 C, 130 checked-and-excluded in a folded section so the exclusions are on the record. Caveat carried into the notes: the web-search allowance ran out partway through, so most later firms were checked against their own portfolio pages; 'none' for a firm without a public portfolio means not visible, not absent."
+  },
+  {
+    "id": "e_inv09",
+    "at": "2026-09-04T21:30:01Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "finding",
+    "refType": "board",
+    "ref": "",
+    "body": "What the pass found that the workbook did not: Galaxy led Soter Insure's Series A and its July 2026 Series B (digital-asset insurer); Coinbase Ventures took a strategic stake in Re, the on-chain reinsurer, in June 2026; Pantera and Haun are in Meanwhile, the Bermuda-licensed bitcoin life insurer (2025); KR1 has held Nexus Mutual since 2017 and in Feb 2026 committed 40,000 NXM to its underwriting pools; 1kx, 1confirmation, Collider, Hashed, DFG and UDHC hold Nexus Mutual, InsurAce, Nayms or OnRe; a16z is a repeat insurtech investor; Tokio Marine Future Fund writes $500k–$3M seed cheques into insurtech and climate risk; Lloyd's Lab asks for parametric solutions in its cohort briefs. Pantera — Toni's own example — pays off: one deal in 247, but a real regulated insurer."
+  },
+  {
+    "id": "e_inv10",
+    "at": "2026-09-04T21:30:02Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Three corrections to earlier records from the same pass. Anthemis (i01): the $90M insurance fund closed in February 2020, not recently — the Sumitomo Life LP link stands, the date was wrong. SCOR (i20): no 'SCOR Ventures' entity could be verified; renamed to SCOR, evidence is the Coriolis Capital ILS acquisition (Sep 2019). MS&AD Ventures (i07): the group also runs Mitsui Sumitomo Insurance Venture Capital in Japan, noted as a second door. Also filed as not-investors rather than dropped silently: Ethena (a protocol, came in from the OnRe cap table), Messari, Lukka, Areta, Astel, Tungsten, Xterio."
   }
 ]

@@ -14,7 +14,7 @@ One flat row across the top.
 | --- | --- |
 | **[Overview](overview/)** | One derived card per tab — the landing page |
 | **[Partners](partners/)** | The CRM: eleven partner types, ten stages, and the 14 records in play |
-| **[Investors](investors/)** | The investor space for the seed: 67 funds tiered by fit, each with dated evidence |
+| **[Investors](investors/)** | The investor space for the seed: 301 firms checked — 36 in the space and writing seed, 77 in insurance at the wrong stage or type, 58 adjacent, 130 excluded — each with dated, linked evidence |
 | **[Plan](plan/)** | The work grouped by workstream, and the draggable timeline |
 | **[Board](board/)** | The same cards by state — the working view |
 | **[Events](events/)** | Meetings and conferences, with dates |

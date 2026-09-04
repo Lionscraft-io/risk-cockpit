@@ -26,6 +26,20 @@ category — Descartes Underwriting, Arbol, FloodFlash, Raincoat, IBISA, Ledger
 Investing, Re, OnRe, Birch Hill — and into the insurance-native, climate, DFI,
 Japanese and Gulf investors the workbook's own footnote says it lacks.
 
+**A pass over the whole universe, also 4 September 2026.** Every *firm* in the
+256-name sheet — the 43 private individuals were neither researched nor
+imported — plus some sixty notable omissions (Pantera, Dragonfly, Polychain,
+Paradigm, a16z crypto, the insurer and reinsurer venture arms, the Japanese
+groups, the US insurtech specialists): 242 firms in eight batches, at most two
+searches each, one of four verdicts — *strong* (a named, dated insurance,
+risk-transfer or on-chain-cover deal), *adjacent* (tokenised RWA or regulated
+infrastructure only), *none*, or *unknown* — and never a URL that was not
+actually loaded. The web-search allowance ran out partway through, so most of
+the later firms were checked against their own portfolio pages instead; for a
+firm without a public portfolio, "none" therefore means *not visible*, and the
+record's notes say so. Every strong verdict was then tiered and ranked by hand
+against the rule below.
+
 ## The three tiers
 
 | Tier | Meaning |
@@ -34,6 +48,8 @@ Japanese and Gulf investors the workbook's own footnote says it lacks.
 | **B** | In the space, but wrong stage (growth-only) or wrong type (bank, strategic, retreating). Relationship now, cheque later — or partner rather than investor. |
 | **C** | Adjacent crypto and RWA funds with no insurance thesis. Round-fillers. |
 | **X** | Checked, and no evidence found of investing in insurance, risk transfer or RWA. Kept so the exclusion is on the record, folded shut at the bottom of the tab. |
+
+Counts after the universe pass: **36 A · 77 B · 58 C · 130 X** — 301 firms in all.
 
 The tier answers one question: *would this fund write into an $8.5M seed for
 risk infrastructure?* The workbook was tiered for a pre-seed with $300–750k
@@ -79,9 +95,30 @@ link, because the workbook cited screenshots, not URLs.
 - **Anthemis, Convective, Mundi, BlackFin, Buoyant, Munich Re Ventures, Brewer
   Lane, Eos, BlueOrchard** were absent — the insurance-native and climate
   investors the workbook itself says are missing. All Tier A.
-- **Anthemis's new insurance fund has Sumitomo Life as an LP**, and **Eos runs
-  an insurtech strategy with Twelve Capital**, an ILS manager from the original
+- **Anthemis's insurance fund has Sumitomo Life as an LP** — the fund closed in
+  February 2020, a date the universe pass corrected — and **Eos runs an
+  insurtech strategy with Twelve Capital**, an ILS manager from the original
   partner target list. Neither link was in the workbook.
+
+## What the universe pass added
+
+- **Galaxy** led both the Series A and the July 2026 Series B of Soter Insure,
+  a digital-asset insurer; **Coinbase Ventures** made a strategic investment in
+  Re, the on-chain reinsurance protocol, in June 2026 — the freshest
+  institutional cheque into on-chain reinsurance on file.
+- **Pantera** and **Haun** are both in Meanwhile, the Bermuda-licensed bitcoin
+  life insurer (2025). **KR1** has held Nexus Mutual since 2017 and supplies its
+  underwriting pools with capital. **1kx, 1confirmation, Collider, Hashed, DFG,
+  UDHC** hold Nexus Mutual, InsurAce, Nayms or OnRe.
+- **a16z** is a repeat insurtech investor (hyperexponential, FurtherAI, Stoïk);
+  **Tokio Marine Future Fund** writes $500k–$3M seed cheques into insurtech and
+  climate risk; **Lloyd's Lab** asks for parametric solutions in its briefs.
+- **SCOR** was corrected: no 'SCOR Ventures' could be verified; the evidence
+  is the Coriolis ILS acquisition (2019). **Sompo**, **Swiss Re** and
+  **Hannover Re** are principals — capacity first, equity second.
+- Not investors at all, now on the record as such: Ethena, Messari, Lukka,
+  Areta, Astel, Tungsten, Xterio. Renamed: Binance Labs → YZi Labs, Arrington
+  XRP → Arrington Capital, Zilliqa Capital → Rule72.
 
 ## The record
 
