@@ -95,19 +95,22 @@ link, because the workbook cited screenshots, not URLs.
 | `warm` | The path in — organisations and events, never a person's name |
 | `ask` | What to ask them for |
 | `stage` | identified → researched → approached → meeting → diligence → term sheet → committed, plus passed / parked |
-| `lastDate` / `nextDate` | When we last spoke; when the next move is due |
 | `source` | Workbook sheet and rank, or the research date |
 | `rank` | Order within the tier, by the rule above. 0 means unranked |
 | `link` | The fund's website, checked live. Empty shows a web search |
 | `sourceUrl` | Where the evidence line came from |
 
-Click a row to edit it, **Add investor** to create one. Changing the stage
-writes an entry to the [Activity](../activity/) log, and each investor has a
-thread at the bottom of its editor.
+Click a row to **read the case** — why they fit, the evidence and its source,
+precedents, the path in, the ask — as paragraphs, with an *Edit* button for
+the rare change. **Add investor** creates one. Changing the stage writes an
+entry to the [Activity](../activity/) log, and each investor has a thread at
+the bottom of its profile.
 
 ## What it does not do
 
-It is not a data room and it does not track terms. It holds no cap-table
+There is no owner, contact, next move or date on an investor — this is a map
+of the space, not a pipeline, and the stage chip alone says whether a
+conversation exists. It is not a data room and it does not track terms. It holds no cap-table
 maths. Precedents are names, not links — the evidence line says which round
 and when, and that is enough to find it. The 256-name universe and the 80
 rounds stay in the workbook; ask if you want them imported as a separate

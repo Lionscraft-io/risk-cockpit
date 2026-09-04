@@ -140,8 +140,6 @@ for (const i of db.investors){
   if (!ITYPES.includes(i.type)) err("investor " + i.id + " has unknown type: " + i.type);
   if (!ITIERS.includes(i.tier)) err("investor " + i.id + " has unknown tier: " + i.tier);
   if (!ISTAGES.includes(i.stage)) err("investor " + i.id + " has unknown stage: " + i.stage);
-  if (!isDateOrEmpty(i.nextDate)) err("investor " + i.id + " nextDate is not YYYY-MM-DD or empty");
-  if (!isDateOrEmpty(i.lastDate)) err("investor " + i.id + " lastDate is not YYYY-MM-DD or empty");
   if (i.rank !== undefined && (!Number.isInteger(i.rank) || i.rank < 0)) err("investor " + i.id + " rank must be an integer >= 0");
   for (const k of ["link", "sourceUrl"]) if (i[k] && !/^https?:\/\//i.test(i[k]))
     err("investor " + i.id + " " + k + " must start with http:// or https:// (got: " + i[k] + ")");

@@ -465,21 +465,6 @@
               "parked"
             ]
           },
-          "owner": {
-            "type": "string"
-          },
-          "contact": {
-            "type": "string"
-          },
-          "next": {
-            "type": "string"
-          },
-          "nextDate": {
-            "$ref": "#/definitions/dateOrEmpty"
-          },
-          "lastDate": {
-            "$ref": "#/definitions/dateOrEmpty"
-          },
           "notes": {
             "type": "string"
           },

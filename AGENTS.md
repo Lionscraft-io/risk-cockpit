@@ -167,8 +167,8 @@ apart from the activity Event below — in the data it is just `events`.
 of product — keep it dated), `precedents` (their portfolio companies in the
 space, free text), `warm` (the path in), `ask` (what to ask for), `stage`
 (`identified` → `researched` → `approached` → `meeting` → `diligence` →
-`term_sheet` → `committed`, plus `passed` / `parked`), `owner`, `contact`,
-`next`, `nextDate`, `lastDate`, `notes`, `source` (where the record came from),
+`term_sheet` → `committed`, plus `passed` / `parked`), `notes`, `source` (where the
+record came from),
 `rank` (integer — order within the tier, 0 = unranked), `link` (verified website
 or empty), `sourceUrl` (where the evidence line came from, or empty).
 
@@ -176,6 +176,9 @@ or empty), `sourceUrl` (where the evidence line came from, or empty).
 already on this board first, then funds that can lead a round this size, then the
 freshest dated evidence. Set `rank` against that rule and say why in the log.
 Never invent a URL — a record with no verified site shows a web search instead.
+There is deliberately no owner, contact, next move or date on an investor: this
+is a map of the space, not a pipeline. The stage alone says whether a
+conversation exists.
 
 Evidence with no date is an opinion. If you cannot date it, say so in the log.
 No personal names from third-party fundraising files: firm names only.

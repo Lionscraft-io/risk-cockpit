@@ -294,6 +294,10 @@ td.num{white-space:nowrap}
 
 /* ─── Filters ────────────────────────────────────────────────────────── */
 .filters{display:flex; gap:7px; flex-wrap:wrap; align-items:center}
+/* Investors: one scannable sub-line in the list; paragraphs, not boxes, in the profile. */
+.cardtable .sub.one{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:72ch}
+.iprof section{display:flex; flex-direction:column; gap:3px}
+.iprof p{margin:0; font-size:13.5px; line-height:1.55}
 select, input[type=text], input[type=date], textarea{
   background:var(--surface); border:1px solid var(--line-strong); border-radius:var(--radius);
   padding:5px 8px; font-size:12.5px; max-width:100%;
@@ -2855,30 +2859,19 @@ function viewInvestors(){
   const byRank = (a, b) => ((a.rank || 99) - (b.rank || 99)) || a.name.localeCompare(b.name);
   const tierCount = t => DB.investors.filter(i => i.tier === t).length;
 
-  /* A fund with no verified site on file gets a web search, labelled as one —
-     never a guessed URL. */
-  const searchFor = i => "https://duckduckgo.com/?q=" + encodeURIComponent(i.name + " venture capital");
-  const site = i => i.link
-    ? `<a class="evlink" href="${esc(i.link)}" target="_blank" rel="noopener noreferrer" data-stop>${esc(hostOf(i.link))} ↗</a>`
-    : `<a class="evlink" href="${esc(searchFor(i))}" target="_blank" rel="noopener noreferrer" data-stop title="No verified website on file — this opens a web search">search ↗</a>`;
-  const src = i => i.sourceUrl
-    ? ` <a class="evlink" href="${esc(i.sourceUrl)}" target="_blank" rel="noopener noreferrer" data-stop>${esc(hostOf(i.sourceUrl))} ↗</a>` : "";
-  const line = (label, html) => html ? `<span class="sub"><span class="cat">${label}</span> ${html}</span>` : "";
-
+  /* One line to scan; the case lives a click away. The sub-line is the proof
+     they are in the space — who they backed — or the thesis when there is no
+     precedent on file. */
   const row = i => `
-    <tr class="clickable" data-investor="${esc(i.id)}">
-      <td style="width:34px" class="num" title="Rank within the tier">${i.rank || "—"}</td>
+    <tr class="clickable" data-investor="${esc(i.id)}" title="${esc(i.thesis)}">
+      <td style="width:34px" class="num">${i.rank || "—"}</td>
       <td class="lead">
-        <b class="pn">${esc(i.name)}</b> ${site(i)}
-        <span class="cat" style="margin-left:7px">${esc(itypeLabel(i.type))}${i.geo ? " · " + esc(i.geo) : ""}${i.writes ? " · writes " + esc(i.writes) : ""}</span>
-        ${line("Why", esc(i.thesis))}
-        ${line("Evidence", (esc(i.evidence) || "none recorded") + src(i))}
-        ${line("Path in", esc(i.warm) || "cold")}
-        ${line("Ask", esc(i.ask))}
+        <b class="pn">${esc(i.name)}</b>${i.link
+          ? ` <a class="evlink" href="${esc(i.link)}" target="_blank" rel="noopener noreferrer" data-stop title="${esc(hostOf(i.link))}">↗</a>` : ""}
+        <span class="cat" style="margin-left:7px">${esc(itypeLabel(i.type))}${i.geo ? " · " + esc(i.geo) : ""}</span>
+        <span class="sub one">${i.precedents ? "Backed " + esc(i.precedents) : esc(i.thesis)}</span>
       </td>
-      <td style="width:118px" data-label="Stage"><span class="chip ${istageClass(i.stage)}"><i class="dot"></i>${istageLabel(i.stage)}</span>${
-        i.lastDate ? `<span class="sub">last ${esc(fmtDate(i.lastDate))}</span>` : ""}${
-        i.nextDate ? `<span class="sub${isOverdue(i.nextDate) ? " overdue" : ""}">due ${esc(fmtDate(i.nextDate))}</span>` : ""}</td>
+      <td style="width:112px" data-label="Stage"><span class="chip ${istageClass(i.stage)}"><i class="dot"></i>${istageLabel(i.stage)}</span></td>
     </tr>`;
 
   const section = t => {
@@ -2927,20 +2920,63 @@ function viewInvestors(){
     </header>
   </div>
 
-  <div class="note" style="margin-bottom:14px"><b>How the order works.</b> The tier answers one question — would this fund write into an $8.5M seed for risk infrastructure? <b>A</b> has backed parametric, ILS or on-chain reinsurance and writes the stage. <b>B</b> has, but is growth-only, a bank, or a strategic. <b>C</b> is adjacent crypto with no insurance thesis. Inside a tier the rank puts a path in through something already on this board first, then funds that can lead a round this size, then the freshest dated evidence. Evidence is dated and, where it came from the open web, linked; "not verified" means nobody has checked yet. A website link reading <i>search</i> means no verified site is on file.</div>
+  <div class="note" style="margin-bottom:14px">Ordered by tier, then by rank inside it: a path in through something already on this board first, then funds that can lead a round this size, then the freshest dated evidence. Click a fund for the full case and its sources.</div>
 
   <div class="grid" style="gap:16px">
     ${section("A")}${section("B")}${section("C")}
   </div>`;
 }
 
-function investorDrawer(id){
+/* Clicking an investor shows the case, not a form: the why, the evidence
+   with its source, the precedents, the path in, the ask. Edit is a button.
+   There is deliberately no owner, contact, next move or date here — this is
+   a map of the space, not a pipeline; the stage chip alone says whether a
+   conversation exists. */
+function investorDrawer(id, mode){
   const isNew = !id;
   const i = isNew
     ? {id:uid("i"), name:"", type:"insurtech", geo:"", tier:"B", writes:"", thesis:"", evidence:"", precedents:"",
-       warm:"", ask:"", stage:"identified", owner:"", contact:"", next:"", nextDate:"", lastDate:"", notes:"", rank:0, link:"", sourceUrl:"", source:"added from the desk"}
+       warm:"", ask:"", stage:"identified", notes:"", rank:0, link:"", sourceUrl:"", source:"added from the desk"}
     : DB.investors.find(x => x.id === id);
   if (!i) return;
+
+  const link = (url, label) => url
+    ? `<a class="evlink" href="${esc(url)}" target="_blank" rel="noopener noreferrer" data-stop>${esc(label || hostOf(url))} ↗</a>` : "";
+  const searchFor = "https://duckduckgo.com/?q=" + encodeURIComponent(i.name + " venture capital");
+
+  if (!isNew && mode !== "edit"){
+    const block = (label, html) => html ? `<section><span class="cat">${label}</span><p>${html}</p></section>` : "";
+    openDrawer(`
+      <header>
+        <h3>${esc(i.name)}</h3>
+        ${i.link ? link(i.link) : link(searchFor, "search")}
+        <button class="btn ghost" data-edit>Edit</button>
+        <button class="btn ghost" data-close>Close</button>
+      </header>
+      <div class="body iprof">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+          <span class="chip ${itierClass(i.tier)}">Tier ${esc(i.tier)}${i.rank ? " · #" + i.rank : ""}</span>
+          <span class="cat">${esc((ITIERS[i.tier] || {}).hint || "")}</span>
+          <span class="chip ${istageClass(i.stage)}"><i class="dot"></i>${istageLabel(i.stage)}</span>
+        </div>
+        <div class="cat">${[itypeLabel(i.type), i.geo, i.writes ? "writes " + i.writes : ""].filter(Boolean).map(esc).join(" · ")}</div>
+        ${block("Why they fit us", esc(i.thesis))}
+        ${block("Evidence", (esc(i.evidence) || "None recorded.") + (i.sourceUrl ? " " + link(i.sourceUrl) : ""))}
+        ${block("Precedents in the space", esc(i.precedents))}
+        ${block("Path in", esc(i.warm) || "Cold.")}
+        ${block("What to ask for", esc(i.ask))}
+        ${block("Notes", esc(i.notes))}
+        <div class="sub">Source: ${esc(i.source) || "—"}</div>
+        ${threadBlock("investor", i.id)}
+      </div>
+      <footer>
+        <span class="spacer"></span>
+        <button class="btn" data-close>Close</button>
+      </footer>`);
+    wireThread("investor", i.id, () => investorDrawer(i.id));
+    drawer.querySelector("[data-edit]").onclick = () => investorDrawer(i.id, "edit");
+    return;
+  }
 
   openDrawer(`
     <header>
@@ -2966,35 +3002,23 @@ function investorDrawer(id){
       <label class="field"><span>Stage</span><select name="stage">
         ${ISTAGES.map(st => `<option value="${st.id}" ${i.stage === st.id ? "selected" : ""}>${st.label} — ${st.hint}</option>`).join("")}
       </select></label>
-      <label class="field"><span>Why they fit us</span><textarea name="thesis" rows="2">${esc(i.thesis)}</textarea></label>
-      <label class="field"><span>Evidence — dated</span><textarea name="evidence" rows="3">${esc(i.evidence)}</textarea></label>
+      <label class="field"><span>Why they fit us</span><textarea name="thesis" rows="5">${esc(i.thesis)}</textarea></label>
+      <label class="field"><span>Evidence — dated</span><textarea name="evidence" rows="6">${esc(i.evidence)}</textarea></label>
       ${field("Evidence source (link)", "sourceUrl", i.sourceUrl || "")}
       ${field("Precedents in the space", "precedents", i.precedents)}
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
-        ${field("Warm path", "warm", i.warm)}
-        ${field("What to ask for", "ask", i.ask)}
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
-        ${field("Owner (us)", "owner", i.owner)}
-        ${field("Contact (them)", "contact", i.contact)}
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 130px 130px; gap:10px">
-        ${field("Next move", "next", i.next)}
-        ${field("Due", "nextDate", i.nextDate, "date")}
-        ${field("Last contact", "lastDate", i.lastDate, "date")}
-      </div>
+      <label class="field"><span>Path in</span><textarea name="warm" rows="3">${esc(i.warm)}</textarea></label>
+      <label class="field"><span>What to ask for</span><textarea name="ask" rows="3">${esc(i.ask)}</textarea></label>
       <label class="field"><span>Notes</span><textarea name="notes" rows="4">${esc(i.notes)}</textarea></label>
-      ${isNew ? "" : `<div class="sub">Source: ${esc(i.source) || "—"}</div>`}
-      ${isNew ? "" : threadBlock("investor", i.id)}
     </div>
     <footer>
       ${isNew ? "" : '<button class="btn danger" data-del>Delete</button>'}
       <span class="spacer"></span>
-      <button class="btn" data-close>Cancel</button>
+      ${isNew ? '<button class="btn" data-close>Cancel</button>' : '<button class="btn" data-back>Cancel</button>'}
       <button class="btn primary" data-save>Save</button>
     </footer>`);
 
-  if (!isNew) wireThread("investor", i.id, () => investorDrawer(i.id));
+  const back = drawer.querySelector("[data-back]");
+  if (back) back.onclick = () => investorDrawer(i.id);
 
   drawer.querySelector("[data-save]").onclick = () => {
     const wasStage = i.stage;
@@ -3008,7 +3032,8 @@ function investorDrawer(id){
     } else if (wasStage !== i.stage){
       logEvent({kind:"change", refType:"investor", ref:i.id, body:istageLabel(wasStage) + " → " + istageLabel(i.stage)});
     }
-    save(); closeDrawer(); renderRail(); render(); toast(isNew ? "Investor added" : "Saved");
+    save(); renderRail(); render(); toast(isNew ? "Investor added" : "Saved");
+    if (isNew) closeDrawer(); else investorDrawer(i.id);
   };
   const del = drawer.querySelector("[data-del]");
   if (del) del.onclick = () => {
