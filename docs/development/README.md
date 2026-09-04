@@ -115,8 +115,15 @@ node scripts/build-local.mjs ~/Desktop/desk.html
 Bakes the current board into the page's `SEED` and gives the copy its own
 storage key, so it opens from disk with no server and no GitHub, and a newer
 build never shows an older build's edits. It is a snapshot: the board as it
-was at build time, and anything edited in it stays in that browser. The output
-is git-ignored — regenerate it, do not commit it.
+was at build time, and anything edited in it stays in that browser.
+
+`lionscraft-desk-local.html` in the repo root is that snapshot, committed, so
+it can be downloaded from the Pages site as one file:
+
+https://lionscraft-io.github.io/risk-cockpit/lionscraft-desk-local.html
+
+It goes stale the moment the board moves. Refresh it by running the build and
+committing the result; the commit message should say which revision it holds.
 
 ## Publishing
 
