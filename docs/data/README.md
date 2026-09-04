@@ -57,7 +57,7 @@ never overwrites your work without asking.
 | --- | --- |
 | `live · rev N` | Reading the board; saves commit automatically |
 | `password needed` | You have edits but no team password — set it under **Data** |
-| `read-only` | This copy has no backend (e.g. the Pages copy) — edits stay local |
+| `read-only · rev N` | This copy has no backend (e.g. the Pages copy). It always shows the published board; anything edited here stays in this browser and is replaced on the next load |
 | `saving…` | Your edits are being committed |
 | `update available` | The board moved on since your copy. The banner offers **Load the board** or **Push mine anyway** |
 | `offline` | Backend unreachable; working from this browser's copy and reconnecting on its own |

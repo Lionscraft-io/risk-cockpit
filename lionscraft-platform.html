@@ -1128,8 +1128,11 @@ async function connectBackend(){
     liveMode = true;
     if (useProxy){ try { headSha = await headCommit(); } catch (e) {} }
     /* Decide on the current dirty flag, not the boot-time state — this also
-       runs on reconnection, where unpushed offline edits must survive. */
-    if (!sync.dirty){
+       runs on reconnection, where unpushed offline edits must survive.
+       A copy with no backend is the exception: its edits can never be pushed,
+       so keeping a weeks-old local board over the published one only ever
+       shows the reader something stale. It always takes what is published. */
+    if (!sync.dirty || !useProxy){
       DB = structuredClone(shared);
       sync = {base:revOf(shared), dirty:false};
       save(true); saveSync();
@@ -1396,7 +1399,7 @@ window.addEventListener("popstate", () => {
 const SYNC_LABEL = {
   /* "live" must mean the shared board. A development backend writes to somebody's
      working tree and reaches nobody else, so it says so. */
-  live:    () => (localBackend ? "working copy · rev " : "live · rev ") + revOf(DB),
+  live:    () => (!useProxy ? "read-only · rev " : localBackend ? "working copy · rev " : "live · rev ") + revOf(DB),
   ahead:   () => !useProxy ? "read-only" : (apiToken || !authRequired) ? "saving…" : "password needed",
   behind:  () => "update available",
   offline: () => "offline"
@@ -1408,7 +1411,9 @@ function renderBanner(){
   chip.classList.toggle("localonly", localBackend);
   chip.querySelector(".txt").textContent = SYNC_LABEL[syncState]();
   chip.title = {
-    live:    localBackend
+    live:    !useProxy
+      ? "Reading the published board. This copy has no backend, so anything you edit here stays in this browser and is replaced by the published board on the next load."
+      : localBackend
       ? "This backend is in development mode: saves are written to its working tree, not committed to GitHub. Nobody else sees them until someone commits."
       : "Connected to the backend. Saves push automatically and others' changes arrive on their own.",
     ahead:   !useProxy ? "This copy has no backend — read-only. Open the desk through its Replit address to edit."
