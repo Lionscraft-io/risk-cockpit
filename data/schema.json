@@ -265,7 +265,9 @@
               "partner",
               "task",
               "milestone",
-              "board"
+              "board",
+              "event",
+              "investor"
             ]
           },
           "ref": {
@@ -339,6 +341,150 @@
           },
           "terminal": {
             "type": "boolean"
+          }
+        }
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "start"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "start": {
+            "$ref": "#/definitions/date"
+          },
+          "end": {
+            "$ref": "#/definitions/dateOrEmpty"
+          },
+          "time": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          },
+          "partner": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "investors": {
+      "type": "array",
+      "description": "The investor space for the raise. tier A = in the space and writes this stage; B = in the space, wrong stage or type; C = adjacent, no insurance thesis.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "type",
+          "tier",
+          "stage"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "enum": [
+              "insurtech",
+              "reinsurer",
+              "ils",
+              "climate",
+              "dfi",
+              "fintech",
+              "crypto_rwa",
+              "crypto",
+              "growth",
+              "sovereign",
+              "bank",
+              "strategic"
+            ]
+          },
+          "geo": {
+            "type": "string"
+          },
+          "tier": {
+            "enum": [
+              "A",
+              "B",
+              "C"
+            ]
+          },
+          "writes": {
+            "type": "string"
+          },
+          "thesis": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "precedents": {
+            "type": "string"
+          },
+          "warm": {
+            "type": "string"
+          },
+          "ask": {
+            "type": "string"
+          },
+          "stage": {
+            "enum": [
+              "identified",
+              "researched",
+              "approached",
+              "meeting",
+              "diligence",
+              "term_sheet",
+              "committed",
+              "passed",
+              "parked"
+            ]
+          },
+          "owner": {
+            "type": "string"
+          },
+          "contact": {
+            "type": "string"
+          },
+          "next": {
+            "type": "string"
+          },
+          "nextDate": {
+            "$ref": "#/definitions/dateOrEmpty"
+          },
+          "lastDate": {
+            "$ref": "#/definitions/dateOrEmpty"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
           }
         }
       }

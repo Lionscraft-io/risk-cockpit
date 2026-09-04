@@ -533,5 +533,45 @@
     "refType": "board",
     "ref": "",
     "body": "Removed two records at Toni's request: Siva Balasuriyar (advisor) and David Palmer (network). Taken with them, because they pointed at nothing once the records were gone: task t108 \"Confirm how Siva is involved in the project\", and two log entries that referenced the records directly. Deleting log entries goes against the append-only rule in AGENTS.md — done here only because the removal was asked for directly, and leaving entries whose whole subject is a named private individual would have defeated the point. Passing mentions of both names survive in other board-level entries, and git history holds everything regardless: removing a name from the working copy does not remove it from a public repository's past."
+  },
+  {
+    "id": "e_inv01",
+    "at": "2026-09-04T16:00:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Added an Investors tab and 67 investor records — the investor space for the $8.5M seed. Two sources, kept apart by the source field on each record: the two curated sheets of a third-party fundraising workbook (imported in full, firm names only; that project's outreach statuses, contacts and 256-name universe deliberately left out), and research on 4 September into who funded the precedents in this category — Descartes, Arbol, FloodFlash, Raincoat, IBISA, Ledger Investing, Re, OnRe, Birch Hill. Tiered A/B/C for an $8.5M seed rather than the pre-seed the workbook assumed: 18 A, 33 B, 16 C. Every record starts at Identified; nothing from anyone else's pipeline was carried over as a status."
+  },
+  {
+    "id": "e_inv02",
+    "at": "2026-09-04T16:00:01Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "finding",
+    "refType": "investor",
+    "ref": "i07",
+    "body": "MS&AD Ventures is the corporate venture arm of MS&AD — the group behind Mitsui Sumitomo Insurance. If the Sumitomo Insurance MoU (p02) sits with Mitsui Sumitomo, this is the investing arm of a counterparty already at MoU stage, and the warmest strategic on the list. If it sits with Sumitomo Life, the warm path is Anthemis instead, whose new insurance fund has Sumitomo Life as an LP. The open question on p02 now has a fundraising consequence."
+  },
+  {
+    "id": "e_inv03",
+    "at": "2026-09-04T16:00:02Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "finding",
+    "refType": "investor",
+    "ref": "i19",
+    "body": "The workbook ranked SiriusPoint #8 and called it 'THE strategic slot'. That is stale: the current CEO is on record reducing equity stakes in MGAs and taking an underwriting-first approach, and the last venture deal found is December 2024. Re-tiered to B. Still worth a conversation — as fronting or capacity, not as an equity cheque."
+  },
+  {
+    "id": "e_inv04",
+    "at": "2026-09-04T16:00:03Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "finding",
+    "refType": "investor",
+    "ref": "i08",
+    "body": "ADB Ventures funds parametric insurtech in Asia — IBISA's $3M round in 2024, with Acumen and Equator — and ADB itself is aligning on the facility. The Business Opportunities Fair in Manila, 21–24 September, puts both the partner and the investor in one building. Worth deciding before then whether the ask to ADB is a country-programme conversation, a venture conversation, or both."
   }
 ]

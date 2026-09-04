@@ -40,6 +40,7 @@ lionscraft-platform.html    the entire application
 data/                       the board, one file per section
   meta.json                 revision and facility metadata
   partners/partners.json    the CRM
+  investors/investors.json  the investor space for the seed
   plan/                     workstreams, tasks, milestones
   activity/activity.json    the shared log
 data/schema.json            the assembled shape

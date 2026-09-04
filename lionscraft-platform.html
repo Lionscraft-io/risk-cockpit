@@ -777,6 +777,52 @@ const isCommitted = id => !!(ALL_STAGES.find(s => s.id === id) || {}).committed;
    questions per type, all of which fed the Outreach tab; that tab was removed
    and the content moved to docs/partners/by-type.md rather than left here
    looking like it still drives something. */
+/* ══ Investors — the raise ═══════════════════════════════════════════ */
+
+const ITYPES = {
+  insurtech:  "Insurtech VC",
+  reinsurer:  "Insurer / reinsurer CVC",
+  ils:        "ILS manager",
+  climate:    "Climate & resilience",
+  dfi:        "DFI & impact",
+  fintech:    "Fintech VC",
+  crypto_rwa: "Crypto — RWA",
+  crypto:     "Crypto — generalist",
+  growth:     "Growth equity",
+  sovereign:  "Sovereign & Gulf",
+  bank:       "Bank / asset manager",
+  strategic:  "Strategic"
+};
+const itypeLabel = id => ITYPES[id] || id;
+
+/* One question decides the tier: would this fund write into an $8.5M seed for
+   risk infrastructure? A has backed this kind of product and writes the
+   stage; B has backed it but is growth-only, a bank, or a strategic; C is
+   adjacent crypto with no insurance thesis. */
+const ITIERS = {
+  A: {label:"A", hint:"In the space, and writes this stage"},
+  B: {label:"B", hint:"In the space — wrong stage or type"},
+  C: {label:"C", hint:"Adjacent — no insurance thesis"}
+};
+const itierClass = t => ({A:"s7", B:"s4", C:"s1"})[t] || "s0";
+
+/* Investor stages are fixed rather than data: a raise has one shape. */
+const ISTAGES = [
+  {id:"identified", label:"Identified",   hint:"On the list, no contact yet"},
+  {id:"researched", label:"Researched",   hint:"Right partner and angle worked out"},
+  {id:"approached", label:"Approached",   hint:"Outreach sent, awaiting reply"},
+  {id:"meeting",    label:"Meeting held", hint:"First conversation done", engaged:true},
+  {id:"diligence",  label:"Diligence",    hint:"Data room open, questions coming", engaged:true},
+  {id:"term_sheet", label:"Term sheet",   hint:"Terms on the table", engaged:true},
+  {id:"committed",  label:"Committed",    hint:"Signed, or verbally in", engaged:true, committed:true},
+  {id:"passed",     label:"Passed",       hint:"Said no", terminal:true},
+  {id:"parked",     label:"Parked",       hint:"Right fund, wrong moment", terminal:true}
+];
+const istageRank  = id => ISTAGES.findIndex(s => s.id === id && !s.terminal);
+const istageLabel = id => (ISTAGES.find(s => s.id === id) || {label:id}).label;
+const istageClass = id => { const i = istageRank(id); return i < 0 ? "out" : "s" + Math.min(7, i); };
+const iengaged    = id => !!(ISTAGES.find(s => s.id === id) || {}).engaged;
+
 const CATEGORIES = {
   carrier: {label:"Risk carriers"},
   capital: {label:"Capital providers"},
@@ -824,6 +870,7 @@ const SEED = {
   ],
   activity: [],
   events: [],
+  investors: [],
   tasks: [],
   milestones: []
 };
@@ -893,6 +940,7 @@ const FILES = [
   {key:"milestones",  path:"data/plan/milestones.json"},
   {key:"columns",     path:"data/plan/columns.json"},
   {key:"events",      path:"data/events/events.json"},
+  {key:"investors",   path:"data/investors/investors.json"},
   {key:"activity",    path:"data/activity/activity.json"}
 ];
 
@@ -928,6 +976,7 @@ async function headCommit(){
 function normaliseBoard(doc){
   if (!Array.isArray(doc.activity)) doc.activity = [];
   if (!Array.isArray(doc.events)) doc.events = [];
+  if (!Array.isArray(doc.investors)) doc.investors = [];
   for (const p of doc.partners || []) if (typeof p.lastDate !== "string") p.lastDate = "";
   return doc;
 }
@@ -1123,6 +1172,7 @@ if (!Array.isArray(DB.activity)) DB.activity = [];
 /* Events arrived after this file shipped, so a browser holding an older copy
    has no such key. */
 if (!Array.isArray(DB.events)) DB.events = [];
+if (!Array.isArray(DB.investors)) DB.investors = [];
 /* Last contact arrived later still, so records saved before it have no key. */
 for (const p of DB.partners) if (typeof p.lastDate !== "string") p.lastDate = "";
 
@@ -1257,6 +1307,7 @@ function toast(msg){
 const VIEWS = [
   {id:"overview",  label:"Overview",  count:() => ""},
   {id:"partners",  label:"Partners",  count:() => DB.partners.length},
+  {id:"investors", label:"Investors", count:() => DB.investors.length},
   {id:"plan",      label:"Plan",      count:() => planCards().filter(c => !isDone(c.status)).length},
   {id:"board",     label:"Board",     count:() => boardCards().filter(c => c.status === "focus" || c.status === "review").length},
   {id:"events",    label:"Events",    count:() => DB.events.filter(e => !isPastEvent(e)).length},
@@ -1264,6 +1315,7 @@ const VIEWS = [
 ];
 let current = "overview";
 let filters = {stage:"", cat:"", q:""};
+let ifilters = {tier:"", type:"", stage:"", q:""};
 
 function renderRail(){
   document.getElementById("rail").innerHTML = VIEWS.map(v =>
@@ -1397,6 +1449,7 @@ function render(){
     plan:      viewPlan,
     board:     viewBoard,
     events:    viewEvents,
+    investors: viewInvestors,
     activity:  viewActivity,
   })[current]();
   if (current === "activity") wireActivity();
@@ -1425,6 +1478,9 @@ function viewOverview(){
   const pills = list => list.length
     ? list.map(x => `<button class="pname" data-partner="${esc(x.partnerId || x.id)}">${
         esc((x.title || x.name).replace(/^MoU — /, ""))}</button>`).join("")
+    : '<span class="sub">None</span>';
+  const ipills = list => list.length
+    ? list.map(x => `<button class="pname" data-investor="${esc(x.id)}">${esc(x.name)}</button>`).join("")
     : '<span class="sub">None</span>';
 
   /* Work: real tasks plus the bridged cards — MoU mirrors are already counted
@@ -1511,6 +1567,19 @@ function viewOverview(){
       <header><h2>Events</h2>${open("events")}</header>
       ${upcoming.length ? upcoming.map(evRow).join("")
         : '<div class="empty" style="padding:22px 15px">Nothing in the diary.</div>'}
+    </section>
+
+    <section class="card">
+      <header><h2>Investors</h2>${open("investors")}</header>
+      <div style="padding:11px 15px; display:flex; gap:7px; flex-wrap:wrap">
+        ${Object.keys(ITIERS).map(t => { const n = DB.investors.filter(i => i.tier === t).length;
+          return `<span class="moupill" ${n ? "" : "data-zero"}><b>${n}</b> tier ${t}</span>`; }).join("")}
+      </div>
+      <div class="mourows">
+        <div class="mourow"><b>In conversation</b><span class="pnames">${ipills(DB.investors.filter(i => iengaged(i.stage)))}</span></div>
+        <div class="mourow quiet"><b>Tier A, not yet approached</b><span class="pnames">${
+          ipills(DB.investors.filter(i => i.tier === "A" && istageRank(i.stage) >= 0 && istageRank(i.stage) < 2))}</span></div>
+      </div>
     </section>
 
   </div>`;
@@ -2769,6 +2838,157 @@ function eventDrawer(id){
   };
 }
 
+/* ── Investors ────────────────────────────────────────────────────── */
+
+function viewInvestors(){
+  let rows = DB.investors.slice();
+  if (ifilters.tier)  rows = rows.filter(i => i.tier === ifilters.tier);
+  if (ifilters.type)  rows = rows.filter(i => i.type === ifilters.type);
+  if (ifilters.stage) rows = rows.filter(i => i.stage === ifilters.stage);
+  if (ifilters.q){
+    const q = ifilters.q.toLowerCase();
+    rows = rows.filter(i => [i.name, i.thesis, i.evidence, i.precedents, i.warm, i.geo, i.notes, i.source].join(" ").toLowerCase().includes(q));
+  }
+  /* Conversation first, then tier, then name: a pipeline at the top and a map
+     of the space underneath. */
+  rows.sort((a, b) => (istageRank(b.stage) - istageRank(a.stage)) || a.tier.localeCompare(b.tier) || a.name.localeCompare(b.name));
+  const tierCount = t => DB.investors.filter(i => i.tier === t).length;
+
+  return `
+  <div class="pagehead">
+    <div>
+      <h1>Investors</h1>
+    </div>
+    <div class="tools">
+      <button class="btn primary" id="addInvestor">Add investor</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <header>
+      <div class="filters">
+        <select id="iTier">
+          <option value="">All tiers</option>
+          ${Object.entries(ITIERS).map(([k, t]) => `<option value="${k}" ${ifilters.tier === k ? "selected" : ""}>Tier ${t.label} — ${t.hint} (${tierCount(k)})</option>`).join("")}
+        </select>
+        <select id="iType">
+          <option value="">All types</option>
+          ${Object.entries(ITYPES).map(([k, l]) => `<option value="${k}" ${ifilters.type === k ? "selected" : ""}>${l}</option>`).join("")}
+        </select>
+        <select id="iStage">
+          <option value="">All stages</option>
+          ${ISTAGES.map(st => `<option value="${st.id}" ${ifilters.stage === st.id ? "selected" : ""}>${st.label}</option>`).join("")}
+        </select>
+        <input type="text" id="iQ" placeholder="Search…" value="${esc(ifilters.q)}" style="width:180px">
+        ${(ifilters.tier || ifilters.type || ifilters.stage || ifilters.q) ? '<button class="btn ghost" id="iClear">Clear</button>' : ""}
+      </div>
+      <span class="spacer"></span>
+      <span class="cat">${rows.length} of ${DB.investors.length}</span>
+    </header>
+    <div class="tablewrap">
+      <table class="cardtable">
+        <thead><tr>
+          <th>Tier</th><th>Investor</th><th>Stage</th><th>Last contact</th><th>Due</th>
+        </tr></thead>
+        <tbody>
+          ${rows.length ? rows.map(i => `
+            <tr class="clickable" data-investor="${esc(i.id)}">
+              <td style="width:52px" data-label="Tier"><span class="chip ${itierClass(i.tier)}" title="${esc((ITIERS[i.tier] || {}).hint || "")}">${esc(i.tier)}</span></td>
+              <td class="lead" title="${esc(i.thesis)}"><b class="pn">${esc(i.name)}</b>
+                <span class="cat" style="margin-left:7px">${esc(itypeLabel(i.type))}${i.geo ? " · " + esc(i.geo) : ""}</span>
+                <span class="sub">${esc(i.evidence) || "No evidence recorded"}</span></td>
+              <td style="width:112px" data-label="Stage"><span class="chip ${istageClass(i.stage)}"><i class="dot"></i>${istageLabel(i.stage)}</span></td>
+              <td style="width:96px" data-label="Last contact" class="num">${fmtDate(i.lastDate)}</td>
+              <td style="width:82px" data-label="Due" class="num ${isOverdue(i.nextDate) ? "overdue" : ""}">${fmtDate(i.nextDate)}</td>
+            </tr>`).join("") : '<tr><td colspan="5" class="empty">No investors match those filters.</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="note">Tier A has backed parametric, ILS or on-chain reinsurance and writes seed. Tier B is in the space at the wrong stage, or as a bank or strategic. Tier C is adjacent crypto with no insurance thesis. Every evidence line carries a date; where one reads "not verified", nobody has checked yet.</div>`;
+}
+
+function investorDrawer(id){
+  const isNew = !id;
+  const i = isNew
+    ? {id:uid("i"), name:"", type:"insurtech", geo:"", tier:"B", writes:"", thesis:"", evidence:"", precedents:"",
+       warm:"", ask:"", stage:"identified", owner:"", contact:"", next:"", nextDate:"", lastDate:"", notes:"", source:"added from the desk"}
+    : DB.investors.find(x => x.id === id);
+  if (!i) return;
+
+  openDrawer(`
+    <header>
+      <h3>${isNew ? "New investor" : esc(i.name)}</h3>
+      <button class="btn ghost" data-close>Close</button>
+    </header>
+    <div class="body">
+      ${field("Investor", "name", i.name)}
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <label class="field"><span>Type</span><select name="type">
+          ${Object.entries(ITYPES).map(([k, l]) => `<option value="${k}" ${i.type === k ? "selected" : ""}>${l}</option>`).join("")}
+        </select></label>
+        ${field("Where", "geo", i.geo)}
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <label class="field"><span>Tier</span><select name="tier">
+          ${Object.entries(ITIERS).map(([k, t]) => `<option value="${k}" ${i.tier === k ? "selected" : ""}>${t.label} — ${t.hint}</option>`).join("")}
+        </select></label>
+        ${field("Writes", "writes", i.writes)}
+      </div>
+      <label class="field"><span>Stage</span><select name="stage">
+        ${ISTAGES.map(st => `<option value="${st.id}" ${i.stage === st.id ? "selected" : ""}>${st.label} — ${st.hint}</option>`).join("")}
+      </select></label>
+      <label class="field"><span>Why they fit us</span><textarea name="thesis" rows="2">${esc(i.thesis)}</textarea></label>
+      <label class="field"><span>Evidence — dated</span><textarea name="evidence" rows="3">${esc(i.evidence)}</textarea></label>
+      ${field("Precedents in the space", "precedents", i.precedents)}
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        ${field("Warm path", "warm", i.warm)}
+        ${field("What to ask for", "ask", i.ask)}
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        ${field("Owner (us)", "owner", i.owner)}
+        ${field("Contact (them)", "contact", i.contact)}
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 130px 130px; gap:10px">
+        ${field("Next move", "next", i.next)}
+        ${field("Due", "nextDate", i.nextDate, "date")}
+        ${field("Last contact", "lastDate", i.lastDate, "date")}
+      </div>
+      <label class="field"><span>Notes</span><textarea name="notes" rows="4">${esc(i.notes)}</textarea></label>
+      ${isNew ? "" : `<div class="sub">Source: ${esc(i.source) || "—"}</div>`}
+      ${isNew ? "" : threadBlock("investor", i.id)}
+    </div>
+    <footer>
+      ${isNew ? "" : '<button class="btn danger" data-del>Delete</button>'}
+      <span class="spacer"></span>
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" data-save>Save</button>
+    </footer>`);
+
+  if (!isNew) wireThread("investor", i.id, () => investorDrawer(i.id));
+
+  drawer.querySelector("[data-save]").onclick = () => {
+    const wasStage = i.stage;
+    drawer.querySelectorAll("[name]").forEach(el => i[el.name] = el.value.trim());
+    if (!i.name){ toast("Give it a name first"); return; }
+    if (isNew){
+      DB.investors.push(i);
+      logEvent({kind:"change", refType:"investor", ref:i.id, body:"Added " + i.name + " to the investor list"});
+    } else if (wasStage !== i.stage){
+      logEvent({kind:"change", refType:"investor", ref:i.id, body:istageLabel(wasStage) + " → " + istageLabel(i.stage)});
+    }
+    save(); closeDrawer(); renderRail(); render(); toast(isNew ? "Investor added" : "Saved");
+  };
+  const del = drawer.querySelector("[data-del]");
+  if (del) del.onclick = () => {
+    if (!confirm("Delete " + i.name + "? This cannot be undone.")) return;
+    DB.investors = DB.investors.filter(x => x.id !== i.id);
+    logEvent({kind:"change", refType:"investor", ref:"", body:"Removed " + i.name + " from the investor list"});
+    save(); closeDrawer(); renderRail(); render(); toast("Deleted");
+  };
+}
+
 /* ── Activity ─────────────────────────────────────────────────────── */
 
 let actFilter = {actor:"", kind:"", q:""};
@@ -2778,6 +2998,7 @@ const refLabel = e => {
   if (e.refType === "task"){ const t = DB.tasks.find(x => x.id === e.ref); return t ? t.title : e.ref; }
   if (e.refType === "milestone"){ const m = DB.milestones.find(x => x.id === e.ref); return m ? m.name : e.ref; }
   if (e.refType === "event"){ const v = DB.events.find(x => x.id === e.ref); return v ? v.name : e.ref; }
+  if (e.refType === "investor"){ const v = DB.investors.find(x => x.id === e.ref); return v ? v.name : e.ref; }
   return e.ref || "the board";
 };
 
@@ -3348,17 +3569,25 @@ document.getElementById("view").addEventListener("click", e => {
   const ev = e.target.closest("[data-event]");
   if (ev){ eventDrawer(ev.dataset.event); return; }
 
+  const inv = e.target.closest("[data-investor]");
+  if (inv){ investorDrawer(inv.dataset.investor); return; }
+
   if (e.target.id === "addPartner"){ partnerDrawer(null); return; }
   if (e.target.id === "addTask"){ taskDrawer(null); return; }
   if (e.target.id === "addEvent"){ eventDrawer(null); return; }
+  if (e.target.id === "addInvestor"){ investorDrawer(null); return; }
   if (e.target.id === "newNote"){ noteDrawer(); return; }
   if (e.target.id === "addMilestone"){ addMilestone(); return; }
   if (e.target.id === "fClear"){ filters = {stage:"", cat:"", q:""}; render(); return; }
+  if (e.target.id === "iClear"){ ifilters = {tier:"", type:"", stage:"", q:""}; render(); return; }
 });
 
 document.getElementById("view").addEventListener("change", e => {
   if (e.target.id === "fStage"){ filters.stage = e.target.value; render(); }
   if (e.target.id === "fCat"){ filters.cat = e.target.value; render(); }
+  if (e.target.id === "iTier"){ ifilters.tier = e.target.value; render(); }
+  if (e.target.id === "iType"){ ifilters.type = e.target.value; render(); }
+  if (e.target.id === "iStage"){ ifilters.stage = e.target.value; render(); }
 });
 document.getElementById("view").addEventListener("input", e => {
   if (e.target.id === "fQ"){
@@ -3366,6 +3595,13 @@ document.getElementById("view").addEventListener("input", e => {
     const pos = e.target.selectionStart;
     render();
     const el = document.getElementById("fQ");
+    if (el){ el.focus(); el.setSelectionRange(pos, pos); }
+  }
+  if (e.target.id === "iQ"){
+    ifilters.q = e.target.value;
+    const pos = e.target.selectionStart;
+    render();
+    const el = document.getElementById("iQ");
     if (el){ el.focus(); el.setSelectionRange(pos, pos); }
   }
 });

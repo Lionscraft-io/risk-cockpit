@@ -18,6 +18,7 @@ const FILES = {
   milestones:  "../data/plan/milestones.json",
   columns:     "../data/plan/columns.json",
   events:      "../data/events/events.json",
+  investors:   "../data/investors/investors.json",
   activity:    "../data/activity/activity.json"
 };
 
@@ -46,7 +47,7 @@ else {
   if (!isDate(db.meta.updated)) err("meta.updated must be YYYY-MM-DD");
 }
 
-for (const key of ["partners", "workstreams", "tasks", "milestones", "columns", "stages", "events"])
+for (const key of ["partners", "workstreams", "tasks", "milestones", "columns", "stages", "events", "investors"])
   if (!Array.isArray(db[key])) err(key + " must be an array");
 if (Array.isArray(db.columns) && !db.columns.length) err("columns must not be empty");
 if (db.activity !== undefined && !Array.isArray(db.activity)) err("activity must be an array");
@@ -67,7 +68,7 @@ const CATS = ["carrier","capital","donor","dfi","operator","digital","data","ver
 const STAGES = (db.stages || []).map(s => s.id);
 const STATUSES = (db.columns || []).map(c => c.id);
 const KINDS = ["comment","change","finding","question","handoff"];
-const REFTYPES = ["partner","task","milestone","board","event"];
+const REFTYPES = ["partner","task","milestone","board","event","investor"];
 
 uniq(db.columns, "column");
 uniq(db.stages, "stage");
@@ -130,6 +131,19 @@ for (const ev of db.events){
     err("event " + ev.id + " link must start with http:// or https:// (got: " + ev.link + ")");
 }
 
+const ITYPES = ["insurtech","reinsurer","ils","climate","dfi","fintech","crypto_rwa","crypto","growth","sovereign","bank","strategic"];
+const ITIERS = ["A","B","C"];
+const ISTAGES = ["identified","researched","approached","meeting","diligence","term_sheet","committed","passed","parked"];
+const investorIds = uniq(db.investors, "investor");
+for (const i of db.investors){
+  if (!i.name) err("investor " + i.id + " has no name");
+  if (!ITYPES.includes(i.type)) err("investor " + i.id + " has unknown type: " + i.type);
+  if (!ITIERS.includes(i.tier)) err("investor " + i.id + " has unknown tier: " + i.tier);
+  if (!ISTAGES.includes(i.stage)) err("investor " + i.id + " has unknown stage: " + i.stage);
+  if (!isDateOrEmpty(i.nextDate)) err("investor " + i.id + " nextDate is not YYYY-MM-DD or empty");
+  if (!isDateOrEmpty(i.lastDate)) err("investor " + i.id + " lastDate is not YYYY-MM-DD or empty");
+}
+
 for (const e of db.activity || []){
   const tag = "activity " + (e.id || "(no id)");
   if (!e.actor) err(tag + " has no actor");
@@ -141,6 +155,7 @@ for (const e of db.activity || []){
   if (e.refType === "task" && e.ref && !taskIds.has(e.ref)) err(tag + " references unknown task " + e.ref);
   if (e.refType === "milestone" && e.ref && !msIds.has(e.ref)) err(tag + " references unknown milestone " + e.ref);
   if (e.refType === "event" && e.ref && !eventIds.has(e.ref)) err(tag + " references unknown event " + e.ref);
+  if (e.refType === "investor" && e.ref && !investorIds.has(e.ref)) err(tag + " references unknown investor " + e.ref);
 }
 
 report();
@@ -151,7 +166,7 @@ function report(){
     for (const e of errors) console.error("  · " + e);
     process.exit(1);
   }
-  const counts = ["partners","tasks","milestones","events"].map(k => db[k].length + " " + k).join(", ") +
+  const counts = ["partners","tasks","milestones","events","investors"].map(k => db[k].length + " " + k).join(", ") +
     ", columns " + db.columns.map(c => c.title).join(" → ");
   console.log("valid — revision " + db.meta.revision + ", " + counts + ", " +
     (db.activity || []).length + " activity entries, across " + Object.keys(FILES).length + " files");

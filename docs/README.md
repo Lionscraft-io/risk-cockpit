@@ -13,7 +13,8 @@ One flat row across the top.
 | | What it covers |
 | --- | --- |
 | **[Overview](overview/)** | One derived card per tab — the landing page |
-| **[Partners](partners/)** | The CRM: eleven partner types, ten stages, and the 15 records in play |
+| **[Partners](partners/)** | The CRM: eleven partner types, ten stages, and the 14 records in play |
+| **[Investors](investors/)** | The investor space for the seed: 67 funds tiered by fit, each with dated evidence |
 | **[Plan](plan/)** | The work grouped by workstream, and the draggable timeline |
 | **[Board](board/)** | The same cards by state — the working view |
 | **[Events](events/)** | Meetings and conferences, with dates |

@@ -13,6 +13,7 @@ or down.
 | `data/plan/tasks.json` | the task array |
 | `data/plan/milestones.json` | the milestone array |
 | `data/events/events.json` | the event array |
+| `data/investors/investors.json` | the investor array |
 | `data/activity/activity.json` | the activity log |
 
 Each file holds the bare array (or object, for `meta.json`) — no wrapper.
@@ -108,6 +109,7 @@ The assembled document, across the files listed above:
   "tasks":       [ Task ],
   "milestones":  [ Milestone ],
   "events":      [ CalendarEvent ],
+  "investors":   [ Investor ],
   "activity":    [ Event ]
 }
 ```
@@ -155,6 +157,22 @@ day), `time` (free text such as `09:00–10:30`, not parsed), `location`,
 `end` must not be before `start`. Named CalendarEvent here only to keep it
 apart from the activity Event below — in the data it is just `events`.
 
+### Investor — the raise
+
+`id`, `name`, `type` (`insurtech` `reinsurer` `ils` `climate` `dfi` `fintech`
+`crypto_rwa` `crypto` `growth` `sovereign` `bank` `strategic`), `geo`, `tier`
+(`A` in the space and writes this stage · `B` in the space, wrong stage or type ·
+`C` adjacent, no insurance thesis), `writes` (what stage they write, free text),
+`thesis` (why they fit us), `evidence` (**dated** proof they have backed this kind
+of product — keep it dated), `precedents` (their portfolio companies in the
+space, free text), `warm` (the path in), `ask` (what to ask for), `stage`
+(`identified` → `researched` → `approached` → `meeting` → `diligence` →
+`term_sheet` → `committed`, plus `passed` / `parked`), `owner`, `contact`,
+`next`, `nextDate`, `lastDate`, `notes`, `source` (where the record came from).
+
+Evidence with no date is an opinion. If you cannot date it, say so in the log.
+No personal names from third-party fundraising files: firm names only.
+
 ### Event — the activity log
 
 ```jsonc
@@ -164,7 +182,7 @@ apart from the activity Event below — in the data it is just `events`.
   "actor": "partner-researcher",       // your name. Be consistent run to run
   "actorKind": "agent",                // "agent" | "human"
   "kind": "finding",                   // see below
-  "refType": "partner",                // "partner" | "task" | "milestone" | "event" | "board"
+  "refType": "partner",                // "partner" | "task" | "milestone" | "event" | "investor" | "board"
   "ref": "p40",                        // id, or "" for the board generally
   "body": "…",                         // what you actually want to say
   "to": "board-operator"               // optional: directed at a named actor
