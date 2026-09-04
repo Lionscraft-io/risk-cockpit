@@ -38,6 +38,33 @@ The tier answers one question: *would this fund write into an $8.5M seed for
 risk infrastructure?* The workbook was tiered for a pre-seed with $300–750k
 cheques; re-tiering for the seed moved several names.
 
+## How the order works
+
+The tab groups by tier, and inside a tier the **rank** is set by hand against
+one rule, in this order:
+
+1. **A path in through something already on this board** — a partner at MoU
+   stage, an event in the diary, a name on the original target list. Warm
+   before cold.
+2. **Can they lead a round this size?** An $8.5M seed needs a lead; a fund that
+   writes $300k follower cheques is useful but not first.
+3. **The freshest dated evidence.** A deal in 2026 beats one in 2022.
+
+So MS&AD Ventures ranks first in Tier A not because it is the biggest fund but
+because it is the venture arm of a group already at MoU stage; Convective ranks
+fourth despite the best thesis fit because the path in is cold. Change a rank
+in the editor and say why in the thread — the rule is the point, the number is
+just where it lands.
+
+## Links
+
+Each record carries two: the fund's **website**, and the **source** of its
+evidence line. Websites were checked live before being added; a fund with no
+verified site shows *search ↗* instead, which opens a web search — never a
+guessed URL. Evidence sources are the articles the research came from, dated
+in the line they support. Records imported from the workbook have no source
+link, because the workbook cited screenshots, not URLs.
+
 ## What changed against the workbook
 
 - **SiriusPoint** was its "THE strategic slot". Its CEO has since said the group
@@ -70,6 +97,9 @@ cheques; re-tiering for the seed moved several names.
 | `stage` | identified → researched → approached → meeting → diligence → term sheet → committed, plus passed / parked |
 | `lastDate` / `nextDate` | When we last spoke; when the next move is due |
 | `source` | Workbook sheet and rank, or the research date |
+| `rank` | Order within the tier, by the rule above. 0 means unranked |
+| `link` | The fund's website, checked live. Empty shows a web search |
+| `sourceUrl` | Where the evidence line came from |
 
 Click a row to edit it, **Add investor** to create one. Changing the stage
 writes an entry to the [Activity](../activity/) log, and each investor has a

@@ -485,6 +485,19 @@
           },
           "source": {
             "type": "string"
+          },
+          "rank": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Order within the tier. 0 = unranked."
+          },
+          "link": {
+            "type": "string",
+            "description": "Verified website, http(s), or empty."
+          },
+          "sourceUrl": {
+            "type": "string",
+            "description": "Where the evidence line came from, http(s), or empty."
           }
         }
       }

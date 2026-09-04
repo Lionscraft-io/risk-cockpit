@@ -573,5 +573,15 @@
     "refType": "investor",
     "ref": "i08",
     "body": "ADB Ventures funds parametric insurtech in Asia — IBISA's $3M round in 2024, with Acumen and Equator — and ADB itself is aligning on the facility. The Business Opportunities Fair in Manila, 21–24 September, puts both the partner and the investor in one building. Worth deciding before then whether the ask to ADB is a country-programme conversation, a venture conversation, or both."
+  },
+  {
+    "id": "e_inv05",
+    "at": "2026-09-04T18:30:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Investors tab rebuilt after Toni's feedback: the view read as a pipeline — stage, last contact, due — for a raise where all 67 are still at Identified, the tier was explained only in a footnote, the 'why' was hidden in a hover, and the order within a tier was alphabetical, which looked like a priority and was not. Now: grouped by tier with the rule in each header; an explicit rank inside each tier — a path in through something already on this board first, then funds that can lead a round this size, then the freshest dated evidence; each row shows why, the evidence with a source link, the path in and the ask. Every fund has a website link checked live (61) or an honest 'search' link (6) — never a guessed URL. 47 evidence lines carry the article they came from. SiriusPoint's demotion now rests on The Insurer: the CEO has ruled out future MGA equity investments."
   }
 ]
