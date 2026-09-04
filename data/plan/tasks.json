@@ -77,17 +77,6 @@
     "order": 6
   },
   {
-    "id": "t108",
-    "ws": "WS14",
-    "title": "Confirm how Siva is involved in the project",
-    "status": "backlog",
-    "owner": "",
-    "start": "",
-    "due": "",
-    "partner": "p11",
-    "order": 7
-  },
-  {
     "id": "t109",
     "ws": "WS11",
     "title": "Update the website",

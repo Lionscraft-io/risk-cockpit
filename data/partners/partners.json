@@ -51,10 +51,10 @@
     "country": "LK",
     "why": "Host country of the first facility; public-sector cooperation is a precondition.",
     "ask": "Align on scope and the counterparty on the government side.",
-    "stage": "approached",
+    "stage": "mou_signed",
     "owner": "",
     "contact": "",
-    "next": "Second meeting — confirm the counterparty and the ask",
+    "next": "Second meeting — define scope under the signed MoU",
     "nextDate": "2026-09-02",
     "lastDate": "2026-08-26",
     "notes": "Renamed from the \"Sri Lanka\" placeholder. The category (Regulators & public bodies), the why and the ask still describe the country, not this organisation — they were written when this record stood for whichever Sri Lankan body would sign. Worth rewriting now that it names a real counterparty."
@@ -66,12 +66,12 @@
     "country": "SA",
     "why": "Saudi mobile operator; network is the protected asset in a Gulf facility.",
     "ask": "Countersignature on the MoU, then restoration cost data.",
-    "stage": "mou_sent",
+    "stage": "mou_signed",
     "owner": "",
     "contact": "",
-    "next": "Chase countersignature",
+    "next": "Define scope and first deliverable under the MoU",
     "nextDate": "",
-    "lastDate": "2026-08-19",
+    "lastDate": "2026-08-26",
     "notes": ""
   },
   {
@@ -150,21 +150,6 @@
     "notes": ""
   },
   {
-    "id": "p11",
-    "name": "Siva Balasuriyar",
-    "cat": "advisor",
-    "country": "",
-    "why": "Advising us — what they advise on has not been recorded yet.",
-    "ask": "Not yet agreed — confirm what we want their counsel on.",
-    "stage": "identified",
-    "owner": "",
-    "contact": "",
-    "next": "Confirm what they advise on and how often we should talk",
-    "nextDate": "",
-    "lastDate": "",
-    "notes": "No contact detail or link on file yet."
-  },
-  {
     "id": "p12",
     "name": "Ethereum Institutional Team",
     "cat": "digital",
@@ -193,21 +178,6 @@
     "nextDate": "",
     "lastDate": "",
     "notes": "Entity unconfirmed. Confirm whether Matthew Dawson is the contact here or on the institutional team."
-  },
-  {
-    "id": "p14",
-    "name": "David Palmer",
-    "cat": "network",
-    "country": "",
-    "why": "Network — ex-Pairpoint. Same role as Roland and Seena: opening doors rather than carrying risk or capital.",
-    "ask": "Agree which rooms to be introduced into, and what to send ahead.",
-    "stage": "identified",
-    "owner": "",
-    "contact": "",
-    "next": "Confirm where their network reaches and what to ask for",
-    "nextDate": "",
-    "lastDate": "",
-    "notes": "Ex-Pairpoint, as given. If that is Pairpoint by Vodafone, it may connect to the Scott Petty conversation — worth confirming."
   },
   {
     "id": "p15",

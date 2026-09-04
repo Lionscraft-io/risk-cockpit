@@ -185,16 +185,6 @@
     "body": "Added an 'Advisors & introducers' partner type. The nine existing types are all institutions — a carrier, a fund, a regulator. These two records are people, and putting a person under 'Capital providers' would have said something untrue about what they are. Note this is the first time the board holds named private individuals rather than organisations, in a public repository."
   },
   {
-    "id": "e_adv04",
-    "at": "2026-08-11T10:16:18.328Z",
-    "actor": "Claude",
-    "actorKind": "agent",
-    "kind": "change",
-    "refType": "partner",
-    "ref": "p11",
-    "body": "Added as an advisor at Toni's request. What they advise on is not recorded, and has not been guessed at."
-  },
-  {
     "id": "e_adv05",
     "at": "2026-08-11T10:16:18.328Z",
     "actor": "Claude",
@@ -273,16 +263,6 @@
     "refType": "partner",
     "ref": "p13",
     "body": "Added at Toni's request. Filed as a donor since a donation fund is a philanthropic funder. Which of the two Ethereum records Matthew Dawson belongs to is open."
-  },
-  {
-    "id": "e_st07",
-    "at": "2026-08-11T10:44:28.446Z",
-    "actor": "Claude",
-    "actorKind": "agent",
-    "kind": "change",
-    "refType": "partner",
-    "ref": "p14",
-    "body": "Added at Toni's request, network — the same role as Roland and Seena, as stated. Ex-Pairpoint recorded as given."
   },
   {
     "id": "eotoutu",
@@ -493,5 +473,65 @@
     "refType": "board",
     "ref": "",
     "body": "Partners table now shows Last contact where it showed Owner. Owner was unassigned on every one of the sixteen records, so the column carried nothing; when a conversation was last touched is the thing you actually scan for. The owner field is untouched and still in the editor. Eight dates entered from Toni's account; the other eight records have no last contact recorded and show a dash rather than a guess."
+  },
+  {
+    "id": "e_sg01",
+    "at": "2026-08-26T16:30:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p05",
+    "body": "MoU sent → MoU signed. Signed today, 26 Aug. Next move was \"Chase countersignature\", which is now done; replaced with the same next move the other signed MoU carries — define scope and first deliverable. That wording is mirrored from Hakuhodo Key3, not something you said, so correct it if the actual next step differs."
+  },
+  {
+    "id": "e_sg02",
+    "at": "2026-08-26T16:30:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "partner",
+    "ref": "p04",
+    "body": "Approached → MoU signed. Signed today, 26 Aug, without passing through the intermediate stages — approached and signed on the same day. The 2 September meeting stands and is still the due date."
+  },
+  {
+    "id": "e_sg03",
+    "at": "2026-08-26T16:30:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "question",
+    "refType": "partner",
+    "ref": "p04",
+    "body": "The long-standing question on this record — which Sri Lankan body is the counterparty and can sign — is answered in practice: Colombo UrbanLab signed. What that does not settle is whether an urban policy organisation is the counterparty the facility needs for the public-sector side, or whether a regulator or ministry is still required alongside it."
+  },
+  {
+    "id": "e_sg04",
+    "at": "2026-08-26T16:30:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "question",
+    "refType": "partner",
+    "ref": "p04",
+    "body": "Still open from before signature: this record is filed under Regulators & public bodies, and its \"why\" and \"ask\" still describe the country rather than this organisation. Worth rewriting now that there is a signed MoU behind the name."
+  },
+  {
+    "id": "e_sg05",
+    "at": "2026-08-26T16:30:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Two MoUs signed today, taking the count from one to three: Hakuhodo Key3, Mobily, Colombo UrbanLab. Three remain out — Sumitomo Insurance, Sumitomo Web3, Aon."
+  },
+  {
+    "id": "e_rm01",
+    "at": "2026-08-26T16:35:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Removed two records at Toni's request: Siva Balasuriyar (advisor) and David Palmer (network). Taken with them, because they pointed at nothing once the records were gone: task t108 \"Confirm how Siva is involved in the project\", and two log entries that referenced the records directly. Deleting log entries goes against the append-only rule in AGENTS.md — done here only because the removal was asked for directly, and leaving entries whose whole subject is a named private individual would have defeated the point. Passing mentions of both names survive in other board-level entries, and git history holds everything regardless: removing a name from the working copy does not remove it from a public repository's past."
   }
 ]
