@@ -389,7 +389,7 @@
     },
     "investors": {
       "type": "array",
-      "description": "The investor space for the raise. tier A = in the space and writes this stage; B = in the space, wrong stage or type; C = adjacent, no insurance thesis.",
+      "description": "The investor space for the raise. tier A = in the space and writes this stage; B = in the space, wrong stage or type; C = adjacent, no insurance thesis; X = checked, no evidence of insurance, risk-transfer or RWA investing.",
       "items": {
         "type": "object",
         "required": [
@@ -431,7 +431,8 @@
             "enum": [
               "A",
               "B",
-              "C"
+              "C",
+              "X"
             ]
           },
           "writes": {

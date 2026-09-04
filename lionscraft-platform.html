@@ -807,9 +807,10 @@ const itypeLabel = id => ITYPES[id] || id;
 const ITIERS = {
   A: {label:"A", hint:"In the space, and writes this stage"},
   B: {label:"B", hint:"In the space — wrong stage or type"},
-  C: {label:"C", hint:"Adjacent — no insurance thesis"}
+  C: {label:"C", hint:"Adjacent — no insurance thesis"},
+  X: {label:"X", hint:"Checked — no evidence of insurance, risk-transfer or RWA investing", short:"checked, no fit"}
 };
-const itierClass = t => ({A:"s7", B:"s4", C:"s1"})[t] || "s0";
+const itierClass = t => ({A:"s7", B:"s4", C:"s1", X:"out"})[t] || "s0";
 
 /* Investor stages are fixed rather than data: a raise has one shape. */
 const ISTAGES = [
@@ -1579,7 +1580,7 @@ function viewOverview(){
       <header><h2>Investors</h2>${open("investors")}</header>
       <div style="padding:11px 15px; display:flex; gap:7px; flex-wrap:wrap">
         ${Object.keys(ITIERS).map(t => { const n = DB.investors.filter(i => i.tier === t).length;
-          return `<span class="moupill" ${n ? "" : "data-zero"}><b>${n}</b> tier ${t}</span>`; }).join("")}
+          return `<span class="moupill" ${n ? "" : "data-zero"}><b>${n}</b> ${ITIERS[t].short || "tier " + t}</span>`; }).join("")}
       </div>
       <div class="mourows">
         <div class="mourow"><b>In conversation</b><span class="pnames">${ipills(DB.investors.filter(i => iengaged(i.stage)))}</span></div>
@@ -2886,14 +2887,27 @@ function viewInvestors(){
 
   const section = t => {
     if (ifilters.tier && ifilters.tier !== t) return "";
-    const list = rows.filter(i => i.tier === t).sort(byRank);
+    const list = rows.filter(i => i.tier === t).sort(t === "X" ? (a, b) => a.name.localeCompare(b.name) : byRank);
+    const table = `<div class="tablewrap"><table class="cardtable">${head}<tbody>${
+        list.length ? list.map(row).join("") : '<tr><td colspan="6" class="empty">Nothing in this tier matches.</td></tr>'
+      }</tbody></table></div>`;
+    const count = `${list.length}${list.length !== tierCount(t) ? " of " + tierCount(t) : ""}`;
+    /* The excluded list is the long one. It folds shut unless it is what was
+       asked for, so it never buries the funds that matter. */
+    if (t === "X") return list.length || ifilters.tier === "X" ? `
+    <section class="card">
+      <details ${(ifilters.tier === "X" || ifilters.q) ? "open" : ""}>
+        <summary style="cursor:pointer; padding:14px 16px; display:flex; align-items:center; gap:10px; list-style:none">
+          <h2 style="margin:0">Checked — no fit</h2><span class="cat">${esc(ITIERS.X.hint)}</span>
+          <span class="spacer"></span><span class="cat">${count} · click to open</span></summary>
+        ${table}
+      </details>
+    </section>` : "";
     return `
     <section class="card">
       <header><h2>Tier ${t}</h2><span class="cat" style="margin-left:10px">${esc(ITIERS[t].hint)}</span>
-        <span class="spacer"></span><span class="cat">${list.length}${list.length !== tierCount(t) ? " of " + tierCount(t) : ""}</span></header>
-      <div class="tablewrap"><table class="cardtable">${head}<tbody>${
-        list.length ? list.map(row).join("") : '<tr><td colspan="6" class="empty">Nothing in this tier matches.</td></tr>'
-      }</tbody></table></div>
+        <span class="spacer"></span><span class="cat">${count}</span></header>
+      ${table}
     </section>`;
   };
 
@@ -2912,7 +2926,7 @@ function viewInvestors(){
       <div class="filters">
         <select id="iTier">
           <option value="">All tiers</option>
-          ${Object.entries(ITIERS).map(([k, t]) => `<option value="${k}" ${ifilters.tier === k ? "selected" : ""}>Tier ${t.label} — ${t.hint} (${tierCount(k)})</option>`).join("")}
+          ${Object.entries(ITIERS).map(([k, t]) => `<option value="${k}" ${ifilters.tier === k ? "selected" : ""}>${t.short ? "Checked, no fit" : "Tier " + t.label + " — " + t.hint} (${tierCount(k)})</option>`).join("")}
         </select>
         <select id="iType">
           <option value="">All types</option>
@@ -2930,10 +2944,10 @@ function viewInvestors(){
     </header>
   </div>
 
-  <div class="note" style="margin-bottom:14px">Ordered by tier, then by rank inside it: a path in through something already on this board first, then funds that can lead a round this size, then the freshest dated evidence. Year is the latest dated deal in the evidence. Click a fund for the why, the ask and the path in.</div>
+  <div class="note" style="margin-bottom:14px">Ordered by tier, then by rank inside it: a path in through something already on this board first, then funds that can lead a round this size, then the freshest dated evidence. Year is the latest dated deal in the evidence. Funds that were checked and show no evidence of investing in this space sit folded at the bottom. Click a fund for the why, the ask and the path in.</div>
 
   <div class="grid" style="gap:16px">
-    ${section("A")}${section("B")}${section("C")}
+    ${section("A")}${section("B")}${section("C")}${section("X")}
   </div>`;
 }
 

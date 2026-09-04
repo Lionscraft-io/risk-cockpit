@@ -33,6 +33,7 @@ Japanese and Gulf investors the workbook's own footnote says it lacks.
 | **A** | Has backed parametric, ILS or on-chain reinsurance, and writes seed. Approach first. |
 | **B** | In the space, but wrong stage (growth-only) or wrong type (bank, strategic, retreating). Relationship now, cheque later — or partner rather than investor. |
 | **C** | Adjacent crypto and RWA funds with no insurance thesis. Round-fillers. |
+| **X** | Checked, and no evidence found of investing in insurance, risk transfer or RWA. Kept so the exclusion is on the record, folded shut at the bottom of the tab. |
 
 The tier answers one question: *would this fund write into an $8.5M seed for
 risk infrastructure?* The workbook was tiered for a pre-seed with $300–750k

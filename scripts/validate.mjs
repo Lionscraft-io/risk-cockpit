@@ -132,7 +132,7 @@ for (const ev of db.events){
 }
 
 const ITYPES = ["insurtech","reinsurer","ils","climate","dfi","fintech","crypto_rwa","crypto","growth","sovereign","bank","strategic"];
-const ITIERS = ["A","B","C"];
+const ITIERS = ["A","B","C","X"];
 const ISTAGES = ["identified","researched","approached","meeting","diligence","term_sheet","committed","passed","parked"];
 const investorIds = uniq(db.investors, "investor");
 for (const i of db.investors){

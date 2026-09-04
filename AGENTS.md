@@ -162,7 +162,8 @@ apart from the activity Event below — in the data it is just `events`.
 `id`, `name`, `type` (`insurtech` `reinsurer` `ils` `climate` `dfi` `fintech`
 `crypto_rwa` `crypto` `growth` `sovereign` `bank` `strategic`), `geo`, `tier`
 (`A` in the space and writes this stage · `B` in the space, wrong stage or type ·
-`C` adjacent, no insurance thesis), `writes` (what stage they write, free text),
+`C` adjacent, no insurance thesis · `X` checked, no evidence of insurance,
+risk-transfer or RWA investing — kept so the exclusion is on the record), `writes` (what stage they write, free text),
 `thesis` (why they fit us), `evidence` (**dated** proof they have backed this kind
 of product — keep it dated), `precedents` (their portfolio companies in the
 space, free text), `warm` (the path in), `ask` (what to ask for), `stage`
