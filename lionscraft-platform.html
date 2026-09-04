@@ -204,7 +204,7 @@ tr[data-task].dragging{opacity:.45}
 /* Reading views keep a comfortable measure; the board does not read, it lays
    things out side by side, so it gets the width the sidebar used to take. */
 main{padding:26px 28px 90px; min-width:0; max-width:1240px}
-main[data-tab="board"]{max-width:1760px}
+main[data-tab="board"],main[data-tab="investors"]{max-width:1760px}
 .pagehead{display:flex; align-items:flex-end; gap:18px; margin-bottom:22px; flex-wrap:wrap}
 .pagehead h1{font-size:25px}
 .pagehead p{margin:5px 0 0; color:var(--ink-2); max-width:64ch; font-size:13.5px}
@@ -295,9 +295,9 @@ td.num{white-space:nowrap}
 /* ─── Filters ────────────────────────────────────────────────────────── */
 .filters{display:flex; gap:7px; flex-wrap:wrap; align-items:center}
 /* Investors: one scannable sub-line in the list; paragraphs, not boxes, in the profile. */
-.cardtable .sub.one{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:72ch}
+.cardtable td.why,.cardtable td.evd{font-size:13px; line-height:1.5}
 .iprof section{display:flex; flex-direction:column; gap:3px}
-.iprof p{margin:0; font-size:13.5px; line-height:1.55}
+.iprof p{margin:0; font-size:15px; line-height:1.6}
 select, input[type=text], input[type=date], textarea{
   background:var(--surface); border:1px solid var(--line-strong); border-radius:var(--radius);
   padding:5px 8px; font-size:12.5px; max-width:100%;
@@ -523,6 +523,7 @@ label.field > span{font-family:var(--data); font-size:10px; letter-spacing:.11em
   opacity:0; transform:translateY(10px) scale(.985);
   transition:opacity .16s ease, transform .16s ease;
 }
+.drawer.wide{width:min(960px, calc(100% - 32px)); max-height:min(92vh, 960px)}
 .drawer.open{opacity:1; transform:none}
 @media (prefers-reduced-motion: reduce){.drawer{transition:none}}
 .drawer > header{padding:15px 18px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; flex:none}
@@ -982,7 +983,7 @@ function normaliseBoard(doc){
   if (!Array.isArray(doc.events)) doc.events = [];
   if (!Array.isArray(doc.investors)) doc.investors = [];
   for (const p of doc.partners || []) if (typeof p.lastDate !== "string") p.lastDate = "";
-  for (const i of doc.investors || []){ if (typeof i.rank !== "number") i.rank = 0; for (const k of ["link", "sourceUrl"]) if (typeof i[k] !== "string") i[k] = ""; }
+  for (const i of doc.investors || []){ if (typeof i.rank !== "number") i.rank = 0; if (typeof i.year !== "number") i.year = 0; for (const k of ["link", "sourceUrl"]) if (typeof i[k] !== "string") i[k] = ""; }
   return doc;
 }
 
@@ -2859,20 +2860,29 @@ function viewInvestors(){
   const byRank = (a, b) => ((a.rank || 99) - (b.rank || 99)) || a.name.localeCompare(b.name);
   const tierCount = t => DB.investors.filter(i => i.tier === t).length;
 
-  /* One line to scan; the case lives a click away. The sub-line is the proof
-     they are in the space — who they backed — or the thesis when there is no
-     precedent on file. */
+  /* A decision table: the evidence sits in the row, dated and linked, so the
+     list can be read without opening anything. The why, the ask and the path
+     in live a click away in the profile. */
+  const site = i => i.link
+    ? ` <a class="evlink" href="${esc(i.link)}" target="_blank" rel="noopener noreferrer" data-stop title="${esc(hostOf(i.link))}">↗</a>` : "";
+  const src = i => i.sourceUrl
+    ? `<a class="evlink" href="${esc(i.sourceUrl)}" target="_blank" rel="noopener noreferrer" data-stop>${esc(hostOf(i.sourceUrl))} ↗</a>`
+    : '<span style="color:var(--ink-3)">—</span>';
   const row = i => `
     <tr class="clickable" data-investor="${esc(i.id)}" title="${esc(i.thesis)}">
-      <td style="width:34px" class="num">${i.rank || "—"}</td>
-      <td class="lead">
-        <b class="pn">${esc(i.name)}</b>${i.link
-          ? ` <a class="evlink" href="${esc(i.link)}" target="_blank" rel="noopener noreferrer" data-stop title="${esc(hostOf(i.link))}">↗</a>` : ""}
-        <span class="cat" style="margin-left:7px">${esc(itypeLabel(i.type))}${i.geo ? " · " + esc(i.geo) : ""}</span>
-        <span class="sub one">${i.precedents ? "Backed " + esc(i.precedents) : esc(i.thesis)}</span>
-      </td>
-      <td style="width:112px" data-label="Stage"><span class="chip ${istageClass(i.stage)}"><i class="dot"></i>${istageLabel(i.stage)}</span></td>
+      <td class="num" data-label="#">${i.rank || "—"}</td>
+      <td data-label="Investor"><b class="pn">${esc(i.name)}</b>${site(i)}
+        <span class="sub">${esc(itypeLabel(i.type))}${i.geo ? " · " + esc(i.geo) : ""}</span></td>
+      <td class="why" data-label="Why">${esc(i.thesis)}</td>
+      <td class="evd" data-label="Evidence">${esc(i.evidence) || '<span style="color:var(--ink-3)">none recorded</span>'}</td>
+      <td class="num" data-label="Year">${i.year || "—"}</td>
+      <td data-label="Source">${src(i)}</td>
     </tr>`;
+
+  const head = `<thead><tr>
+      <th style="width:34px">#</th><th style="width:210px">Investor</th><th style="width:27%">Why</th><th>Evidence</th>
+      <th style="width:52px">Year</th><th style="width:150px">Source</th>
+    </tr></thead>`;
 
   const section = t => {
     if (ifilters.tier && ifilters.tier !== t) return "";
@@ -2881,8 +2891,8 @@ function viewInvestors(){
     <section class="card">
       <header><h2>Tier ${t}</h2><span class="cat" style="margin-left:10px">${esc(ITIERS[t].hint)}</span>
         <span class="spacer"></span><span class="cat">${list.length}${list.length !== tierCount(t) ? " of " + tierCount(t) : ""}</span></header>
-      <div class="tablewrap"><table class="cardtable"><tbody>${
-        list.length ? list.map(row).join("") : '<tr><td class="empty">Nothing in this tier matches.</td></tr>'
+      <div class="tablewrap"><table class="cardtable">${head}<tbody>${
+        list.length ? list.map(row).join("") : '<tr><td colspan="6" class="empty">Nothing in this tier matches.</td></tr>'
       }</tbody></table></div>
     </section>`;
   };
@@ -2920,7 +2930,7 @@ function viewInvestors(){
     </header>
   </div>
 
-  <div class="note" style="margin-bottom:14px">Ordered by tier, then by rank inside it: a path in through something already on this board first, then funds that can lead a round this size, then the freshest dated evidence. Click a fund for the full case and its sources.</div>
+  <div class="note" style="margin-bottom:14px">Ordered by tier, then by rank inside it: a path in through something already on this board first, then funds that can lead a round this size, then the freshest dated evidence. Year is the latest dated deal in the evidence. Click a fund for the why, the ask and the path in.</div>
 
   <div class="grid" style="gap:16px">
     ${section("A")}${section("B")}${section("C")}
@@ -2936,7 +2946,7 @@ function investorDrawer(id, mode){
   const isNew = !id;
   const i = isNew
     ? {id:uid("i"), name:"", type:"insurtech", geo:"", tier:"B", writes:"", thesis:"", evidence:"", precedents:"",
-       warm:"", ask:"", stage:"identified", notes:"", rank:0, link:"", sourceUrl:"", source:"added from the desk"}
+       warm:"", ask:"", stage:"identified", notes:"", rank:0, year:0, link:"", sourceUrl:"", source:"added from the desk"}
     : DB.investors.find(x => x.id === id);
   if (!i) return;
 
@@ -2959,7 +2969,7 @@ function investorDrawer(id, mode){
           <span class="cat">${esc((ITIERS[i.tier] || {}).hint || "")}</span>
           <span class="chip ${istageClass(i.stage)}"><i class="dot"></i>${istageLabel(i.stage)}</span>
         </div>
-        <div class="cat">${[itypeLabel(i.type), i.geo, i.writes ? "writes " + i.writes : ""].filter(Boolean).map(esc).join(" · ")}</div>
+        <div class="cat">${[itypeLabel(i.type), i.geo, i.writes ? "writes " + i.writes : "", i.year ? "latest evidence " + i.year : ""].filter(Boolean).map(esc).join(" · ")}</div>
         ${block("Why they fit us", esc(i.thesis))}
         ${block("Evidence", (esc(i.evidence) || "None recorded.") + (i.sourceUrl ? " " + link(i.sourceUrl) : ""))}
         ${block("Precedents in the space", esc(i.precedents))}
@@ -2973,6 +2983,7 @@ function investorDrawer(id, mode){
         <span class="spacer"></span>
         <button class="btn" data-close>Close</button>
       </footer>`);
+    drawer.classList.add("wide");
     wireThread("investor", i.id, () => investorDrawer(i.id));
     drawer.querySelector("[data-edit]").onclick = () => investorDrawer(i.id, "edit");
     return;
@@ -2992,12 +3003,13 @@ function investorDrawer(id, mode){
         </select></label>
         ${field("Where", "geo", i.geo)}
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 110px; gap:10px">
+      <div style="display:grid; grid-template-columns:1fr 1fr 90px 90px; gap:10px">
         <label class="field"><span>Tier</span><select name="tier">
           ${Object.entries(ITIERS).map(([k, t]) => `<option value="${k}" ${i.tier === k ? "selected" : ""}>${t.label} — ${t.hint}</option>`).join("")}
         </select></label>
         ${field("Writes", "writes", i.writes)}
         ${field("Rank in tier", "rank", i.rank || "", "number")}
+        ${field("Year", "year", i.year || "", "number")}
       </div>
       <label class="field"><span>Stage</span><select name="stage">
         ${ISTAGES.map(st => `<option value="${st.id}" ${i.stage === st.id ? "selected" : ""}>${st.label} — ${st.hint}</option>`).join("")}
@@ -3017,6 +3029,7 @@ function investorDrawer(id, mode){
       <button class="btn primary" data-save>Save</button>
     </footer>`);
 
+  drawer.classList.add("wide");
   const back = drawer.querySelector("[data-back]");
   if (back) back.onclick = () => investorDrawer(i.id);
 
@@ -3025,6 +3038,7 @@ function investorDrawer(id, mode){
     drawer.querySelectorAll("[name]").forEach(el => i[el.name] = el.value.trim());
     if (!i.name){ toast("Give it a name first"); return; }
     i.rank = parseInt(i.rank, 10) || 0;
+    i.year = parseInt(i.year, 10) || 0;
     for (const k of ["link", "sourceUrl"]) if (i[k] && !/^https?:\/\//i.test(i[k])){ toast("A link has to start with http:// or https://"); return; }
     if (isNew){
       DB.investors.push(i);
@@ -3209,6 +3223,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(
 
 function openDrawer(html){
   drawer.innerHTML = html;
+  drawer.classList.remove("wide");
   lockScroll(true);
   drawer.classList.add("open"); scrim.classList.add("open");
   drawer.setAttribute("aria-hidden", "false");

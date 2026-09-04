@@ -593,5 +593,15 @@
     "refType": "board",
     "ref": "",
     "body": "Investors tab tidied after Toni's second round: the list had become a wall of five-line rows in two fonts, and clicking a fund opened a form with three-line boxes you could not read. Now a row is one line to scan — rank, name with a link, type and place, and who they backed — and a click opens the case as paragraphs: why they fit, the evidence with its source, precedents, path in, ask, notes, with Edit as a button. The CRM block — owner, contact, next move, due, last contact — is gone from the editor, the data, the schema and the contract: this is a map of the space, not a pipeline, and all sixty-seven were empty anyway. Stage stays as a chip because the Overview reads it."
+  },
+  {
+    "id": "e_inv07",
+    "at": "2026-09-04T20:15:00Z",
+    "actor": "Claude",
+    "actorKind": "agent",
+    "kind": "change",
+    "refType": "board",
+    "ref": "",
+    "body": "Investors list restructured as a decision table at Toni's request: #, Investor with its website, the Evidence in full, the Year of its latest dated deal, and the Source link — so funds can be compared in the list without opening anything. Year is a new field, derived once from the dates already in each evidence line (67 records; 8 undated, all workbook entries marked 'not verified'), editable beside rank. The why, precedents, path in and ask stay in the profile."
   }
 ]

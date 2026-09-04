@@ -97,12 +97,15 @@ link, because the workbook cited screenshots, not URLs.
 | `stage` | identified → researched → approached → meeting → diligence → term sheet → committed, plus passed / parked |
 | `source` | Workbook sheet and rank, or the research date |
 | `rank` | Order within the tier, by the rule above. 0 means unranked |
+| `year` | The latest dated deal in the evidence line. 0 means undated |
 | `link` | The fund's website, checked live. Empty shows a web search |
 | `sourceUrl` | Where the evidence line came from |
 
-Click a row to **read the case** — why they fit, the evidence and its source,
-precedents, the path in, the ask — as paragraphs, with an *Edit* button for
-the rare change. **Add investor** creates one. Changing the stage writes an
+The list is a decision table: **#**, **Investor** (with its website), the
+**Evidence** in full, the **Year** of its latest dated deal, and the **Source**
+it came from — so the funds can be compared without opening anything. Click a
+row to **read the case** — why they fit, precedents, the path in, the ask — as
+paragraphs, with an *Edit* button for the rare change. **Add investor** creates one. Changing the stage writes an
 entry to the [Activity](../activity/) log, and each investor has a thread at
 the bottom of its profile.
 

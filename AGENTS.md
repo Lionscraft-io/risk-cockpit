@@ -169,8 +169,9 @@ space, free text), `warm` (the path in), `ask` (what to ask for), `stage`
 (`identified` → `researched` → `approached` → `meeting` → `diligence` →
 `term_sheet` → `committed`, plus `passed` / `parked`), `notes`, `source` (where the
 record came from),
-`rank` (integer — order within the tier, 0 = unranked), `link` (verified website
-or empty), `sourceUrl` (where the evidence line came from, or empty).
+`rank` (integer — order within the tier, 0 = unranked), `year` (integer — the
+latest dated deal in the evidence, 0 = undated), `link` (verified website or
+empty), `sourceUrl` (where the evidence line came from, or empty).
 
 **The order within a tier is a rule, not a feeling:** a path in through something
 already on this board first, then funds that can lead a round this size, then the

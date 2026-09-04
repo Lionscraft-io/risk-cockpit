@@ -141,6 +141,7 @@ for (const i of db.investors){
   if (!ITIERS.includes(i.tier)) err("investor " + i.id + " has unknown tier: " + i.tier);
   if (!ISTAGES.includes(i.stage)) err("investor " + i.id + " has unknown stage: " + i.stage);
   if (i.rank !== undefined && (!Number.isInteger(i.rank) || i.rank < 0)) err("investor " + i.id + " rank must be an integer >= 0");
+  if (i.year !== undefined && i.year !== 0 && (!Number.isInteger(i.year) || i.year < 2000 || i.year > 2100)) err("investor " + i.id + " year must be 0 or a four-digit year");
   for (const k of ["link", "sourceUrl"]) if (i[k] && !/^https?:\/\//i.test(i[k]))
     err("investor " + i.id + " " + k + " must start with http:// or https:// (got: " + i[k] + ")");
 }

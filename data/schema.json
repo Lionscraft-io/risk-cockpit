@@ -483,6 +483,11 @@
           "sourceUrl": {
             "type": "string",
             "description": "Where the evidence line came from, http(s), or empty."
+          },
+          "year": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Latest dated deal in the evidence. 0 = undated."
           }
         }
       }
